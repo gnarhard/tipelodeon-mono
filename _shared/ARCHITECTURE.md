@@ -637,7 +637,7 @@ Song Tipper exposes a **RESTful JSON API** at `/api/v1`.
 │   │   ├── PUT    /repertoire/{id}     # Update song
 │   │   ├── DELETE /repertoire/{id}     # Remove song
 │   │   ├── POST   /repertoire/{id}/performances  # Log performance
-│   │   ├── POST   /repertoire/bulk-import        # Bulk PDF import
+│   │   ├── POST   /repertoire/bulk-import        # Bulk repertoire import
 │   │   │
 │   │   ├── GET    /setlists            # List setlists
 │   │   ├── POST   /setlists            # Create setlist
@@ -1303,7 +1303,7 @@ CHART_RENDER_QUEUE=renders
 
 #### ProcessImportedChart
 
-**Trigger:** After bulk import when song is unknown
+**Trigger:** After chart-backed bulk import when song is unknown
 
 **Responsibilities:**
 1. Download chart PDF from R2

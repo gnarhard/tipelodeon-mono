@@ -52,6 +52,14 @@
 - Limits:
   - max files per request: `20`
   - max size per PDF: `2MB`
+- Supports either:
+  - chart-backed imports via `files[]`
+  - metadata-only imports via `items[]` rows parsed from CSV
+- When importing without charts, each `items[]` row must include:
+  - `title`
+  - `artist`
+- Optional item metadata:
+  - `theme`
 - Filename metadata supports: `key`, `capo`, `tuning`, `energy`, `era`, `genre`, `theme`.
 - Theme filename token example: `-- theme=love`.
 

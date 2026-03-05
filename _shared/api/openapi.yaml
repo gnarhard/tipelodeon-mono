@@ -350,8 +350,8 @@ paths:
   /me/projects/{projectId}/repertoire/bulk-import:
     post:
       tags: [Repertoire]
-      summary: Bulk-import chart PDFs
-      description: Up to 20 files per request, each PDF max 2MB.
+      summary: Bulk-import repertoire from PDFs or CSV rows
+      description: Up to 20 chart PDFs or 20 metadata-only song rows per request. Each PDF max 2MB. When `files` is omitted, each `items[]` row must include `title` and `artist`.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -362,7 +362,9 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [files]
+              anyOf:
+                - required: [files]
+                - required: [items]
               properties:
                 files:
                   type: array
