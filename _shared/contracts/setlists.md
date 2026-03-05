@@ -127,6 +127,7 @@ Notes:
 
 Manual CSV matching is client-side:
 - User pastes title-only CSV.
+- CSV can be used either while creating a manual set or while adding songs to an existing set.
 - Client matches titles against repertoire using normalized/fuzzy scoring.
 - Auto-match: top score `>= 0.90` and margin vs second `>= 0.08`.
 - Needs review: top score `>= 0.70` but ambiguous.
@@ -135,10 +136,13 @@ Manual CSV matching is client-side:
 - Each row must be matched or skipped before apply.
 - User can manually link any row to any repertoire song.
 - Repeated CSV titles are treated as explicit skipped duplicates after first occurrence.
+- Applying adds every resolved row in original CSV order, including auto-matches,
+  reviewed matches, and manual links.
 
 Manual apply sequence:
-1. Create set via `POST /setlists/{setlistId}/sets`.
-2. Bulk add resolved song IDs in CSV order via `POST /setlists/{setlistId}/sets/{setId}/songs/bulk`.
+1. If creating a new manual set, create the set via `POST /setlists/{setlistId}/sets`.
+2. Add the resolved song IDs in CSV order via `POST /setlists/{setlistId}/sets/{setId}/songs/bulk`
+   for newly created sets, or `POST /setlists/{setlistId}/sets/{setId}/songs` for existing-set append flows.
 
 ---
 
