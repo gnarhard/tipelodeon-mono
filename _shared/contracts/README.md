@@ -20,6 +20,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
   - Login/logout
   - Password reset flow
   - Update password
+  - Web dashboard billing gate and performer subscription setup
 
 - **[projects.md](./projects.md)** - Project management
   - CRUD operations for projects (bands/solo acts)
