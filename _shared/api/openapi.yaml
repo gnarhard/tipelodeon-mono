@@ -1239,6 +1239,9 @@ components:
         request_count:
           type: integer
           description: Present on the authenticated repertoire list response.
+        total_tip_amount_cents:
+          type: integer
+          description: Present on the authenticated repertoire list response.
         last_performed_at:
           type: string
           format: date-time

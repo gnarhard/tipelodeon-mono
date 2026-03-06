@@ -31,6 +31,7 @@
 - Repertoire list items include:
   - `performance_count`
   - `request_count`
+  - `total_tip_amount_cents`
   - `last_performed_at`
 
 ### Create
