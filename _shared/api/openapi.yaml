@@ -607,14 +607,40 @@ paths:
           application/json:
             schema:
               type: object
-              required: [lines]
+              required: [text]
               properties:
-                lines:
-                  type: array
-                  items: { type: string }
+                text:
+                  type: string
+                  description: Newline-separated `Title - Artist` rows.
+                create_missing_songs:
+                  type: boolean
+                  default: true
       responses:
         '201':
-          description: Songs imported
+          description: Songs imported, including duplicate matches with warnings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  setlist_songs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SetlistSongResource'
+                  meta:
+                    type: object
+                    properties:
+                      added_count: { type: integer }
+                      duplicate_count: { type: integer }
+                      duplicate_lines:
+                        type: array
+                        items: { type: string }
+                      unresolved_count: { type: integer }
+                      unresolved_lines:
+                        type: array
+                        items: { type: string }
 
   /me/projects/{projectId}/performances/start:
     post:

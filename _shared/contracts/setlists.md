@@ -139,9 +139,11 @@ Manual CSV matching is client-side:
   CSV immediately without opening the review sheet.
 - Each row must be matched or skipped before apply.
 - User can manually link any row to any repertoire song.
-- Repeated CSV titles are treated as explicit skipped duplicates after first occurrence.
-- Applying adds every resolved row in original CSV order, including auto-matches,
-  reviewed matches, and manual links.
+- Repeated CSV titles are kept.
+- Rows that resolve to a repertoire song already selected earlier in the CSV, or
+  already present in the target set, are warned as duplicates but still added.
+- Applying adds every resolved row in original CSV order, including duplicates,
+  auto-matches, reviewed matches, and manual links.
 
 Manual apply sequence:
 1. If creating a new manual set, create the set via `POST /setlists/{setlistId}/sets`.
@@ -164,6 +166,13 @@ Set songs:
 - `PUT /setlists/{setlistId}/sets/{setId}/songs/reorder`
 - `DELETE /setlists/{setlistId}/sets/{setId}/songs/{songId}`
 - `POST /setlists/{setlistId}/sets/{setId}/songs/import-text`
+
+Set song rules:
+- Duplicate `project_song_id` entries are allowed within the same set.
+- `POST /setlists/{setlistId}/sets/{setId}/songs/import-text` accepts
+  `text` and optional `create_missing_songs`.
+- `songs/import-text` returns `meta.added_count`, `meta.duplicate_count`,
+  `meta.duplicate_lines`, `meta.unresolved_count`, and `meta.unresolved_lines`.
 
 Delete behavior:
 - Remaining sets are always reindexed so `order_index` stays contiguous (`0..N-1`).
