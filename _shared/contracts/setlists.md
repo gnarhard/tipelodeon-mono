@@ -165,6 +165,12 @@ Set songs:
 - `DELETE /setlists/{setlistId}/sets/{setId}/songs/{songId}`
 - `POST /setlists/{setlistId}/sets/{setId}/songs/import-text`
 
+Set song payload notes:
+- `PUT /setlists/{setlistId}/sets/{setId}/songs/{songId}` accepts optional
+  `notes` and optional nullable `color_hex`.
+- `color_hex` must match `#RRGGBB` when present.
+- `color_hex = null` means clients should render the default dark grey song dot.
+
 Delete behavior:
 - Remaining sets are always reindexed so `order_index` stays contiguous (`0..N-1`).
 - Default-numbered titles (`Set <number>`) are renumbered sequentially.

@@ -1359,6 +1359,11 @@ components:
         project_song_id: { type: integer }
         order_index: { type: integer }
         notes: { type: string, nullable: true }
+        color_hex:
+          type: string
+          nullable: true
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          description: Null means use the default dark grey set-song indicator.
         song:
           allOf:
             - $ref: '#/components/schemas/SongSummary'
