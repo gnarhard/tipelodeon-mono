@@ -23,7 +23,7 @@
 - The only allowed agent-created directory in the main `songtipper` checkout is the ignored `songtipper-worktrees/` root.
 - This root docs worktree may contain only `_shared/` and other shared docs. Do not assume `web/` or `mobile_app/` exist here.
 - If the task requires app code, create and use separate worktrees for `web/` and `mobile_app/` as needed.
-- When finished, create a PR for each repo you modified without waiting to be asked, resolve any merge conflicts in those PRs using your best judgment, and share every PR link with the developer.
+- When finished, create a PR for each repo you modified without waiting to be asked, but only after every test suite in each submitted repo is passing with zero errors, including unrelated failures. Resolve any merge conflicts in those PRs using your best judgment, and share every PR link with the developer.
 
 ## Ignore
 
