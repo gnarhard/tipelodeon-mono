@@ -28,6 +28,10 @@
 ### List
 - `GET /repertoire`
 - Supports `theme` filter.
+- Repertoire list items include:
+  - `performance_count`
+  - `request_count`
+  - `last_performed_at`
 
 ### Create
 - `POST /repertoire`

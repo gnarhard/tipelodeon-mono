@@ -1210,9 +1210,27 @@ components:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
         energy_level: { type: string, nullable: true }
+        era: { type: string, nullable: true }
         genre: { type: string, nullable: true }
         song:
           $ref: '#/components/schemas/SongSummary'
+        highest_active_tip_cents:
+          type: integer
+          nullable: true
+        performed_musical_key: { type: string, nullable: true }
+        original_musical_key: { type: string, nullable: true }
+        tuning: { type: string, nullable: true }
+        capo: { type: integer, nullable: true }
+        duration_in_seconds: { type: integer, nullable: true }
+        needs_improvement: { type: boolean }
+        performance_count: { type: integer }
+        request_count:
+          type: integer
+          description: Present on the authenticated repertoire list response.
+        last_performed_at:
+          type: string
+          format: date-time
+          nullable: true
     SingleRepertoireResponse:
       type: object
       properties:
