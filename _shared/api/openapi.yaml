@@ -533,11 +533,14 @@ paths:
       tags: [Setlists]
       summary: Generate a smart set in an existing setlist
       description: |
-        Smart generation ranks project repertoire by:
+        Smart generation selects project repertoire by:
         1) Revenue (`SUM(requests.tip_amount_cents)`)
         2) Popularity (`COUNT(requests.id)`)
         3) Play count (`project_songs.performance_count`)
         Then tie-breaks by title asc, artist asc, project_song_id asc.
+        When recorded setlist performance history exists, the generated set is
+        re-ordered to follow learned opener, transition, slot, and closer
+        patterns from real performances.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -663,7 +666,7 @@ paths:
                   type: string
                   enum: [manual, smart]
       responses:
-        '200':
+        '201':
           description: Session started
           content:
             application/json:
@@ -719,6 +722,10 @@ paths:
                 source:
                   type: string
                   enum: [setlist, repertoire]
+                setlist_song_id:
+                  type: integer
+                  nullable: true
+                  description: Required when `source=setlist` so duplicate setlist entries are completed in the correct performed order.
       responses:
         '200':
           description: Session updated

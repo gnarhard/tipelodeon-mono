@@ -52,12 +52,19 @@ Semantics:
 - By default (`allow_existing_set_duplicates=false`), songs already present in other sets of the same setlist are excluded.
 - If no candidates remain, endpoint returns `422`.
 - Creates one new set containing all ranked candidates.
+- After candidate selection, song order is adjusted using recorded setlist
+  performance history when available so openers, transitions, slot patterns,
+  and closers mimic real performances.
 
-Ranking order:
+Candidate selection order:
 1. Revenue: `SUM(requests.tip_amount_cents)` per song (all statuses)
 2. Popularity: `COUNT(requests.id)` per song
 3. Play count: `project_songs.performance_count`
 4. Tie-breakers: `title ASC`, `artist ASC`, `project_song_id ASC`
+
+Ordering fallback:
+- If there is no recorded setlist performance history with
+  `performed_order_index`, backend keeps the candidate-selection order above.
 
 ### Strategic set
 
@@ -195,4 +202,6 @@ Rules:
 - Starting while active returns `409 Conflict`.
 - Session mode: `manual` or `smart`.
 - `complete` records sequential `performed_order_index`.
+- `complete` for `source=setlist` also sends `setlist_song_id` so duplicate
+  songs in one setlist are tracked as distinct performed entries.
 - Smart mode can reorder pending items after skip/complete.
