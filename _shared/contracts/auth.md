@@ -13,7 +13,7 @@ Route prefix: `/api/v1/auth`
   - `basic_monthly` at `$4.99/month`
   - `basic_yearly` at `$49.99/year`
   - `pro_monthly` at `$19.99/month`
-  - `pro_yearly` at `$200/year`
+  - `pro_yearly` at `$199.99/year`
 - Paid plans collect a payment method up front and begin with a 30-day free trial.
 - Complimentary access can be granted in two forms:
   - `free_year` expires after the configured complimentary period
