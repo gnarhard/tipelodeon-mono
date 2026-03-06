@@ -173,6 +173,6 @@ When modifying the API:
 ## Related Documentation
 
 - [../api-contract-rules.md](../api-contract-rules.md) - Main API overview and general rules
-- [../audience-achievements.md](../audience-achievements.md) - Audience gamification features
+- [../audience-achievements.md](../audience-achievements.md) - Retired audience gamification notes
 - [../../ARCHITECTURE.md](../../ARCHITECTURE.md) - Full system architecture documentation
 - [../../CLAUDE.md](../../CLAUDE.md) - Development workflow and agent instructions

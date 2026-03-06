@@ -905,26 +905,6 @@ paths:
         '422':
           description: Validation failed, request gating, or minimum tip violation
 
-  /public/projects/{projectSlug}/audience/me:
-    get:
-      tags: [Audience]
-      summary: Get audience profile + achievements for current cookie identity
-      parameters:
-        - $ref: '#/components/parameters/ProjectSlug'
-      responses:
-        '200':
-          description: Audience profile and achievements
-
-  /public/projects/{projectSlug}/audience/leaderboard:
-    get:
-      tags: [Audience]
-      summary: Who-is-here leaderboard for current active performance session
-      parameters:
-        - $ref: '#/components/parameters/ProjectSlug'
-      responses:
-        '200':
-          description: Ranked participants (sum tip amount during active session)
-
 components:
   securitySchemes:
     bearerAuth:

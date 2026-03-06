@@ -324,5 +324,5 @@ When making breaking changes to the API:
 ## Related Documentation
 
 - [ARCHITECTURE.md](../ARCHITECTURE.md) - Full system architecture
-- [audience-achievements.md](./audience-achievements.md) - Gamification features
+- [audience-achievements.md](./audience-achievements.md) - Retired audience gamification notes
 - [CLAUDE.md](../CLAUDE.md) - Development workflow

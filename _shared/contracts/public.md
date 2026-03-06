@@ -65,23 +65,3 @@ Payout setup gate:
 
 - If project requests are disabled independently, API returns `422` with
   message only (no `code` field).
-
----
-
-## Audience profile and achievements
-
-- `GET /audience/me`
-- Returns profile, totals, and achievements list for current cookie identity.
-
-Profile name policy:
-- Deterministic pseudonymous `display_name = Adjective + Animal` based on token hash.
-- Uses a safe animal allowlist.
-
----
-
-## Who's here leaderboard
-
-- `GET /audience/leaderboard`
-- Uses current active performance session.
-- Includes active participants and rank by `SUM(tip_amount_cents)` during session.
-- Stable tiebreaker: `joined_at ASC`.
