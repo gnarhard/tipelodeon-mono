@@ -24,3 +24,4 @@ Notes:
 - Keep `web`, `mobile_app`, and `_shared` in sync for any API or contract change.
 - Do not add backwards-compatible shims unless explicitly requested.
 - Open a PR for every repo you modify before handoff, even if the user did not explicitly ask for PR creation.
+- If any PR you open has merge conflicts, resolve them using your best judgment before handoff.

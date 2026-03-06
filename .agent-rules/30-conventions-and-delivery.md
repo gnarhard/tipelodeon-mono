@@ -77,6 +77,7 @@ When you finish a task, summarize with:
 - Web PR template: `web/.github/pull_request_template.md`
 - Mobile PR template: `mobile_app/.github/pull_request_template.md`
 - PR creation is required after every completed task that changes a repo. Do not wait for the user to ask for it.
+- If any PR you open shows merge conflicts, fix them before handoff using your best judgment and rerun any validation affected by the conflict resolution.
 
 Every PR body must include:
 
