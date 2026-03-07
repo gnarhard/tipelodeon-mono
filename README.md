@@ -1,6 +1,6 @@
-# Songtipper Monorepo
+# Song Tipper Monorepo
 
-SongTipper is a performer-focused app to manage songs, setlists, charts and live audience requests.
+Song Tipper is a performer-focused app to manage songs, setlists, charts and live audience requests.
 
 - Purpose: Manage repertoire (songs, metadata, tags), create setlists, store charts (PDFs/images), and handle audience song requests / live queue syncing.
 - Architecture: Backend API + web UI in backend/, performer mobile app in frontend/ (Flutter), and shared API/contracts in shared/. - Key features: Repertoire & metadata, setlist building, chart/file uploads, audience request queue, project-scoped auth, offline-first mobile behavior. 
@@ -8,7 +8,7 @@ SongTipper is a performer-focused app to manage songs, setlists, charts and live
 - Auth & scope: Token-based authentication with authorization scoped to a Project/band. 
 - Scale & imports: Designed to support bulk imports (see database/seeders), and integrates with external metadata/enrichment as needed.
 
-Songtipper is split into multiple repositories:
+Song Tipper is split into multiple repositories:
 
 - `songtipper/` (this repo): shared files, tooling, and top-level coordination.
 - `songtipper/web/`: Laravel API + marketing site.

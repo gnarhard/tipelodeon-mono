@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: SongTipper API v1.2
+  title: Song Tipper API v1.2
   version: 1.2.0
   description: |
-    Contract-first API for SongTipper performer and audience flows.
+    Contract-first API for Song Tipper performer and audience flows.
 
     Canonical response envelope:
     - success: {"data": ..., "meta": ...}
