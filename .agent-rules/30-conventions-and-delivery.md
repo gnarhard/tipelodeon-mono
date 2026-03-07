@@ -88,6 +88,8 @@ Every PR body must include:
 - `Contract / API Impact`
 - `Breaking Changes`
 - `Validation` with exact commands run
+- For Flutter repos, include the exact device used for any `integration_test`
+  command
 - `Risk / Rollback`
 - `Checklist`
 
@@ -103,3 +105,7 @@ If a template is missing in a repo, add it first and then open the feature PR wi
 ## Finish the job completely
 
 Do the needed follow-through work when you can. If a migration, validation step, or other task is part of finishing the change, do it instead of handing it back unfinished.
+
+If you change mobile architecture, dependency injection, routing boundaries, or
+presentation boundaries, update the repo-local mobile rule markdown in the same
+PR so future work follows the new shape.
