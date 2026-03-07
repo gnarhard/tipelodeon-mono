@@ -38,6 +38,8 @@
 
 - Notes are supported on `setlists`, `setlist_sets`, and `setlist_songs`
 - Create and update payloads accept `notes` as nullable text
+- `setlist_sets` also expose nullable `notes_order_index` to persist where the
+  set note should appear inside the set's mixed song list
 
 ## Text import for setlists
 

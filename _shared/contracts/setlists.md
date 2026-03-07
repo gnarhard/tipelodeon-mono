@@ -166,6 +166,15 @@ Sets:
 - `PUT /setlists/{setlistId}/sets/{setId}`
 - `DELETE /setlists/{setlistId}/sets/{setId}`
 
+Set payload notes:
+- `POST /setlists/{setlistId}/sets` and `PUT /setlists/{setlistId}/sets/{setId}`
+  accept optional nullable `notes` plus optional nullable
+  `notes_order_index`.
+- `notes_order_index` stores the set note's position within the mixed song list.
+- If `notes` is present and `notes_order_index` is omitted, backend defaults the
+  note position to `0`.
+- If `notes` is cleared, backend also clears `notes_order_index`.
+
 Set songs:
 - `POST /setlists/{setlistId}/sets/{setId}/songs`
 - `POST /setlists/{setlistId}/sets/{setId}/songs/bulk`
