@@ -1293,16 +1293,6 @@ components:
         order_index:
           type: integer
           nullable: true
-        notes:
-          type: string
-          nullable: true
-        notes_order_index:
-          type: integer
-          nullable: true
-          description: >-
-            Optional position for rendering the set note inside the set's mixed
-            song list. Defaults to 0 when notes are present and no explicit
-            value is sent.
     SmartSetGenerateRequest:
       type: object
       properties:
@@ -1381,26 +1371,28 @@ components:
       properties:
         id: { type: integer }
         set_id: { type: integer }
-        project_song_id: { type: integer }
+        project_song_id:
+          type: integer
+          nullable: true
+          description: Null when the set entry is a set note instead of a repertoire song.
         order_index: { type: integer }
         notes: { type: string, nullable: true }
         color_hex:
           type: string
           nullable: true
           pattern: '^#[0-9A-Fa-f]{6}$'
-          description: Null means use the default dark grey set-song indicator.
+          description: Null means use the default dark grey set-entry indicator.
         song:
           allOf:
             - $ref: '#/components/schemas/SongSummary'
           nullable: true
+          description: Null when the set entry is a set note.
     SetlistSetResource:
       type: object
       properties:
         id: { type: integer }
         setlist_id: { type: integer }
         name: { type: string }
-        notes: { type: string, nullable: true }
-        notes_order_index: { type: integer, nullable: true }
         order_index: { type: integer }
         songs:
           type: array

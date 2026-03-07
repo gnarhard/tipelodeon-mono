@@ -166,14 +166,12 @@ Sets:
 - `PUT /setlists/{setlistId}/sets/{setId}`
 - `DELETE /setlists/{setlistId}/sets/{setId}`
 
-Set payload notes:
+Set payload rules:
 - `POST /setlists/{setlistId}/sets` and `PUT /setlists/{setlistId}/sets/{setId}`
-  accept optional nullable `notes` plus optional nullable
-  `notes_order_index`.
-- `notes_order_index` stores the set note's position within the mixed song list.
-- If `notes` is present and `notes_order_index` is omitted, backend defaults the
-  note position to `0`.
-- If `notes` is cleared, backend also clears `notes_order_index`.
+  only manage set metadata (`name`, `order_index`).
+- Set-level notes are no longer stored on `setlist_sets`.
+- Multiple set notes are modeled as normal ordered entries inside
+  `setlist_songs`.
 
 Set songs:
 - `POST /setlists/{setlistId}/sets/{setId}/songs`
@@ -184,10 +182,16 @@ Set songs:
 - `POST /setlists/{setlistId}/sets/{setId}/songs/import-text`
 
 Set song payload notes:
+- `POST /setlists/{setlistId}/sets/{setId}/songs` accepts either:
+  - `project_song_id` for a repertoire song entry, or
+  - `notes` for a set note entry.
+- Set note entries serialize with `project_song_id = null` and `song = null`.
 - `PUT /setlists/{setlistId}/sets/{setId}/songs/{songId}` accepts optional
   `notes` and optional nullable `color_hex`.
 - `color_hex` must match `#RRGGBB` when present.
 - `color_hex = null` means clients should render the default dark grey song dot.
+- `PUT /setlists/{setlistId}/sets/{setId}/songs/reorder` reorders all mixed
+  set entries, including note entries.
 Set song rules:
 - Duplicate `project_song_id` entries are allowed within the same set.
 - `POST /setlists/{setlistId}/sets/{setId}/songs/import-text` accepts
