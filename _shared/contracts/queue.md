@@ -5,6 +5,9 @@
 - All endpoints below require `Authorization: Bearer <token>`.
 - All endpoints are performer-scoped and project-scoped via `{project_id}`.
 - Route prefix: `/api/v1/me/projects/{project_id}`
+- Project owners and invited project members can read queue endpoints.
+- Queue visibility is based on project access, not the invited member's billing
+  plan tier.
 
 ---
 

@@ -209,6 +209,53 @@ paths:
         '422':
           description: Validation failed or payout setup incomplete
 
+  /me/projects/{projectId}/members:
+    get:
+      tags: [Projects]
+      summary: List the owner and invited members for a project
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Owner and invited members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMembersResponse'
+        '404':
+          description: Not found (user does not have access to the project)
+    post:
+      tags: [Projects]
+      summary: Invite an existing SongTipper user to a project as a member
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberInviteRequest'
+      responses:
+        '200':
+          description: Existing membership returned or upgraded to `member`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberMessageResponse'
+        '201':
+          description: Member invited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberMessageResponse'
+        '403':
+          description: Forbidden (user is not project owner)
+        '422':
+          description: Validation failed
+
   /me/projects/{projectId}/wallet:
     get:
       tags: [Payouts]
@@ -501,6 +548,55 @@ paths:
       responses:
         '200':
           description: Learning song deleted
+
+  /me/projects/{projectId}/setlists/{setlistId}/share-link:
+    post:
+      tags: [Setlists]
+      summary: Create or fetch a share link for a setlist
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/SetlistId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Existing share link returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetlistShareLinkResponse'
+        '201':
+          description: Share link created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetlistShareLinkResponse'
+        '403':
+          description: User has project access but cannot create share links
+
+  /me/shared-setlists/{shareToken}/accept:
+    post:
+      tags: [Setlists]
+      summary: Accept a shared setlist link and open the persisted copy
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ShareToken'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Existing copied setlist returned for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedSetlistAcceptanceResponse'
+        '201':
+          description: Copied setlist created for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedSetlistAcceptanceResponse'
+        '404':
+          description: Share token not found or recipient lacks project access
 
   /me/projects/{projectId}/setlists/{setlistId}/sets:
     post:
@@ -938,6 +1034,11 @@ components:
       name: setId
       required: true
       schema: { type: integer }
+    ShareToken:
+      in: path
+      name: shareToken
+      required: true
+      schema: { type: string }
     ChartId:
       in: path
       name: chartId
@@ -965,6 +1066,63 @@ components:
       properties:
         id: { type: integer }
         name: { type: string }
+    ProjectCollaboratorOwner:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+        role:
+          type: string
+          enum: [owner]
+    ProjectMemberUser:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string, format: email }
+    ProjectMember:
+      type: object
+      properties:
+        id: { type: integer }
+        user_id: { type: integer }
+        role:
+          type: string
+          enum: [member, readonly]
+        joined_at:
+          type: string
+          format: date-time
+          nullable: true
+        user:
+          $ref: '#/components/schemas/ProjectMemberUser'
+    ProjectMembersPayload:
+      type: object
+      properties:
+        owner:
+          $ref: '#/components/schemas/ProjectCollaboratorOwner'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectMember'
+    ProjectMembersResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectMembersPayload'
+    ProjectMemberInviteRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+    ProjectMemberMessageResponse:
+      type: object
+      properties:
+        message: { type: string }
+        member:
+          $ref: '#/components/schemas/ProjectMember'
     Project:
       type: object
       properties:
@@ -1414,6 +1572,33 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/SetlistSetResource'
+    SetlistShareLink:
+      type: object
+      properties:
+        project_id: { type: integer }
+        setlist_id: { type: integer }
+        token: { type: string }
+        share_url: { type: string, format: uri }
+        deep_link_url: { type: string, format: uri }
+    SetlistShareLinkResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/SetlistShareLink'
+    SharedSetlistAcceptance:
+      type: object
+      properties:
+        project:
+          $ref: '#/components/schemas/Project'
+        setlist:
+          $ref: '#/components/schemas/SetlistResource'
+        was_already_accepted: { type: boolean }
+    SharedSetlistAcceptanceResponse:
+      type: object
+      properties:
+        message: { type: string }
+        data:
+          $ref: '#/components/schemas/SharedSetlistAcceptance'
     SetGenerationMeta:
       type: object
       properties:

@@ -26,6 +26,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
   - CRUD operations for projects (bands/solo acts)
   - Project settings and configuration
   - Performer profile image upload
+  - Project member invites and roster reads
 
 - **[payouts.md](./payouts.md)** - Stripe Connect payout account management
   - Payout account readiness status
@@ -43,6 +44,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
   - Manually add items to queue
   - Mark requests as played
   - Request history
+  - Member queue visibility is based on project access, not billing tier
 
 - **[charts.md](./charts.md)** - Chart (sheet music) management
   - Upload PDF charts

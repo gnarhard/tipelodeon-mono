@@ -16,6 +16,25 @@
 - `PATCH /{projectId}` - partial settings update
 - `DELETE /{projectId}` - owner-only delete
 - `POST /{projectId}/performer-image` - upload performer profile image
+- `GET /{projectId}/members` - list owner and invited members
+- `POST /{projectId}/members` - owner-only invite of an existing SongTipper user
+
+---
+
+## Project members
+
+- Owners can invite another existing SongTipper user by email.
+- Invite payload: `{ "email": "member@example.com" }`
+- Invites always create or promote the collaborator to the `member` role.
+- Re-inviting an existing `member` returns the existing membership instead of
+  creating a duplicate row.
+- `GET /{projectId}/members` is readable by the project owner and invited
+  project members.
+- Member list payload returns:
+  - `owner` with `id`, `name`, `email`, and `role=owner`
+  - `members[]` with `id`, `user_id`, `role`, `joined_at`, and nested `user`
+    details
+- Inviting the project owner's own email returns `422`.
 
 ---
 
