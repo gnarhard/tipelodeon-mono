@@ -12,7 +12,7 @@
 - Web: `git@github.com:gnarhard/songtipper_web.git`
 - Mobile App: `git@github.com:gnarhard/songtipper_mobile_app.git`
 
-When finished, create a PR for each repo you modified without waiting to be asked, but only after every test suite in each submitted repo is passing with zero errors, including unrelated failures. Resolve any merge conflicts in those PRs using your best judgment, and share every PR link with the developer.
+When finished, create a PR for each repo you modified without waiting to be asked, but only after every test suite in each submitted repo is passing with zero errors, including unrelated failures. Resolve any merge conflicts in those PRs using your best judgment, and share every PR link with the developer. If the PR is closed, merged, and the branch is deleted, create a new PR.
 
 ## Ignore
 
@@ -21,9 +21,8 @@ When finished, create a PR for each repo you modified without waiting to be aske
 
 ## Repo-specific rules
 
-- Before editing `web`, read `web/AGENTS.md` in the web worktree.
-- Before editing `mobile_app`, read `mobile_app/AGENTS.md` in the mobile
-  worktree.
+- Before editing `web`, read `web/AGENTS.md`.
+- Before editing `mobile_app`, read `mobile_app/AGENTS.md.
 - If `mobile_app/AGENTS.md` is missing, read
   `mobile_app/.agent-rules/flutter.md`,
   `mobile_app/.agent-rules/presentation-boundaries.md`, and
