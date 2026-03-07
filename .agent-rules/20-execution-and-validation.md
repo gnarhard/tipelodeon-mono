@@ -37,13 +37,28 @@ php artisan test
 
 ### Mobile (`songtipper/mobile_app`)
 
+Read `mobile_app/AGENTS.md` first. If it is missing in the current mobile
+worktree, read `mobile_app/.agent-rules/flutter.md`,
+`mobile_app/.agent-rules/presentation-boundaries.md`, and
+`mobile_app/.agent-rules/app-architecture.md`.
+
+Run the full mobile validation set before GitHub submission:
+
 ```bash
 flutter --version
 flutter pub get
+flutter analyze lib test integration_test
 flutter test
+flutter test integration_test/mobile_app_all_features_integration_test.dart -d <available_device>
 dart format .
-dart analyze
 ```
+
+- If more than one Flutter device is available, always pass `-d <device>` for
+  integration tests instead of relying on the default device.
+- If the repo has a different integration entrypoint, run that exact target and
+  report it.
+- If integration tests cannot run because no supported device is available,
+  report the blocker and do not open or update the PR.
 
 If a build is needed:
 

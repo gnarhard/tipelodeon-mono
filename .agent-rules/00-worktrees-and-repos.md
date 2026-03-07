@@ -33,5 +33,10 @@
 ## Repo-specific rules
 
 - Before editing `web`, read `web/AGENTS.md` in the web worktree.
-- Before editing `mobile_app`, read `mobile_app/.agent-rules/*.md` in the mobile worktree.
+- Before editing `mobile_app`, read `mobile_app/AGENTS.md` in the mobile
+  worktree.
+- If `mobile_app/AGENTS.md` is missing, read
+  `mobile_app/.agent-rules/flutter.md`,
+  `mobile_app/.agent-rules/presentation-boundaries.md`, and
+  `mobile_app/.agent-rules/app-architecture.md`.
 - In the web repo, AI-specific skill directories may exist under `web/.claude`, `web/.gemini`, `web/.codex`, and `web/.github`.
