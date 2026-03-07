@@ -26,6 +26,34 @@ Removed (breaking change):
 
 ---
 
+## Shared setlist links
+
+Sharers:
+- `POST /setlists/{setlistId}/share-link`
+- Allowed for project owners and project members.
+- Returns one stable share token per source setlist.
+- Response includes:
+  - `share_url` for sending to another Song Tipper user
+  - `deep_link_url` for the app redirect target
+
+Recipients:
+- `POST /api/v1/me/shared-setlists/{shareToken}/accept`
+- Recipient must already have access to the owning project.
+- Accepting the link copies the source setlist into the same owning project.
+- The copied setlist is persisted server-side and returned in the response.
+- Acceptance is idempotent per `(share link, user)`:
+  - first accept creates one copied setlist
+  - later accepts reopen the same copied setlist instead of creating duplicates
+
+Mobile behavior:
+- The public `share_url` redirects into the mobile app.
+- When opened, the app accepts the share token, switches to the owning
+  project, refreshes that project's setlist list, and opens the copied
+  setlist detail screen.
+- The copied setlist name is suffixed with ` (Copy)`.
+
+---
+
 ## Set creation methods
 
 ### Manual set
