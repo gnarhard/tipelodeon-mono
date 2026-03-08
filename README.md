@@ -109,6 +109,8 @@ Stripe is used in two ways:
 
 If you see "Unable to initialize payment right now. Please try again." This means the user who signed up for their account in Stripe Connect Express signed up in the sandbox instead of the live account (or vice versa).
 
+Stripe Connect platform has a payment method and the Stripe account also has different payment methods. The regular stripe account will display when musicians sign up and when they update their billing. The Connect platform payment methods will show for the musician's when they take payment from the audience.
+
 ## Admin designation
 
 Use the following command to add admin privileges to an account:
