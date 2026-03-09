@@ -6,6 +6,26 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const tokensPath = path.join(rootDir, '_shared', 'design', 'theme_tokens.json');
 const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+const allowedThemeHexes = new Set([
+  '#ffb375',
+  '#ffcba0',
+  '#dcecf4',
+  '#cddce3',
+  '#302938',
+  '#2d2633',
+  '#6f9072',
+  '#d9e6da',
+  '#c86455',
+  '#f4d4ce',
+  '#5f7fa2',
+  '#d7e3ee',
+]);
+const allowedWebWaveValues = new Set([
+  'rgba(48, 41, 56, 0.07)',
+  'rgba(48, 41, 56, 0.11)',
+  'rgba(220, 236, 244, 0.08)',
+  'rgba(220, 236, 244, 0.12)',
+]);
 const expectedWaveRibbonColors = {
   ribbonALightStart: '#dcecf4',
   ribbonALightEnd: '#cddce3',
@@ -123,6 +143,45 @@ function writeFile(filePath, content) {
   fs.writeFileSync(filePath, content);
 }
 
+function assertApprovedHex(sectionName, key, value) {
+  if (!allowedThemeHexes.has(value.toLowerCase())) {
+    throw new Error(
+      `Expected ${sectionName}.${key} to use an approved base or accent color, received ${value}`,
+    );
+  }
+}
+
+for (const [paletteName, values] of Object.entries(tokens.palettes)) {
+  for (const [shade, value] of Object.entries(values)) {
+    assertApprovedHex(`palettes.${paletteName}`, shade, value);
+  }
+}
+
+for (const [modeName, values] of Object.entries(tokens.web)) {
+  for (const [key, value] of Object.entries(values)) {
+    if (key === 'waveBandPrimary' || key === 'waveBandSecondary') {
+      if (!allowedWebWaveValues.has(value)) {
+        throw new Error(
+          `Expected web.${modeName}.${key} to keep the pinned wave color, received ${value}`,
+        );
+      }
+      continue;
+    }
+
+    assertApprovedHex(`web.${modeName}`, key, value);
+  }
+}
+
+for (const [modeName, values] of Object.entries(tokens.mobile)) {
+  if (modeName === 'wave') {
+    continue;
+  }
+
+  for (const [key, value] of Object.entries(values)) {
+    assertApprovedHex(`mobile.${modeName}`, key, value);
+  }
+}
+
 for (const [key, expectedValue] of Object.entries(expectedWaveRibbonColors)) {
   if (tokens.mobile.wave?.[key] !== expectedValue) {
     throw new Error(
@@ -185,6 +244,7 @@ export const tailwindPalettes = ${JSON.stringify(
     accent: tokens.palettes.accent,
     neutral: tokens.palettes.neutral,
     danger: tokens.palettes.danger,
+    info: tokens.palettes.info,
   },
   null,
   4,
