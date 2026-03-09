@@ -40,6 +40,9 @@ Recipients:
 - `POST /api/v1/me/shared-setlists/{shareToken}/accept`
 - Recipient must already have access to the owning project.
 - Accepting the link copies the source setlist into the same owning project.
+- If the copied setlist references songs that are not yet in that project's
+  repertoire, the backend creates the missing repertoire rows automatically
+  before saving the copied setlist.
 - The copied setlist is persisted server-side and returned in the response.
 - Acceptance is idempotent per `(share link, user)`:
   - first accept creates one copied setlist
@@ -48,8 +51,8 @@ Recipients:
 Mobile behavior:
 - The public `share_url` redirects into the mobile app.
 - When opened, the app accepts the share token, switches to the owning
-  project, refreshes that project's setlist list, and opens the copied
-  setlist detail screen.
+  project, refreshes that project's repertoire and setlist list, and opens the
+  copied setlist detail screen.
 - The copied setlist name is suffixed with ` (Copy)`.
 
 ---

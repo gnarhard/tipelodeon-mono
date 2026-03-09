@@ -706,6 +706,11 @@ paths:
     post:
       tags: [Setlists]
       summary: Accept a shared setlist link and open the persisted copy
+      description: |
+        Copies the shared setlist into the owning project for the current user.
+        If any copied setlist songs reference repertoire entries that are
+        missing from that project, the backend creates those repertoire rows
+        automatically before saving the copied setlist.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ShareToken'
