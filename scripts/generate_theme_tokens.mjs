@@ -158,7 +158,6 @@ for (const [modeName, values] of Object.entries(tokens.mobile)) {
 }
 
 dartLines.push('}');
-dartLines.push('');
 
 writeFile(dartOutputPath, `${dartLines.join('\n')}\n`);
 
@@ -181,12 +180,11 @@ const webJsContent = `// GENERATED FILE - DO NOT EDIT BY HAND.
 
 export const tailwindPalettes = ${JSON.stringify(
   {
-    indigo: tokens.palettes.brass,
-    amber: tokens.palettes.brass,
-    fuchsia: tokens.palettes.brass,
-    emerald: tokens.palettes.accent,
-    gray: tokens.palettes.neutral,
-    slate: tokens.palettes.neutral,
+    sunshade: tokens.palettes.sunshade,
+    success: tokens.palettes.success,
+    accent: tokens.palettes.accent,
+    neutral: tokens.palettes.neutral,
+    danger: tokens.palettes.danger,
   },
   null,
   4,
