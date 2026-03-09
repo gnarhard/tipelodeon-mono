@@ -11,6 +11,7 @@ const allowedThemeHexes = new Set([
   '#ffcba0',
   '#dcecf4',
   '#cddce3',
+  '#4e435b',
   '#302938',
   '#2d2633',
   '#6f9072',

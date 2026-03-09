@@ -31,7 +31,7 @@
       "300": "#dcecf4",
       "400": "#cddce3",
       "500": "#2d2633",
-      "600": "#302938",
+      "600": "#4e435b",
       "700": "#2d2633",
       "800": "#302938",
       "900": "#2d2633"
@@ -43,7 +43,7 @@
       "300": "#dcecf4",
       "400": "#cddce3",
       "500": "#2d2633",
-      "600": "#302938",
+      "600": "#4e435b",
       "700": "#2d2633",
       "800": "#302938",
       "900": "#2d2633",
@@ -91,7 +91,7 @@
       "accentSoft": "#dcecf4",
       "waveBandPrimary": "rgba(48, 41, 56, 0.07)",
       "waveBandSecondary": "rgba(48, 41, 56, 0.11)",
-      "primaryInk": "#302938"
+      "primaryInk": "#4e435b"
     },
     "dark": {
       "canvas": "#302938",
@@ -109,15 +109,15 @@
       "accentSoft": "#2d2633",
       "waveBandPrimary": "rgba(220, 236, 244, 0.08)",
       "waveBandSecondary": "rgba(220, 236, 244, 0.12)",
-      "primaryInk": "#302938"
+      "primaryInk": "#4e435b"
     }
   },
   "mobile": {
     "light": {
       "primary": "#ffb375",
-      "onPrimary": "#302938",
+      "onPrimary": "#4e435b",
       "primaryContainer": "#ffcba0",
-      "onPrimaryContainer": "#302938",
+      "onPrimaryContainer": "#4e435b",
       "secondary": "#302938",
       "onSecondary": "#cddce3",
       "secondaryContainer": "#dcecf4",
@@ -144,9 +144,9 @@
     },
     "dark": {
       "primary": "#ffb375",
-      "onPrimary": "#302938",
+      "onPrimary": "#4e435b",
       "primaryContainer": "#ffcba0",
-      "onPrimaryContainer": "#302938",
+      "onPrimaryContainer": "#4e435b",
       "secondary": "#cddce3",
       "onSecondary": "#302938",
       "secondaryContainer": "#2d2633",
