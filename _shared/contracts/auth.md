@@ -69,7 +69,8 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
   "user": {
     "id": 1,
     "name": "Mike Johnson",
-    "email": "mike@example.com"
+    "email": "mike@example.com",
+    "instrument_type": "vocals"
   }
 }
 ```
@@ -178,6 +179,77 @@ Reset password using email + reset token.
 ```json
 {
   "message": "The provided password reset token is invalid."
+}
+```
+
+---
+
+## Profile
+
+- **Method**: `GET`
+- **Path**: `/api/v1/me/profile`
+- **Auth**: Required (Bearer token)
+
+Return the authenticated user's profile.
+
+### Success response (`200`)
+
+```json
+{
+  "user": {
+    "id": 1,
+    "name": "Mike Johnson",
+    "email": "mike@example.com",
+    "instrument_type": "vocals"
+  }
+}
+```
+
+- **Method**: `PATCH`
+- **Path**: `/api/v1/me/profile`
+- **Auth**: Required (Bearer token)
+
+Update the authenticated user's mobile-owned profile fields.
+
+### Request body
+
+```json
+{
+  "instrument_type": "drums"
+}
+```
+
+`instrument_type` may also be `null` to clear the selection.
+
+Allowed values:
+
+- `vocals`
+- `guitar`
+- `bass`
+- `piano`
+- `violin`
+- `trumpet`
+- `trombone`
+- `saxophone`
+- `drums`
+- `keyboard`
+- `harmonica`
+- `mandolin`
+- `banjo`
+- `ukulele`
+- `percussion`
+
+### Success response (`200`)
+
+```json
+{
+  "message": "Profile updated successfully.",
+  "user": {
+    "id": 1,
+    "name": "Mike Johnson",
+    "email": "mike@example.com",
+    "instrument_type": "drums"
+  }
 }
 ```
 

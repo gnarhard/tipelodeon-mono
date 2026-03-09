@@ -155,6 +155,44 @@ paths:
         '422':
           description: Validation failed
 
+  /me/profile:
+    get:
+      tags: [Auth]
+      summary: Get the authenticated user's profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '401':
+          description: Unauthenticated
+    patch:
+      tags: [Auth]
+      summary: Update the authenticated user's profile
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthProfileUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserMessageResponse'
+        '401':
+          description: Unauthenticated
+        '422':
+          description: Validation failed
+
   /me/payout-account:
     get:
       tags: [Payouts]
@@ -1233,6 +1271,31 @@ components:
         current_password: { type: string }
         password: { type: string }
         password_confirmation: { type: string }
+    AuthProfileUpdateRequest:
+      type: object
+      properties:
+        instrument_type:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/InstrumentType'
+    InstrumentType:
+      type: string
+      enum:
+        - vocals
+        - guitar
+        - bass
+        - piano
+        - violin
+        - trumpet
+        - trombone
+        - saxophone
+        - drums
+        - keyboard
+        - harmonica
+        - mandolin
+        - banjo
+        - ukulele
+        - percussion
     AuthUser:
       type: object
       properties:
@@ -1241,6 +1304,10 @@ components:
         email:
           type: string
           format: email
+        instrument_type:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/InstrumentType'
     AuthAccessBundle:
       type: object
       properties:
@@ -1260,6 +1327,17 @@ components:
       type: object
       properties:
         message: { type: string }
+    AuthUserResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/AuthUser'
+    AuthUserMessageResponse:
+      type: object
+      properties:
+        message: { type: string }
+        user:
+          $ref: '#/components/schemas/AuthUser'
     ProjectOwner:
       type: object
       properties:
