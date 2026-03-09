@@ -27,12 +27,12 @@ const allowedWebWaveValues = new Set([
   'rgba(220, 236, 244, 0.12)',
 ]);
 const expectedWaveRibbonColors = {
-  ribbonALightStart: '#dcecf4',
-  ribbonALightEnd: '#cddce3',
+  ribbonALightStart: '#cddce3',
+  ribbonALightEnd: '#dcecf4',
   ribbonBLightStart: '#e9f1f6',
   ribbonBLightEnd: '#bdd0d9',
-  ribbonCLightStart: '#cddce3',
-  ribbonCLightEnd: '#dcecf4',
+  ribbonCLightStart: '#dcecf4',
+  ribbonCLightEnd: '#cddce3',
   ribbonADarkStart: '#49445b',
   ribbonADarkEnd: '#302938',
   ribbonBDarkStart: '#5d5a74',

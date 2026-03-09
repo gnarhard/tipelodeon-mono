@@ -67,10 +67,10 @@ test('theme token generator emits only the pinned theme families and wave colors
     /Color\(0xFFC46D2C\)|Color\(0xFF10B981\)|Color\(0xFF92A1AF\)/,
   );
 
-  assert.match(webCssOutput, /--st-surface: #cddce3;/);
+  assert.match(webCssOutput, /--st-surface: #dcecf4;/);
   assert.match(webCssOutput, /--st-apricot: #ffb375;/);
-  assert.match(webCssOutput, /--st-text: #dcecf4;/);
-  assert.match(webCssOutput, /--st-line-strong: #cddce3;/);
+  assert.match(webCssOutput, /--st-text: #cddce3;/);
+  assert.match(webCssOutput, /--st-line-strong: #dcecf4;/);
   assert.doesNotMatch(
     webCssOutput,
     /#e88d4d|#c46d2c|#92a1af|#778093|#10b981/i,
