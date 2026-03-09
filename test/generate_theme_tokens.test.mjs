@@ -40,7 +40,7 @@ test('theme token generator emits the pinned sunshade and text tokens', () => {
 
   assert.match(
     dartOutput,
-    /static const Color sunshade_500 = Color\(0xFFF4903E\);/,
+    /static const Color sunshade_500 = Color\(0xFFFFB375\);/,
   );
   assert.match(
     dartOutput,
@@ -56,7 +56,7 @@ test('theme token generator emits the pinned sunshade and text tokens', () => {
   );
 
   assert.match(webCssOutput, /--st-text: #302938;/);
-  assert.match(webCssOutput, /--st-sunshade: #f4903e;/);
+  assert.match(webCssOutput, /--st-sunshade: #ffb375;/);
   assert.match(webCssOutput, /--st-text: #dcecf4;/);
 
   assert.match(webJsOutput, /sunshade/);

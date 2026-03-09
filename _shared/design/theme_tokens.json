@@ -1,16 +1,16 @@
 {
   "palettes": {
     "sunshade": {
-      "50": "#fff4eb",
-      "100": "#fee7d0",
-      "200": "#fdd1aa",
-      "300": "#fbb67a",
-      "400": "#f79f57",
-      "500": "#f4903e",
-      "600": "#e47622",
-      "700": "#c15c18",
-      "800": "#9a4918",
-      "900": "#7b3c17"
+      "50": "#fff7ef",
+      "100": "#ffead8",
+      "200": "#ffd8bc",
+      "300": "#ffd1a6",
+      "400": "#ffc08a",
+      "500": "#ffb375",
+      "600": "#e88d4d",
+      "700": "#c46d2c",
+      "800": "#a95520",
+      "900": "#8c4818"
     },
     "success": {
       "50": "#ecfdf5",
@@ -73,8 +73,8 @@
       "textMuted": "#5d6178",
       "line": "rgba(48, 41, 56, 0.16)",
       "lineStrong": "rgba(48, 41, 56, 0.28)",
-      "sunshade": "#f4903e",
-      "sunshadeEmphasis": "#e47622",
+      "sunshade": "#ffb375",
+      "sunshadeEmphasis": "#e88d4d",
       "accent": "#302938",
       "accentSoft": "rgba(48, 41, 56, 0.12)",
       "waveBandPrimary": "rgba(48, 41, 56, 0.07)",
@@ -91,8 +91,8 @@
       "textMuted": "#cddce3",
       "line": "rgba(220, 236, 244, 0.16)",
       "lineStrong": "rgba(220, 236, 244, 0.28)",
-      "sunshade": "#f4903e",
-      "sunshadeEmphasis": "#f79f57",
+      "sunshade": "#ffb375",
+      "sunshadeEmphasis": "#ffd8bc",
       "accent": "#dcecf4",
       "accentSoft": "rgba(220, 236, 244, 0.10)",
       "waveBandPrimary": "rgba(220, 236, 244, 0.08)",
@@ -102,9 +102,9 @@
   },
   "mobile": {
     "light": {
-      "primary": "#f4903e",
+      "primary": "#ffb375",
       "onPrimary": "#302938",
-      "primaryContainer": "#fee7d0",
+      "primaryContainer": "#ffead8",
       "onPrimaryContainer": "#302938",
       "secondary": "#302938",
       "onSecondary": "#dcecf4",
@@ -125,15 +125,15 @@
       "outlineVariant": "#b0c0cb",
       "inverseSurface": "#302938",
       "onInverseSurface": "#dcecf4",
-      "inversePrimary": "#f79f57",
+      "inversePrimary": "#ffc08a",
       "surfaceTint": "#302938",
       "heading": "#302938",
       "headingStrong": "#302938"
     },
     "dark": {
-      "primary": "#f4903e",
+      "primary": "#ffb375",
       "onPrimary": "#302938",
-      "primaryContainer": "#c15c18",
+      "primaryContainer": "#c46d2c",
       "onPrimaryContainer": "#dcecf4",
       "secondary": "#dcecf4",
       "onSecondary": "#302938",
@@ -154,7 +154,7 @@
       "outlineVariant": "#49445b",
       "inverseSurface": "#cddce3",
       "onInverseSurface": "#302938",
-      "inversePrimary": "#f79f57",
+      "inversePrimary": "#ffc08a",
       "surfaceTint": "#dcecf4",
       "heading": "#dcecf4",
       "headingStrong": "#dcecf4"
