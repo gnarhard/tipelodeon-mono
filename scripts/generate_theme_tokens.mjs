@@ -6,6 +6,45 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const tokensPath = path.join(rootDir, '_shared', 'design', 'theme_tokens.json');
 const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+const expectedWaveRibbonColors = {
+  ribbonALightStart: '#dcecf4',
+  ribbonALightEnd: '#cddce3',
+  ribbonBLightStart: '#e9f1f6',
+  ribbonBLightEnd: '#bdd0d9',
+  ribbonCLightStart: '#cddce3',
+  ribbonCLightEnd: '#dcecf4',
+  ribbonADarkStart: '#49445b',
+  ribbonADarkEnd: '#302938',
+  ribbonBDarkStart: '#5d5a74',
+  ribbonBDarkEnd: '#403d4f',
+  ribbonCDarkStart: '#2d2633',
+  ribbonCDarkEnd: '#302938',
+};
+const orderedWaveKeys = [
+  'textureAsset',
+  'textureOpacityLight',
+  'textureOpacityDark',
+  'textureTintLight',
+  'textureTintDark',
+  'backgroundTopLight',
+  'backgroundBottomLight',
+  'backgroundTopDark',
+  'backgroundBottomDark',
+  'ambientLight',
+  'ambientDark',
+  'ribbonALightStart',
+  'ribbonALightEnd',
+  'ribbonBLightStart',
+  'ribbonBLightEnd',
+  'ribbonCLightStart',
+  'ribbonCLightEnd',
+  'ribbonADarkStart',
+  'ribbonADarkEnd',
+  'ribbonBDarkStart',
+  'ribbonBDarkEnd',
+  'ribbonCDarkStart',
+  'ribbonCDarkEnd',
+];
 
 const dartOutputPath = path.join(
   rootDir,
@@ -46,9 +85,15 @@ function toDartConstName(value) {
     .toUpperCase();
 }
 
-function emitDartMap(name, map) {
-  const entries = Object.entries(map)
-    .map(([key, value]) => {
+function emitDartMap(name, map, orderedKeys) {
+  const keys = orderedKeys ?? Object.keys(map);
+  const entries = keys
+    .map((key) => {
+      if (!(key in map)) {
+        throw new Error(`Missing ${name} token: ${key}`);
+      }
+
+      const value = map[key];
       const constName = toDartConstName(key);
       if (typeof value === 'number') {
         return `  static const double ${name}_${constName} = ${value};`;
@@ -78,6 +123,14 @@ function writeFile(filePath, content) {
   fs.writeFileSync(filePath, content);
 }
 
+for (const [key, expectedValue] of Object.entries(expectedWaveRibbonColors)) {
+  if (tokens.mobile.wave?.[key] !== expectedValue) {
+    throw new Error(
+      `Expected mobile.wave.${key} to be ${expectedValue} in _shared/design/theme_tokens.json`,
+    );
+  }
+}
+
 const dartLines = [
   '// GENERATED CODE - DO NOT EDIT BY HAND.',
   '// Source: _shared/design/theme_tokens.json',
@@ -97,7 +150,7 @@ for (const [paletteName, values] of Object.entries(tokens.palettes)) {
 
 for (const [modeName, values] of Object.entries(tokens.mobile)) {
   if (modeName === 'wave') {
-    dartLines.push(emitDartMap('wave', values));
+    dartLines.push(emitDartMap('wave', values, orderedWaveKeys));
     continue;
   }
 
@@ -105,7 +158,6 @@ for (const [modeName, values] of Object.entries(tokens.mobile)) {
 }
 
 dartLines.push('}');
-dartLines.push('');
 
 writeFile(dartOutputPath, `${dartLines.join('\n')}\n`);
 
@@ -128,12 +180,11 @@ const webJsContent = `// GENERATED FILE - DO NOT EDIT BY HAND.
 
 export const tailwindPalettes = ${JSON.stringify(
   {
-    indigo: tokens.palettes.brass,
-    amber: tokens.palettes.brass,
-    fuchsia: tokens.palettes.brass,
-    emerald: tokens.palettes.accent,
-    gray: tokens.palettes.neutral,
-    slate: tokens.palettes.neutral,
+    sunshade: tokens.palettes.sunshade,
+    success: tokens.palettes.success,
+    accent: tokens.palettes.accent,
+    neutral: tokens.palettes.neutral,
+    danger: tokens.palettes.danger,
   },
   null,
   4,
