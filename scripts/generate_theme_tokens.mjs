@@ -202,8 +202,9 @@ const dartLines = [
 
 for (const [paletteName, values] of Object.entries(tokens.palettes)) {
   for (const [shade, value] of Object.entries(values)) {
+    const constName = toDartConstName(shade);
     dartLines.push(
-      `  static const Color ${paletteName}_${shade} = ${hexToDartColor(value)};`,
+      `  static const Color ${paletteName}_${constName} = ${hexToDartColor(value)};`,
     );
   }
 }
@@ -241,9 +242,9 @@ const webJsContent = `// GENERATED FILE - DO NOT EDIT BY HAND.
 export const tailwindPalettes = ${JSON.stringify(
   {
     apricot: tokens.palettes.apricot,
+    light: tokens.palettes.light,
+    dark: tokens.palettes.dark,
     success: tokens.palettes.success,
-    accent: tokens.palettes.accent,
-    neutral: tokens.palettes.neutral,
     danger: tokens.palettes.danger,
     info: tokens.palettes.info,
   },

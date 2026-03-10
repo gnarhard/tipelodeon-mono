@@ -40,15 +40,19 @@ test('theme token generator emits only the pinned theme families and wave colors
 
   assert.match(
     dartOutput,
-    /static const Color apricot_500 = Color\(0xFFFFB375\);/,
+    /static const Color apricot_NORMAL = Color\(0xFFFFB375\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color success_500 = Color\(0xFF6F9072\);/,
+    /static const Color success_NORMAL = Color\(0xFF6F9072\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color info_500 = Color\(0xFF5F7FA2\);/,
+    /static const Color info_NORMAL = Color\(0xFF5F7FA2\);/,
+  );
+  assert.match(
+    dartOutput,
+    /static const Color dark_SEPARATOR = Color\(0xFF4E435B\);/,
   );
   assert.match(
     dartOutput,
@@ -68,16 +72,22 @@ test('theme token generator emits only the pinned theme families and wave colors
   );
 
   assert.match(webCssOutput, /--st-surface: #dcecf4;/);
+  assert.match(webCssOutput, /--st-surface-strong: #cddce3;/);
   assert.match(webCssOutput, /--st-apricot: #ffb375;/);
-  assert.match(webCssOutput, /--st-text: #cddce3;/);
-  assert.match(webCssOutput, /--st-line-strong: #dcecf4;/);
+  assert.match(webCssOutput, /--st-text: #dcecf4;/);
+  assert.match(webCssOutput, /--st-line: #4e435b;/);
+  assert.match(webCssOutput, /--st-line-strong: #cddce3;/);
   assert.doesNotMatch(
     webCssOutput,
     /#e88d4d|#c46d2c|#92a1af|#778093|#10b981/i,
   );
 
   assert.match(webJsOutput, /apricot/);
+  assert.match(webJsOutput, /light/);
+  assert.match(webJsOutput, /dark/);
   assert.match(webJsOutput, /success/);
   assert.match(webJsOutput, /info/);
+  assert.doesNotMatch(webJsOutput, /"50":/);
+  assert.doesNotMatch(webJsOutput, /neutral/);
   assert.doesNotMatch(webJsOutput, /amber/);
 });
