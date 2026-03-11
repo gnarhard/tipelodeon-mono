@@ -1676,6 +1676,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
+        instrumental: { type: boolean }
         energy_level: { type: string, nullable: true }
         era: { type: string, nullable: true }
         genre: { type: string, nullable: true }
@@ -1730,6 +1731,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
+        instrumental: { type: boolean, nullable: true }
         energy_level: { type: string, nullable: true }
         era: { type: string, nullable: true }
         genre: { type: string, nullable: true }

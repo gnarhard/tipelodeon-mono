@@ -25,10 +25,19 @@
 
 ## Repertoire
 
+Instrumental flag:
+- Field: `instrumental`
+- Scope: stored on `project_songs`
+- Type: boolean
+- Default: `false`
+- When `true`, repertoire and audience song lists append ` (instrumental)` to
+  the displayed song title
+
 ### List
 - `GET /repertoire`
 - Supports `theme` filter.
 - Repertoire list items include:
+  - `instrumental`
   - `performance_count`
   - `request_count`
   - `total_tip_amount_cents`
@@ -36,11 +45,13 @@
 
 ### Create
 - `POST /repertoire`
-- Supports theme and project-song `notes` in request and response payloads.
+- Supports theme, `instrumental`, and project-song `notes` in request and
+  response payloads.
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
-- Supports theme and project-song `notes` updates at project override level.
+- Supports theme, `instrumental`, and project-song `notes` updates at project
+  override level.
 
 Project-song notes:
 - Field: `notes`
