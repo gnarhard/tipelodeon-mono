@@ -12,6 +12,9 @@
 
 - `GET /repertoire`
 - Supports search/sort and metadata filters including `theme`.
+- Each repertoire item includes boolean `instrumental`.
+- Audience UIs append ` (instrumental)` to the displayed title when
+  `instrumental=true`.
 - `theme` is strict enum:
   `love`, `party`, `worship`, `story`, `st_patricks`, `christmas`, `halloween`, `patriotic`.
 - Invalid `theme` filter values return `422`.
