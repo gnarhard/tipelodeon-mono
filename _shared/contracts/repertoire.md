@@ -36,11 +36,19 @@
 
 ### Create
 - `POST /repertoire`
-- Supports theme in request and response payloads.
+- Supports theme and project-song `notes` in request and response payloads.
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
-- Supports theme updates at project override level.
+- Supports theme and project-song `notes` updates at project override level.
+
+Project-song notes:
+- Field: `notes`
+- Scope: stored on `project_songs` and applies across setlists within the
+  project
+- Type: nullable string
+- Validation: max `3000` characters
+- Response: included on repertoire list and single-song payloads
 
 ### Delete
 - `DELETE /repertoire/{projectSongId}`

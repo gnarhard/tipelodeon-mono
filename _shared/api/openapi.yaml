@@ -1678,6 +1678,7 @@ components:
         original_musical_key: { type: string, nullable: true }
         tuning: { type: string, nullable: true }
         capo: { type: integer, nullable: true }
+        notes: { type: string, nullable: true }
         duration_in_seconds: { type: integer, nullable: true }
         needs_improvement: { type: boolean }
         performance_count: { type: integer }
@@ -1726,6 +1727,10 @@ components:
         original_musical_key: { type: string, nullable: true }
         tuning: { type: string, nullable: true }
         capo: { type: integer, nullable: true }
+        notes:
+          type: string
+          nullable: true
+          maxLength: 3000
         duration_in_seconds: { type: integer, nullable: true }
     SetCreateRequest:
       type: object
