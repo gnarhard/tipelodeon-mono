@@ -117,7 +117,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
 
 - **Field naming:** `snake_case` in JSON (mapped to `camelCase` in Dart)
 - **Dates:** ISO 8601 format with timezone (e.g., `2026-02-11T22:20:10+00:00`)
-- **Currency:** Integer cents (e.g., `1500` = $15.00)
+- **Currency:** Integer cents, with tip and minimum-tip writes rounded up to whole dollars (e.g., `1500` = $15)
 - **Pagination:** Laravel paginator format with `data`, `meta`, `links`
 
 ## Enums

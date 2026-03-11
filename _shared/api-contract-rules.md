@@ -92,8 +92,9 @@ All endpoints are prefixed with `/api/v1` to allow for future API versions witho
 ### 5. Currency
 
 - All monetary values in integer cents
-- Example: `1500` = $15.00
-- Display formatting handled by client
+- Tip and minimum-tip writes are rounded up to the nearest whole dollar
+- Example: `1500` = $15
+- Display formatting omits cents across web and mobile
 
 ### 6. Pagination
 

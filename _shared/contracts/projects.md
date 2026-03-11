@@ -56,7 +56,7 @@ Core fields:
 - `owner_user_id`
 - `performer_info_url` (nullable)
 - `performer_profile_image_url` (nullable)
-- `min_tip_cents`
+- `min_tip_cents` (rounded up to a whole-dollar cent value on write)
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
@@ -111,7 +111,7 @@ project while sharing one account-level Stripe wallet across all owner projects.
 
 - `name`
 - `performer_info_url`
-- `min_tip_cents`
+- `min_tip_cents` (backend rounds cent inputs up to the next whole dollar)
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`

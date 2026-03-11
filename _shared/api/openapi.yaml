@@ -1159,7 +1159,10 @@ paths:
                 song_id: { type: integer, nullable: true }
                 tip_only: { type: boolean, default: false }
                 is_original: { type: boolean, default: false }
-                tip_amount_cents: { type: integer, minimum: 0 }
+                tip_amount_cents:
+                  type: integer
+                  minimum: 0
+                  description: Rounded up to the nearest whole-dollar amount before payment and persistence.
                 note: { type: string, maxLength: 500, nullable: true }
       responses:
         '200':
@@ -1412,7 +1415,7 @@ components:
         min_tip_cents:
           type: integer
           minimum: 0
-          description: Minimum tip amount when `is_accepting_tips=true`.
+          description: Minimum tip amount when `is_accepting_tips=true`, rounded up to a whole-dollar cent value on write.
         is_accepting_requests:
           type: boolean
           description: |
@@ -1462,7 +1465,10 @@ components:
           type: string
           nullable: true
           maxLength: 2048
-        min_tip_cents: { type: integer, minimum: 0 }
+        min_tip_cents:
+          type: integer
+          minimum: 0
+          description: Rounded up to the nearest whole-dollar amount before persistence.
         is_accepting_requests: { type: boolean }
         is_accepting_tips: { type: boolean }
         is_accepting_original_requests: { type: boolean }

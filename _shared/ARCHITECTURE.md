@@ -349,7 +349,7 @@ A band, solo act, or performance context. All data is scoped to a project.
 - `slug` - URL-friendly identifier (unique)
 - `performer_info_url` - Link to performer website
 - `performer_profile_image_path` - S3/R2 path to profile image
-- `min_tip_cents` - Minimum tip amount (default: 500 = $5.00)
+- `min_tip_cents` - Minimum tip amount (default: 500 = $5, writes round up to whole dollars)
 - `is_accepting_requests` - Toggle request queue on/off
 - `is_accepting_original_requests` - Allow "play an original" requests
 - `show_persistent_queue_strip` - UI preference for audience
@@ -1421,7 +1421,7 @@ CHART_RENDER_QUEUE=renders
 
 ### Minimum Tip
 
-- Configurable per project: `project.min_tip_cents` (default: $5.00)
+- Configurable per project: `project.min_tip_cents` (default: $5, cent inputs round up)
 - Validated on backend before creating Payment Intent
 - Can be set to 0 for free requests
 

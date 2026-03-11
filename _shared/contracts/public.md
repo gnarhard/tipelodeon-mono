@@ -58,6 +58,8 @@ Tips-disabled behavior:
   `tip_amount_cents=0`.
 - Tip-only submissions are rejected while tips are disabled.
 - `min_tip_cents` is ignored while tips are disabled.
+- Tip and minimum-tip values with cents are rounded up to the next whole dollar
+  before validation and persistence.
 
 Payout setup gate:
 - If owner payout setup is incomplete, request creation returns `422`:

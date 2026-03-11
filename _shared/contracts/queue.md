@@ -35,7 +35,7 @@ Get active request queue for a project. **Supports ETag caching** for efficient 
         "artist": "Frank Sinatra"
       },
       "tip_amount_cents": 1500,
-      "tip_amount_dollars": "15.00",
+      "tip_amount_dollars": "15",
       "status": "active",
       "requester_name": null,
       "note": "Happy birthday!",
@@ -102,6 +102,8 @@ Manually add an item to the active queue as an authenticated performer/project m
 - `type`: required, one of: `custom`, `repertoire_song`, `original`
 - Original requests only allowed when project setting `is_accepting_original_requests` is `true`
 - `tip_amount_cents`: optional for all types, defaults to `0` when omitted
+- `tip_amount_cents` values with cents are rounded up to the next whole-dollar
+  amount before persistence and response serialization
 
 ### Success response (`201`)
 
@@ -116,7 +118,7 @@ Manually add an item to the active queue as an authenticated performer/project m
       "artist": "Custom Request"
     },
     "tip_amount_cents": 0,
-    "tip_amount_dollars": "0.00",
+    "tip_amount_dollars": "0",
     "status": "active",
     "note": "Mash two choruses if possible",
     "played_at": null,
@@ -182,7 +184,7 @@ Mark a request as played.
       "artist": "Frank Sinatra"
     },
     "tip_amount_cents": 1500,
-    "tip_amount_dollars": "15.00",
+    "tip_amount_dollars": "15",
     "status": "played",
     "requester_name": null,
     "note": "Happy birthday!",
