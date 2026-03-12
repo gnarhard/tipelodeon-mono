@@ -100,10 +100,15 @@ When updating a project:
 ## Wallet endpoints related to projects
 
 - `GET /api/v1/me/projects/{projectId}/wallet`
+- `GET /api/v1/me/projects/{projectId}/stats/today`
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 
-Both endpoints are owner-only and return payout/wallet reporting views for that
-project while sharing one account-level Stripe wallet across all owner projects.
+All three endpoints are owner-only reporting views for that project.
+
+- `/wallet` and `/wallet/sessions` expose payout/wallet reporting while sharing
+  one account-level Stripe wallet across all owner projects.
+- `/stats/today` returns the local-day stats summary scoped by the required
+  `timezone` query param (IANA identifier).
 
 ---
 

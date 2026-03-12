@@ -445,6 +445,32 @@ paths:
         '502':
           description: Stripe wallet data unavailable
 
+  /me/projects/{projectId}/stats/today:
+    get:
+      tags: [Payouts]
+      summary: Get owner-only local-day stats for a project
+      description: |
+        Returns the project's owner-facing "Today" stats window scoped to the
+        supplied IANA timezone. Request counts and money use accepted request
+        timestamps, while played counts use `played_at`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/ReportingTimezone'
+      responses:
+        '200':
+          description: Local-day stats summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodayStatsResponse'
+        '403':
+          description: Forbidden (user is not project owner)
+        '422':
+          description: Validation failed (invalid timezone)
+        '502':
+          description: Stripe settlement data unavailable
+
   /me/projects/{projectId}/wallet/sessions:
     get:
       tags: [Payouts]
@@ -1197,6 +1223,14 @@ components:
       name: projectId
       required: true
       schema: { type: integer }
+    ReportingTimezone:
+      in: query
+      name: timezone
+      required: true
+      schema:
+        type: string
+        example: America/Denver
+      description: IANA timezone used to compute the local-day reporting window.
     ProjectSongId:
       in: path
       name: projectSongId
@@ -1571,6 +1605,55 @@ components:
           $ref: '#/components/schemas/ProjectWallet'
         payout_account:
           $ref: '#/components/schemas/PayoutAccount'
+    TodayStatsPeriod:
+      type: object
+      properties:
+        local_date: { type: string, example: '2026-03-12' }
+        timezone: { type: string, example: America/Denver }
+        window_start_utc: { type: string, format: date-time }
+        window_end_utc: { type: string, format: date-time }
+        generated_at: { type: string, format: date-time }
+    TodayStatsMoney:
+      type: object
+      properties:
+        gross_tip_amount_cents: { type: integer }
+        fee_amount_cents: { type: integer }
+        net_tip_amount_cents: { type: integer }
+    TodayStatsCounts:
+      type: object
+      properties:
+        request_count: { type: integer }
+        played_count: { type: integer }
+    TodaySongStat:
+      type: object
+      properties:
+        song_id: { type: integer }
+        title: { type: string }
+        artist: { type: string }
+        request_count: { type: integer }
+        net_tip_amount_cents: { type: integer }
+    TodayStatsSongs:
+      type: object
+      properties:
+        most_requested:
+          allOf:
+            - $ref: '#/components/schemas/TodaySongStat'
+          nullable: true
+        highest_earning:
+          allOf:
+            - $ref: '#/components/schemas/TodaySongStat'
+          nullable: true
+    TodayStatsResponse:
+      type: object
+      properties:
+        period:
+          $ref: '#/components/schemas/TodayStatsPeriod'
+        money:
+          $ref: '#/components/schemas/TodayStatsMoney'
+        counts:
+          $ref: '#/components/schemas/TodayStatsCounts'
+        songs:
+          $ref: '#/components/schemas/TodayStatsSongs'
     SessionWalletItem:
       type: object
       properties:

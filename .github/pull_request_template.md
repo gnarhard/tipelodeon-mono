@@ -28,7 +28,7 @@
 
 ## Checklist
 
-- [ ] I reviewed related AGENTS.md / agent rules for this repo.
-- [ ] I updated tests for all behavior changes.
-- [ ] I ran relevant validation commands and recorded results.
-- [ ] I assessed contract/API impact and documented it above.
+- [ ] I updated shared docs or contracts where needed.
+- [ ] I ran the relevant validation for the repos touched by this change.
+- [ ] I documented contract/API impact above.
+- [ ] I considered rollback or migration implications.

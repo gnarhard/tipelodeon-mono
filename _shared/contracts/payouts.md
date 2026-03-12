@@ -14,6 +14,7 @@
 - `POST /api/v1/me/payout-account/onboarding-link`
 - `POST /api/v1/me/payout-account/dashboard-link`
 - `GET /api/v1/me/projects/{projectId}/wallet`
+- `GET /api/v1/me/projects/{projectId}/stats/today`
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 - `GET /api/v1/me/payouts`
 
@@ -107,6 +108,33 @@ Semantics:
 - Wallet scope is `account_level` because one performer has one Stripe account.
 - Project earnings are reporting views; Stripe balance is source of truth for
   cashout availability.
+
+---
+
+## Today stats endpoint
+
+`GET /api/v1/me/projects/{projectId}/stats/today`:
+- Owner-only endpoint.
+- Required query param:
+  - `timezone` as an IANA identifier, for example `America/Denver`
+- Returns a single summary object with:
+  - `period.local_date`, `period.timezone`, `window_start_utc`,
+    `window_end_utc`, `generated_at`
+  - `money.gross_tip_amount_cents`, `money.fee_amount_cents`,
+    `money.net_tip_amount_cents`
+  - `counts.request_count`, `counts.played_count`
+  - nullable `songs.most_requested` and `songs.highest_earning`
+
+Semantics:
+- "Today" is the supplied timezone's local calendar day.
+- Money and request counts use the accepted request timestamp.
+- Played counts use `played_at`.
+- Song rankings only consider repertoire-linked songs in the current project.
+- Tip-only placeholders, original-request placeholders, and custom manual titles
+  are excluded from the top-song cards.
+- Stripe-backed requests use persisted Stripe fee/net settlement values.
+- If same-day Stripe settlement data is still missing, backend may hydrate it
+  from Stripe on demand; if it cannot be resolved, endpoint returns `502`.
 
 ---
 

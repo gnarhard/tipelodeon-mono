@@ -32,6 +32,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
   - Payout account readiness status
   - Onboarding link generation
   - Express dashboard login links
+  - Owner-only today stats for local-day reporting
 
 - **[repertoire.md](./repertoire.md)** - Song repertoire management
   - Add/edit/delete songs in repertoire
