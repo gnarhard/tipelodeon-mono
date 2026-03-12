@@ -14,7 +14,7 @@
 - `POST /api/v1/me/payout-account/onboarding-link`
 - `POST /api/v1/me/payout-account/dashboard-link`
 - `GET /api/v1/me/projects/{projectId}/wallet`
-- `GET /api/v1/me/projects/{projectId}/stats/today`
+- `GET /api/v1/me/projects/{projectId}/stats`
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 - `GET /api/v1/me/payouts`
 
@@ -111,22 +111,32 @@ Semantics:
 
 ---
 
-## Today stats endpoint
+## Project stats endpoint
 
-`GET /api/v1/me/projects/{projectId}/stats/today`:
+`GET /api/v1/me/projects/{projectId}/stats`:
 - Owner-only endpoint.
-- Required query param:
+- Required query params:
   - `timezone` as an IANA identifier, for example `America/Denver`
-- Returns a single summary object with:
-  - `period.local_date`, `period.timezone`, `window_start_utc`,
-    `window_end_utc`, `generated_at`
+  - `preset` as one of:
+    `today|yesterday|this_week|last_week|this_month|last_month|this_year|last_year|all_time|custom`
+- Required only for `preset=custom`:
+  - `start_date`
+  - `end_date`
+- Returns a single report object with:
+  - `period.preset`, `period.timezone`, `period.local_start_date`,
+    `period.local_end_date`, `window_start_utc`, `window_end_utc`,
+    `generated_at`
   - `money.gross_tip_amount_cents`, `money.fee_amount_cents`,
     `money.net_tip_amount_cents`
   - `counts.request_count`, `counts.played_count`
-  - nullable `songs.most_requested` and `songs.highest_earning`
+  - nullable `highlights.most_requested` and `highlights.highest_earning`
+  - `rankings.most_played`, `rankings.most_requested`,
+    `rankings.highest_earning`
 
 Semantics:
-- "Today" is the supplied timezone's local calendar day.
+- Week presets use Monday-start local weeks.
+- `custom` uses inclusive local calendar dates in the supplied timezone.
+- `all_time` spans from project creation through report generation time.
 - Money and request counts use the accepted request timestamp.
 - Played counts use `played_at`.
 - Song rankings only consider repertoire-linked songs in the current project.

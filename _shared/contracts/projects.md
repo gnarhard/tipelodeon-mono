@@ -100,15 +100,24 @@ When updating a project:
 ## Wallet endpoints related to projects
 
 - `GET /api/v1/me/projects/{projectId}/wallet`
-- `GET /api/v1/me/projects/{projectId}/stats/today`
+- `GET /api/v1/me/projects/{projectId}/stats`
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 
 All three endpoints are owner-only reporting views for that project.
 
 - `/wallet` and `/wallet/sessions` expose payout/wallet reporting while sharing
   one account-level Stripe wallet across all owner projects.
-- `/stats/today` returns the local-day stats summary scoped by the required
-  `timezone` query param (IANA identifier).
+- `/stats` returns the owner-facing timeline stats report scoped by:
+  - required `timezone` query param (IANA identifier)
+  - required `preset` query param:
+    `today|yesterday|this_week|last_week|this_month|last_month|this_year|last_year|all_time|custom`
+  - `start_date` and `end_date` only when `preset=custom`
+
+Timeline semantics:
+- Week presets use Monday-start local weeks.
+- Relative presets resolve in the supplied reporting timezone.
+- `custom` dates are inclusive local calendar dates in the supplied timezone.
+- `all_time` spans from project `created_at` through report generation time.
 
 ---
 

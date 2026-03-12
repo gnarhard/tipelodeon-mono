@@ -445,29 +445,32 @@ paths:
         '502':
           description: Stripe wallet data unavailable
 
-  /me/projects/{projectId}/stats/today:
+  /me/projects/{projectId}/stats:
     get:
       tags: [Payouts]
-      summary: Get owner-only local-day stats for a project
+      summary: Get owner-only stats for a project timeline
       description: |
-        Returns the project's owner-facing "Today" stats window scoped to the
-        supplied IANA timezone. Request counts and money use accepted request
-        timestamps, while played counts use `played_at`.
+        Returns the project's owner-facing stats report for the supplied
+        timeline preset and IANA timezone. Request counts and money use
+        accepted request timestamps, while played counts use `played_at`.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
         - $ref: '#/components/parameters/ReportingTimezone'
+        - $ref: '#/components/parameters/StatsTimelinePreset'
+        - $ref: '#/components/parameters/StatsStartDate'
+        - $ref: '#/components/parameters/StatsEndDate'
       responses:
         '200':
-          description: Local-day stats summary
+          description: Timeline stats summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TodayStatsResponse'
+                $ref: '#/components/schemas/ProjectStatsResponse'
         '403':
           description: Forbidden (user is not project owner)
         '422':
-          description: Validation failed (invalid timezone)
+          description: Validation failed (invalid timezone, preset, or custom range)
         '502':
           description: Stripe settlement data unavailable
 
@@ -1316,7 +1319,34 @@ components:
       schema:
         type: string
         example: America/Denver
-      description: IANA timezone used to compute the local-day reporting window.
+      description: IANA timezone used to compute the reporting window.
+    StatsTimelinePreset:
+      in: query
+      name: preset
+      required: true
+      schema:
+        $ref: '#/components/schemas/StatsTimelinePreset'
+      description: >
+        Timeline preset. Use `custom` with `start_date` and `end_date`, or
+        `all_time` for the full project lifetime.
+    StatsStartDate:
+      in: query
+      name: start_date
+      required: false
+      schema:
+        type: string
+        format: date
+        example: '2026-03-01'
+      description: Required only when `preset=custom`.
+    StatsEndDate:
+      in: query
+      name: end_date
+      required: false
+      schema:
+        type: string
+        format: date
+        example: '2026-03-07'
+      description: Required only when `preset=custom`.
     ProjectSongId:
       in: path
       name: projectSongId
@@ -1691,26 +1721,42 @@ components:
           $ref: '#/components/schemas/ProjectWallet'
         payout_account:
           $ref: '#/components/schemas/PayoutAccount'
-    TodayStatsPeriod:
+    StatsTimelinePreset:
+      type: string
+      enum:
+        - today
+        - yesterday
+        - this_week
+        - last_week
+        - this_month
+        - last_month
+        - this_year
+        - last_year
+        - all_time
+        - custom
+    ProjectStatsPeriod:
       type: object
       properties:
-        local_date: { type: string, example: '2026-03-12' }
+        preset:
+          $ref: '#/components/schemas/StatsTimelinePreset'
         timezone: { type: string, example: America/Denver }
+        local_start_date: { type: string, example: '2026-03-09' }
+        local_end_date: { type: string, example: '2026-03-15' }
         window_start_utc: { type: string, format: date-time }
         window_end_utc: { type: string, format: date-time }
         generated_at: { type: string, format: date-time }
-    TodayStatsMoney:
+    ProjectStatsMoney:
       type: object
       properties:
         gross_tip_amount_cents: { type: integer }
         fee_amount_cents: { type: integer }
         net_tip_amount_cents: { type: integer }
-    TodayStatsCounts:
+    ProjectStatsCounts:
       type: object
       properties:
         request_count: { type: integer }
         played_count: { type: integer }
-    TodaySongStat:
+    ProjectStatsRequestRanking:
       type: object
       properties:
         song_id: { type: integer }
@@ -1718,28 +1764,52 @@ components:
         artist: { type: string }
         request_count: { type: integer }
         net_tip_amount_cents: { type: integer }
-    TodayStatsSongs:
+    ProjectStatsPlayedRanking:
+      type: object
+      properties:
+        song_id: { type: integer }
+        title: { type: string }
+        artist: { type: string }
+        played_count: { type: integer }
+    ProjectStatsHighlights:
       type: object
       properties:
         most_requested:
           allOf:
-            - $ref: '#/components/schemas/TodaySongStat'
+            - $ref: '#/components/schemas/ProjectStatsRequestRanking'
           nullable: true
         highest_earning:
           allOf:
-            - $ref: '#/components/schemas/TodaySongStat'
+            - $ref: '#/components/schemas/ProjectStatsRequestRanking'
           nullable: true
-    TodayStatsResponse:
+    ProjectStatsRankings:
+      type: object
+      properties:
+        most_played:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectStatsPlayedRanking'
+        most_requested:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectStatsRequestRanking'
+        highest_earning:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProjectStatsRequestRanking'
+    ProjectStatsResponse:
       type: object
       properties:
         period:
-          $ref: '#/components/schemas/TodayStatsPeriod'
+          $ref: '#/components/schemas/ProjectStatsPeriod'
         money:
-          $ref: '#/components/schemas/TodayStatsMoney'
+          $ref: '#/components/schemas/ProjectStatsMoney'
         counts:
-          $ref: '#/components/schemas/TodayStatsCounts'
-        songs:
-          $ref: '#/components/schemas/TodayStatsSongs'
+          $ref: '#/components/schemas/ProjectStatsCounts'
+        highlights:
+          $ref: '#/components/schemas/ProjectStatsHighlights'
+        rankings:
+          $ref: '#/components/schemas/ProjectStatsRankings'
     SessionWalletItem:
       type: object
       properties:
