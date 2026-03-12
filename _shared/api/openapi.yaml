@@ -1570,6 +1570,15 @@ components:
           type: integer
           minimum: 0
           description: Minimum tip amount when `is_accepting_tips=true`, rounded up to a whole-dollar cent value on write.
+        quick_tip_amounts_cents:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Exactly three whole-dollar cent values in descending display order for the audience request quick-tip buttons.
+          items:
+            type: integer
+            minimum: 100
+            multipleOf: 100
         is_accepting_requests:
           type: boolean
           description: |
@@ -1623,6 +1632,15 @@ components:
           type: integer
           minimum: 0
           description: Rounded up to the nearest whole-dollar amount before persistence.
+        quick_tip_amounts_cents:
+          type: array
+          minItems: 3
+          maxItems: 3
+          description: Exactly three whole-dollar cent values in descending display order for the audience request quick-tip buttons.
+          items:
+            type: integer
+            minimum: 100
+            multipleOf: 100
         is_accepting_requests: { type: boolean }
         is_accepting_tips: { type: boolean }
         is_accepting_original_requests: { type: boolean }
