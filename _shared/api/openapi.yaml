@@ -1034,6 +1034,92 @@ paths:
         '200':
           description: Recommendation
 
+  /me/charts:
+    get:
+      tags: [Charts]
+      summary: List charts for the authenticated user
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: project_id
+          schema: { type: integer }
+        - in: query
+          name: song_id
+          schema: { type: integer }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 200 }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1 }
+      responses:
+        '200':
+          description: Paginated chart list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartCollectionResponse'
+    post:
+      tags: [Charts]
+      summary: Upload or replace a chart PDF for a song
+      description: |
+        Upserts by `(owner_user_id, project_id, song_id)`.
+        First upload returns `201`.
+        Re-uploading the same PDF returns `200` without changing the chart.
+        Re-uploading a different PDF returns `200`, keeps the existing chart ID,
+        replaces the source PDF in place, clears old render artifacts, and
+        triggers rendering again.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, song_id, project_id]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                song_id:
+                  type: integer
+                project_id:
+                  type: integer
+      responses:
+        '200':
+          description: Existing chart kept or replaced in place
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '201':
+          description: New chart created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '422':
+          description: Validation failed
+
+  /me/charts/{chartId}:
+    get:
+      tags: [Charts]
+      summary: Get a single chart
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ChartId'
+      responses:
+        '200':
+          description: Chart resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '403':
+          description: Forbidden
+
   /me/charts/{chartId}/pages/{page}/viewport:
     get:
       tags: [Charts]
@@ -1952,6 +2038,43 @@ components:
                     enum: [pending, performed, skipped]
                   order_index: { type: integer }
                   performed_order_index: { type: integer, nullable: true }
+        meta:
+          type: object
+          additionalProperties: true
+    ChartSongSummary:
+      type: object
+      nullable: true
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        artist: { type: string }
+    ChartResource:
+      type: object
+      properties:
+        id: { type: integer }
+        song:
+          $ref: '#/components/schemas/ChartSongSummary'
+        project_id: { type: integer }
+        has_renders: { type: boolean }
+        page_count: { type: integer, minimum: 0 }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time, nullable: true }
+    ChartResponse:
+      type: object
+      properties:
+        message: { type: string }
+        chart:
+          $ref: '#/components/schemas/ChartResource'
+    ChartCollectionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartResource'
+        links:
+          type: object
+          additionalProperties: true
         meta:
           type: object
           additionalProperties: true
