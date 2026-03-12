@@ -57,6 +57,7 @@ Core fields:
 - `performer_info_url` (nullable)
 - `performer_profile_image_url` (nullable)
 - `min_tip_cents` (rounded up to a whole-dollar cent value on write)
+- `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
@@ -117,6 +118,7 @@ All three endpoints are owner-only reporting views for that project.
 - `name`
 - `performer_info_url`
 - `min_tip_cents` (backend rounds cent inputs up to the next whole dollar)
+- `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
