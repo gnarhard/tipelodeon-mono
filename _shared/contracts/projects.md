@@ -69,11 +69,37 @@ Payout readiness fields:
 - `payout_account_status` (`not_started|pending|enabled|restricted`)
 - `payout_status_reason` (nullable machine code/string for UI messaging)
 
+Entitlements fields:
+- `entitlements.plan_code`
+- `entitlements.plan_tier` (`basic|pro`)
+- `entitlements.repertoire_song_limit` (`100` for Basic, `null` for Pro)
+- `entitlements.single_chart_upload_limit_bytes` (`2097152`)
+- `entitlements.bulk_chart_upload_limit_bytes` (`2097152`)
+- `entitlements.bulk_chart_file_limit` (`20`)
+- `entitlements.ai_interactive_per_minute` (`10` Basic, `30` Pro)
+- `entitlements.bulk_ai_window_limit` (`500`)
+- `entitlements.bulk_ai_window_hours` (`6`)
+- `entitlements.can_use_public_requests`
+- `entitlements.can_access_queue`
+- `entitlements.can_access_history`
+- `entitlements.can_view_owner_stats`
+- `entitlements.can_view_wallet`
+
 ---
 
 ## Payout gate behavior for requests and tips
 
 When updating a project:
+- If the owner plan is Basic and the update would newly enable public requests
+  or tips, API returns `422`:
+
+```json
+{
+  "code": "feature_requires_pro",
+  "message": "Audience requests and tips require Pro."
+}
+```
+
 - If the resulting project state would have both `"is_accepting_requests": true`
   and `"is_accepting_tips": true` while owner payout setup is not complete, API
   returns `422`:
@@ -104,7 +130,7 @@ When updating a project:
 - `GET /api/v1/me/projects/{projectId}/stats`
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 
-All three endpoints are owner-only reporting views for that project.
+All three endpoints are Pro-only owner reporting views for that project.
 
 - `/wallet` and `/wallet/sessions` expose payout/wallet reporting while sharing
   one account-level Stripe wallet across all owner projects.
@@ -119,6 +145,9 @@ Timeline semantics:
 - Relative presets resolve in the supplied reporting timezone.
 - `custom` dates are inclusive local calendar dates in the supplied timezone.
 - `all_time` spans from project `created_at` through report generation time.
+
+If the owning project is not on Pro, these endpoints return `403` with
+`code=feature_requires_pro`.
 
 ---
 

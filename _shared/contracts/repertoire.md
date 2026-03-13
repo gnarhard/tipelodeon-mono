@@ -25,6 +25,14 @@
 
 ## Repertoire
 
+Plan limits:
+- Basic-owned projects are hard-capped at `100` repertoire songs.
+- Pro-owned projects do not have a repertoire-song cap.
+- Direct add and copy flows return `422` with `code=repertoire_limit_reached`
+  when the Basic cap would be exceeded.
+- Bulk import stays `200 OK` and reports skipped items via `limit_reached`
+  counters and per-song `action=limit_reached`.
+
 Instrumental flag:
 - Field: `instrumental`
 - Scope: stored on `project_songs`
@@ -47,6 +55,17 @@ Instrumental flag:
 - `POST /repertoire`
 - Supports theme, `instrumental`, and project-song `notes` in request and
   response payloads.
+
+Limit error:
+
+```json
+{
+  "code": "repertoire_limit_reached",
+  "message": "This project has reached its repertoire limit for the current plan.",
+  "project_id": 1,
+  "repertoire_song_limit": 100
+}
+```
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
@@ -76,6 +95,9 @@ Project-song notes:
 - Limits:
   - max files per request: `20`
   - max size per PDF: `2MB`
+- Large chart batches may queue AI enrichment separately from the tighter
+  interactive metadata throttle. When the bulk fair-use burst bucket is full,
+  uploads still succeed but affected entries are reported as `deferred`.
 - Supports either:
   - chart-backed imports via `files[]`
   - metadata-only imports via `items[]` rows parsed from CSV
@@ -107,6 +129,8 @@ Behavior:
 - `source_project_song_ids` must all belong to `source_project_id`.
 - If `include_charts=true`, copies linked chart PDFs and rendered chart images
   for the selected songs into the destination project.
+- On a Basic-owned destination project, copy is rejected once the project has
+  reached `100` repertoire songs.
 
 ---
 

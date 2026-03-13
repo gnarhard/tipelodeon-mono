@@ -17,6 +17,9 @@
   - `file`: PDF (required)
   - `song_id`: int (required)
   - `project_id`: int (required)
+- **Upload limits**:
+  - single PDF max: `2MB`
+  - route throttle: `5` requests per minute per authenticated user
 - **Semantics**: upsert by `(owner_user_id, project_id, song_id)`
   - First upload creates a new chart and returns `201`.
   - Re-uploading the same PDF for the same song/project returns `200` and leaves the existing chart unchanged.

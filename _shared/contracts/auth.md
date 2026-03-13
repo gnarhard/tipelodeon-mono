@@ -62,7 +62,23 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
         "owner_user_id": 1,
         "payout_setup_complete": false,
         "payout_account_status": "pending",
-        "payout_status_reason": "requirements_due"
+        "payout_status_reason": "requirements_due",
+        "entitlements": {
+          "plan_code": "basic_monthly",
+          "plan_tier": "basic",
+          "repertoire_song_limit": 100,
+          "single_chart_upload_limit_bytes": 2097152,
+          "bulk_chart_upload_limit_bytes": 2097152,
+          "bulk_chart_file_limit": 20,
+          "ai_interactive_per_minute": 10,
+          "bulk_ai_window_limit": 500,
+          "bulk_ai_window_hours": 6,
+          "can_use_public_requests": false,
+          "can_access_queue": false,
+          "can_access_history": false,
+          "can_view_owner_stats": false,
+          "can_view_wallet": false
+        }
       }
     ]
   },
@@ -218,6 +234,22 @@ Update the authenticated user's mobile-owned profile fields.
   "instrument_type": "drums"
 }
 ```
+
+---
+
+## Account usage
+
+- **Method**: `GET`
+- **Path**: `/api/v1/me/usage`
+- **Auth**: Required (Bearer token)
+
+Returns the authenticated owner account's current usage state, including:
+- current billing plan code/tier
+- storage usage and thresholds
+- AI usage and estimated cost
+- current review/block state
+- activity and archival timestamps
+- emitted warning markers
 
 `instrument_type` may also be `null` to clear the selection.
 
