@@ -62,6 +62,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
 ### Public/Audience Resources
 
 - **[public.md](./public.md)** - Public audience-facing endpoints
+  - Public app bootstrap version policy lookup
   - Browse public repertoire
   - Create song requests with payment
 
@@ -70,6 +71,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
 ### Authentication
 
 - **Public endpoints** (auth.md, public.md) - No auth required
+- Public app startup checks use `GET /api/v1/app/version-policy?platform={platform}` with platform values `ios`, `android`, `macos`, `windows`, or `linux`
 - **Authenticated endpoints** - Require `Authorization: Bearer {token}` header
   - Token obtained via `/api/v1/auth/login`
   - Laravel Sanctum tokens
@@ -120,6 +122,7 @@ Contract markdown files in this directory provide domain-oriented explanations a
 - **Dates:** ISO 8601 format with timezone (e.g., `2026-02-11T22:20:10+00:00`)
 - **Currency:** Integer cents, with tip and minimum-tip writes rounded up to whole dollars (e.g., `1500` = $15)
 - **Pagination:** Laravel paginator format with `data`, `meta`, `links`
+- **Version checks:** Installed app startup compares numeric `x.y.z` first, then `latest_build_number`; mobile policies use `store_url`, desktop policies use `archive_url`
 
 ## Enums
 

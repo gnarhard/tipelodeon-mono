@@ -4,7 +4,25 @@
 
 - No bearer auth.
 - Audience identity is cookie-backed (`songtipper_audience_token`).
-- Route prefix: `/api/v1/public/projects/{project_slug}`.
+- Audience route prefix: `/api/v1/public/projects/{project_slug}`.
+- App bootstrap route exception: `GET /api/v1/app/version-policy?platform={platform}`.
+
+---
+
+## App version policy
+
+- `GET /api/v1/app/version-policy?platform={platform}`
+- Public startup endpoint for installed `ios`, `android`, `macos`, `windows`, and `linux` builds.
+- Returns `200 { data: ... }` only when an enabled release policy exists for the requested platform.
+- Returns `404` when the platform has no enabled release policy.
+
+Comparison rules:
+- Compare `latest_version` numerically as `x.y.z`.
+- If the semantic version matches the installed app, compare `latest_build_number`.
+
+Platform URL fields:
+- `store_url` is used only for mobile platforms (`ios`, `android`) and should be null for desktop policies.
+- `archive_url` is used only for desktop platforms (`macos`, `windows`, `linux`) and should be null for mobile policies.
 
 ---
 

@@ -25,6 +25,7 @@ tags:
   - name: Setlists
   - name: Performances
   - name: Charts
+  - name: App
   - name: Audience
   - name: Learning
 
@@ -1423,6 +1424,40 @@ paths:
         '201':
           description: Annotation saved
 
+  /app/version-policy:
+    get:
+      tags: [App]
+      summary: Get the enabled app release policy for a platform
+      description: |
+        Public startup endpoint used by installed apps to decide whether to
+        show an update prompt.
+
+        Outdated comparison rule:
+        - compare `latest_version` numerically as `x.y.z`
+        - if the semantic version matches, compare `latest_build_number`
+
+        `store_url` is populated for mobile platforms (`ios`, `android`).
+        `archive_url` is populated for desktop platforms (`macos`, `windows`, `linux`).
+      parameters:
+        - in: query
+          name: platform
+          required: true
+          schema:
+            $ref: '#/components/schemas/AppPlatform'
+      responses:
+        '200':
+          description: Enabled app release policy for the requested platform
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AppVersionPolicy'
+        '404':
+          description: No enabled release policy exists for the requested platform
+
   /public/projects/{projectSlug}/repertoire:
     get:
       tags: [Audience]
@@ -2336,6 +2371,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BulkImportSongResult'
+    AppPlatform:
+      type: string
+      enum: [ios, android, macos, windows, linux]
+    AppVersionPolicy:
+      type: object
+      required:
+        [
+          platform,
+          latest_version,
+          latest_build_number,
+          store_url,
+          archive_url,
+        ]
+      properties:
+        platform:
+          $ref: '#/components/schemas/AppPlatform'
+        latest_version:
+          type: string
+          description: Latest semantic version in `x.y.z` format.
+        latest_build_number:
+          type: integer
+          description: Build number compared after `latest_version` matches.
+        store_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Required for mobile policies and null for desktop policies.
+        archive_url:
+          type: string
+          format: uri
+          nullable: true
+          description: Required for desktop policies and null for mobile policies.
     PublicRequestCreateResponse:
       type: object
       properties:
