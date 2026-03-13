@@ -32,3 +32,8 @@ Notes:
 - Open a PR for every repo you modify before handoff, even if the user did not explicitly ask for PR creation.
 - If any PR you open has merge conflicts, resolve them using your best judgment before handoff.
 - Before pushing, opening, or updating anything on GitHub, every test suite in each repo being submitted must be passing with zero errors, including failures unrelated to the current task.
+
+## MCP Servers
+
+- `mobile_app` development can be assisted with the globally installed Dart MCP server.
+- `web` development can be assisted with the locally installed Laravel Boost MCP server available at `./web/.mcp.json`. See `./web/CLAUDE.md` for agent instructions and `./web/.claude/skills` for skills.
