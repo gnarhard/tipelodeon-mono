@@ -6,6 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
 const tokensPath = path.join(rootDir, '_shared', 'design', 'theme_tokens.json');
 const tokens = JSON.parse(fs.readFileSync(tokensPath, 'utf8'));
+const filledForegroundPairs = tokens.filledForegroundPairs ?? {};
 const allowedThemeHexes = new Set([
   '#ffb375',
   '#ffcba0',
@@ -131,6 +132,30 @@ function emitDartMap(name, map, orderedKeys) {
   return entries;
 }
 
+function toDartFieldName(value) {
+  return value
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((part, index) => {
+      const normalized = part.charAt(0).toUpperCase() + part.slice(1);
+      if (index === 0) {
+        return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+      }
+
+      return normalized;
+    })
+    .join('');
+}
+
+function emitDartStringMap(name, map) {
+  const fieldName = toDartFieldName(name);
+  const entries = Object.entries(map)
+    .map(([key, value]) => `    '${key}': '${value}',`)
+    .join('\n');
+
+  return `  static const Map<String, String> ${fieldName} = {\n${entries}\n  };`;
+}
+
 function emitCssVariables(selector, values) {
   const lines = Object.entries(values).map(
     ([key, value]) => `  --st-${key.replace(/[A-Z]/g, (match) => `-${match.toLowerCase()}`)}: ${value};`,
@@ -149,6 +174,77 @@ function assertApprovedHex(sectionName, key, value) {
     throw new Error(
       `Expected ${sectionName}.${key} to use an approved base or accent color, received ${value}`,
     );
+  }
+}
+
+function hexToRgb(hex) {
+  const normalized = hex.replace('#', '');
+
+  return {
+    red: Number.parseInt(normalized.slice(0, 2), 16),
+    green: Number.parseInt(normalized.slice(2, 4), 16),
+    blue: Number.parseInt(normalized.slice(4, 6), 16),
+  };
+}
+
+function channelToLinear(value) {
+  const normalized = value / 255;
+
+  if (normalized <= 0.03928) {
+    return normalized / 12.92;
+  }
+
+  return ((normalized + 0.055) / 1.055) ** 2.4;
+}
+
+function relativeLuminance(hex) {
+  const { red, green, blue } = hexToRgb(hex);
+
+  return (
+    0.2126 * channelToLinear(red)
+    + 0.7152 * channelToLinear(green)
+    + 0.0722 * channelToLinear(blue)
+  );
+}
+
+function contrastRatio(background, foreground) {
+  const backgroundLuminance = relativeLuminance(background);
+  const foregroundLuminance = relativeLuminance(foreground);
+  const lighter = Math.max(backgroundLuminance, foregroundLuminance);
+  const darker = Math.min(backgroundLuminance, foregroundLuminance);
+
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function validateFilledForegroundPairs(sectionName, values, pairs) {
+  for (const [backgroundToken, foregroundToken] of Object.entries(pairs)) {
+    if (!(backgroundToken in values)) {
+      throw new Error(
+        `Missing filled pair background token ${sectionName}.${backgroundToken}`,
+      );
+    }
+
+    if (!(foregroundToken in values)) {
+      throw new Error(
+        `Missing filled pair foreground token ${sectionName}.${foregroundToken}`,
+      );
+    }
+
+    if (!foregroundToken.startsWith('on')) {
+      throw new Error(
+        `Filled pair ${sectionName}.${backgroundToken} must map to an on-* token, received ${foregroundToken}`,
+      );
+    }
+
+    const backgroundValue = values[backgroundToken];
+    const foregroundValue = values[foregroundToken];
+    const ratio = contrastRatio(backgroundValue, foregroundValue);
+
+    if (ratio < 4.5) {
+      throw new Error(
+        `Filled pair ${sectionName}.${backgroundToken}/${foregroundToken} must meet WCAG AA 4.5:1, received ${ratio.toFixed(2)}:1`,
+      );
+    }
   }
 }
 
@@ -171,6 +267,12 @@ for (const [modeName, values] of Object.entries(tokens.web)) {
 
     assertApprovedHex(`web.${modeName}`, key, value);
   }
+
+  validateFilledForegroundPairs(
+    `web.${modeName}`,
+    values,
+    filledForegroundPairs.web?.[modeName] ?? {},
+  );
 }
 
 for (const [modeName, values] of Object.entries(tokens.mobile)) {
@@ -181,6 +283,12 @@ for (const [modeName, values] of Object.entries(tokens.mobile)) {
   for (const [key, value] of Object.entries(values)) {
     assertApprovedHex(`mobile.${modeName}`, key, value);
   }
+
+  validateFilledForegroundPairs(
+    `mobile.${modeName}`,
+    values,
+    filledForegroundPairs.mobile?.[modeName] ?? {},
+  );
 }
 
 const resolvedMobileWaveTokens = {
@@ -215,6 +323,17 @@ for (const [modeName, values] of Object.entries(tokens.mobile)) {
   dartLines.push(emitDartMap(modeName, values));
 }
 
+for (const [platformName, modes] of Object.entries(filledForegroundPairs)) {
+  for (const [modeName, pairs] of Object.entries(modes)) {
+    dartLines.push(
+      emitDartStringMap(
+        `${platformName}_${modeName}_filled_foreground_pairs`,
+        pairs,
+      ),
+    );
+  }
+}
+
 dartLines.push('}');
 
 writeFile(dartOutputPath, `${dartLines.join('\n')}\n`);
@@ -245,6 +364,23 @@ export const tailwindPalettes = ${JSON.stringify(
     danger: tokens.palettes.danger,
     info: tokens.palettes.info,
   },
+  null,
+  4,
+)};
+
+export const webThemeTokens = ${JSON.stringify(tokens.web, null, 4)};
+
+export const mobileThemeTokens = ${JSON.stringify(
+  {
+    ...tokens.mobile,
+    wave: resolvedMobileWaveTokens,
+  },
+  null,
+  4,
+)};
+
+export const filledForegroundPairs = ${JSON.stringify(
+  filledForegroundPairs,
   null,
   4,
 )};

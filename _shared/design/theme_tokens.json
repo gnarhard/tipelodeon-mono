@@ -43,7 +43,15 @@
       "accentSoft": "#cddce3",
       "waveBandPrimary": "rgba(48, 41, 56, 0.07)",
       "waveBandSecondary": "rgba(48, 41, 56, 0.11)",
-      "primaryInk": "#4e435b"
+      "primaryInk": "#4e435b",
+      "primaryContainer": "#ffcba0",
+      "onPrimaryContainer": "#4e435b",
+      "secondaryContainer": "#cddce3",
+      "onSecondaryContainer": "#302938",
+      "successContainer": "#d9e6da",
+      "onSuccessContainer": "#302938",
+      "errorContainer": "#f4d4ce",
+      "onErrorContainer": "#302938"
     },
     "dark": {
       "canvas": "#302938",
@@ -61,7 +69,15 @@
       "accentSoft": "#2d2633",
       "waveBandPrimary": "rgba(220, 236, 244, 0.08)",
       "waveBandSecondary": "rgba(220, 236, 244, 0.12)",
-      "primaryInk": "#4e435b"
+      "primaryInk": "#4e435b",
+      "primaryContainer": "#ffcba0",
+      "onPrimaryContainer": "#4e435b",
+      "secondaryContainer": "#2d2633",
+      "onSecondaryContainer": "#cddce3",
+      "successContainer": "#d9e6da",
+      "onSuccessContainer": "#302938",
+      "errorContainer": "#f4d4ce",
+      "onErrorContainer": "#302938"
     }
   },
   "mobile": {
@@ -147,6 +163,36 @@
       "ribbonBDarkEnd": "#403d4f",
       "ribbonCDarkStart": "#2d2633",
       "ribbonCDarkEnd": "#302938"
+    }
+  },
+  "filledForegroundPairs": {
+    "web": {
+      "light": {
+        "primaryContainer": "onPrimaryContainer",
+        "secondaryContainer": "onSecondaryContainer",
+        "successContainer": "onSuccessContainer",
+        "errorContainer": "onErrorContainer"
+      },
+      "dark": {
+        "primaryContainer": "onPrimaryContainer",
+        "secondaryContainer": "onSecondaryContainer",
+        "successContainer": "onSuccessContainer",
+        "errorContainer": "onErrorContainer"
+      }
+    },
+    "mobile": {
+      "light": {
+        "primaryContainer": "onPrimaryContainer",
+        "secondaryContainer": "onSecondaryContainer",
+        "tertiaryContainer": "onTertiaryContainer",
+        "errorContainer": "onErrorContainer"
+      },
+      "dark": {
+        "primaryContainer": "onPrimaryContainer",
+        "secondaryContainer": "onSecondaryContainer",
+        "tertiaryContainer": "onTertiaryContainer",
+        "errorContainer": "onErrorContainer"
+      }
     }
   }
 }

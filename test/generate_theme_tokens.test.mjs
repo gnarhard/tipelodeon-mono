@@ -77,6 +77,9 @@ test('theme token generator emits only the pinned theme families and wave colors
   assert.match(webCssOutput, /--st-text: #dcecf4;/);
   assert.match(webCssOutput, /--st-line: #4e435b;/);
   assert.match(webCssOutput, /--st-line-strong: #cddce3;/);
+  assert.match(webCssOutput, /--st-primary-container: #ffcba0;/);
+  assert.match(webCssOutput, /--st-success-container: #d9e6da;/);
+  assert.match(webCssOutput, /--st-on-success-container: #302938;/);
   assert.doesNotMatch(
     webCssOutput,
     /#e88d4d|#c46d2c|#92a1af|#778093|#10b981/i,
@@ -87,7 +90,20 @@ test('theme token generator emits only the pinned theme families and wave colors
   assert.match(webJsOutput, /dark/);
   assert.match(webJsOutput, /success/);
   assert.match(webJsOutput, /info/);
+  assert.match(webJsOutput, /webThemeTokens/);
+  assert.match(webJsOutput, /mobileThemeTokens/);
+  assert.match(webJsOutput, /filledForegroundPairs/);
+  assert.match(webJsOutput, /"successContainer": "onSuccessContainer"/);
   assert.doesNotMatch(webJsOutput, /"50":/);
   assert.doesNotMatch(webJsOutput, /neutral/);
   assert.doesNotMatch(webJsOutput, /amber/);
+
+  assert.match(
+    dartOutput,
+    /static const Map<String, String> webLightFilledForegroundPairs = \{/,
+  );
+  assert.match(
+    dartOutput,
+    /'secondaryContainer': 'onSecondaryContainer'/,
+  );
 });

@@ -17,6 +17,7 @@
 - Do not add dependencies unless they are necessary.
 - Do not reformat entire files unless the formatter requires it.
 - Never exceed database table name length limits; avoid MySQL `1059 Identifier name` failures when planning migrations.
+- When composite indexes, unique constraints, or foreign keys could approach MySQL's 64-character identifier limit, always provide an explicit short name in the repo's abbreviated style such as `_idx`, `_uniq`, or `_fk`.
 - Do not push branches, open PRs, or update PRs while any test in a repo you intend to submit is failing. GitHub submission is blocked until the repo is error-free.
 
 ## Common commands

@@ -19,6 +19,7 @@ servers:
 tags:
   - name: Auth
   - name: Projects
+  - name: Queue
   - name: Payouts
   - name: Repertoire
   - name: Setlists
@@ -476,6 +477,100 @@ paths:
           description: Forbidden (user is not project owner)
         '422':
           description: Validation failed
+
+  /me/projects/{projectId}/queue:
+    get:
+      tags: [Queue]
+      summary: Get the active request queue for a project
+      description: |
+        Returns the active request queue ordered by `tip_amount_cents DESC`,
+        then `created_at ASC`. Supports ETag caching for queue polling.
+        When `timezone` is supplied, `meta.daily_record_event` reports a new
+        project-scoped daily gross-tip record for the current local day.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/OptionalReportingTimezone'
+      responses:
+        '200':
+          description: Active queue response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueCollectionResponse'
+        '304':
+          description: Not modified when the queue payload and record event are unchanged
+        '403':
+          description: Forbidden (queue access requires Pro-owned project access)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequiresProError'
+        '404':
+          description: Not found (user does not have access to the project)
+    post:
+      tags: [Queue]
+      summary: Add a manual queue item
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualQueueItemRequest'
+      responses:
+        '201':
+          description: Queue item added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManualQueueItemResponse'
+        '403':
+          description: Forbidden (queue access requires Pro-owned project access)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequiresProError'
+        '404':
+          description: Not found (user does not have access to the project)
+        '422':
+          description: Validation failed or originals are disabled
+
+  /me/projects/{projectId}/requests/history:
+    get:
+      tags: [Queue]
+      summary: Get the non-active request history for a project
+      description: |
+        Returns the project-scoped non-active request history used by the
+        mobile archive screen. The payload shape remains the same played-request
+        resource; there is no separate archived status value.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 1, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+      responses:
+        '200':
+          description: Paginated request history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestHistoryCollectionResponse'
+        '403':
+          description: Forbidden (history access requires Pro-owned project access)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequiresProError'
+        '404':
+          description: Not found (user does not have access to the project)
 
   /me/projects/{projectId}/wallet:
     get:
@@ -1408,6 +1503,14 @@ components:
         type: string
         example: America/Denver
       description: IANA timezone used to compute the reporting window.
+    OptionalReportingTimezone:
+      in: query
+      name: timezone
+      required: false
+      schema:
+        type: string
+        example: America/Denver
+      description: IANA timezone used to compute queue record-event metadata.
     StatsTimelinePreset:
       in: query
       name: preset
@@ -2031,6 +2134,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ProjectStatsRequestRanking'
+    ProjectStatsBestDayRecord:
+      type: object
+      properties:
+        gross_tip_amount_cents: { type: integer }
+        local_date: { type: string, format: date }
+        timezone: { type: string, example: America/Denver }
+        is_current_period_record: { type: boolean }
+    ProjectStatsRecords:
+      type: object
+      properties:
+        best_day:
+          allOf:
+            - $ref: '#/components/schemas/ProjectStatsBestDayRecord'
+          nullable: true
     ProjectStatsResponse:
       type: object
       properties:
@@ -2044,6 +2161,90 @@ components:
           $ref: '#/components/schemas/ProjectStatsHighlights'
         rankings:
           $ref: '#/components/schemas/ProjectStatsRankings'
+        records:
+          $ref: '#/components/schemas/ProjectStatsRecords'
+    SongRequestStatus:
+      type: string
+      enum: [active, played]
+    QueueRequest:
+      type: object
+      properties:
+        id: { type: integer }
+        audience_profile_id: { type: integer, nullable: true }
+        performance_session_id: { type: integer, nullable: true }
+        song:
+          $ref: '#/components/schemas/SongSummary'
+        tip_amount_cents: { type: integer }
+        tip_amount_dollars: { type: string }
+        status:
+          $ref: '#/components/schemas/SongRequestStatus'
+        note: { type: string, nullable: true }
+        played_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+    QueueDailyRecordEvent:
+      type: object
+      properties:
+        event_id: { type: string }
+        gross_tip_amount_cents: { type: integer }
+        local_date: { type: string, format: date }
+        timezone: { type: string, example: America/Denver }
+    QueueCollectionMeta:
+      type: object
+      properties:
+        daily_record_event:
+          allOf:
+            - $ref: '#/components/schemas/QueueDailyRecordEvent'
+          nullable: true
+    QueueCollectionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueRequest'
+        meta:
+          $ref: '#/components/schemas/QueueCollectionMeta'
+    RequestHistoryCollectionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueRequest'
+        links:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
+    ManualQueueItemRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [custom, repertoire_song, original]
+        custom_title:
+          type: string
+          nullable: true
+        custom_artist:
+          type: string
+          nullable: true
+        song_id:
+          type: integer
+          nullable: true
+        tip_amount_cents:
+          type: integer
+          nullable: true
+        note:
+          type: string
+          nullable: true
+    ManualQueueItemResponse:
+      type: object
+      properties:
+        message: { type: string }
+        request:
+          $ref: '#/components/schemas/QueueRequest'
     SessionWalletItem:
       type: object
       properties:

@@ -146,6 +146,18 @@ Timeline semantics:
 - `custom` dates are inclusive local calendar dates in the supplied timezone.
 - `all_time` spans from project `created_at` through report generation time.
 
+Stats response fields:
+- `period`, `money`, `counts`, `highlights`, and `rankings` remain unchanged.
+- `records.best_day` is nullable and, when present, includes:
+  - `gross_tip_amount_cents`
+  - `local_date`
+  - `timezone`
+  - `is_current_period_record`
+- `records.best_day` is project-scoped and based on the highest lifetime
+  one-day gross tip total in the supplied reporting timezone.
+- `is_current_period_record=true` when the selected timeline range contains the
+  record date.
+
 If the owning project is not on Pro, these endpoints return `403` with
 `code=feature_requires_pro`.
 

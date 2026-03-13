@@ -18,7 +18,15 @@
 - **Method**: `GET`
 - **Path**: `/queue`
 
-Get active request queue for a project. **Supports ETag caching** for efficient polling.
+Get the active request queue for a project. **Supports ETag caching** for
+efficient polling.
+
+Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
+
+### Query parameters
+
+- `timezone` (optional): IANA timezone used to compute the queue
+  `meta.daily_record_event`. Defaults to `UTC` when omitted or invalid.
 
 ### Headers
 
@@ -31,6 +39,8 @@ Get active request queue for a project. **Supports ETag caching** for efficient 
   "data": [
     {
       "id": 42,
+      "audience_profile_id": null,
+      "performance_session_id": null,
       "song": {
         "id": 1,
         "title": "Fly Me to the Moon",
@@ -39,23 +49,33 @@ Get active request queue for a project. **Supports ETag caching** for efficient 
       "tip_amount_cents": 1500,
       "tip_amount_dollars": "15",
       "status": "active",
-      "requester_name": null,
       "note": "Happy birthday!",
-      "activated_at": "2026-02-03T12:00:00+00:00",
       "played_at": null,
       "created_at": "2026-02-03T11:55:00+00:00"
     }
-  ]
+  ],
+  "meta": {
+    "daily_record_event": {
+      "event_id": "queue-record:42:2026-03-12:12300",
+      "gross_tip_amount_cents": 12300,
+      "local_date": "2026-03-12",
+      "timezone": "America/Denver"
+    }
+  }
 }
 ```
 
 **Response includes `ETag` header.**
 
-Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
+- `meta.daily_record_event` is `null` unless the current local day sets a new
+  project lifetime one-day gross-tip record.
+- The queue `ETag` must change when either the active queue payload or the
+  `daily_record_event` changes.
 
 ### Not Modified response (`304`)
 
-No changes since last request (when `If-None-Match` matches). No body returned.
+No changes since last request (when `If-None-Match` matches). No body is
+returned. Matching includes both the queue payload and the record-event state.
 
 ---
 
@@ -160,7 +180,11 @@ Manually add an item to the active queue as an authenticated performer/project m
 - **Method**: `GET`
 - **Path**: `/requests/history`
 
-Get played requests history (paginated).
+Get the non-active request history for the current project (paginated).
+
+Archive/history in mobile is backed by this endpoint. The API keeps the
+existing played-request payload shape and existing active/played status model;
+there is no separate archived status.
 
 ### Query Parameters
 
@@ -171,7 +195,12 @@ Get played requests history (paginated).
 
 ### Success response (`200`)
 
-Same structure as queue, but with `status: "played"` and `played_at` populated.
+Same item shape as the queue response, but paginated and with `status: "played"`
+plus `played_at` populated.
+
+History includes custom, original, repertoire, and tip-only requests once they
+are no longer active. The mobile archive may also show a local secondary list
+of dismissed tip-only items that are restorable back into the live queue strip.
 
 ### Error response (`403`)
 
