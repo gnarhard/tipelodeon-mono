@@ -26,6 +26,8 @@
 
 - `POST /requests`
 - Supports `Idempotency-Key`.
+- Public request creation is available only when the owning project exposes
+  `entitlements.can_use_public_requests=true` (Pro-owned projects).
 
 Request body fields:
 - `song_id` (optional from client when `tip_only` / `is_original` flows are used)
@@ -77,5 +79,14 @@ Payout setup gate:
 - Payout setup is only required when project `is_accepting_tips=true`.
 - If project requests are disabled independently, API returns `422` with
   message only (no `code` field).
+- If the owner plan does not include public requests, API also returns `422`
+  with message only:
+
+```json
+{
+  "message": "This project is not currently accepting requests."
+}
+```
+
 - If project tips are disabled independently, positive-tip and tip-only
   submissions return `422` with message only (no `code` field).

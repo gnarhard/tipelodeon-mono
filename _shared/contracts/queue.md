@@ -5,9 +5,11 @@
 - All endpoints below require `Authorization: Bearer <token>`.
 - All endpoints are performer-scoped and project-scoped via `{project_id}`.
 - Route prefix: `/api/v1/me/projects/{project_id}`
-- Project owners and invited project members can read queue endpoints.
-- Queue visibility is based on project access, not the invited member's billing
-  plan tier.
+- Queue and history access require the owning project to expose
+  `entitlements.can_access_queue=true` / `entitlements.can_access_history=true`.
+- On Pro-owned projects, invited members keep queue/history access even if
+  their own account plan is Basic.
+- On Basic-owned projects, queue and history endpoints return `403`.
 
 ---
 
@@ -131,6 +133,15 @@ Manually add an item to the active queue as an authenticated performer/project m
 
 **User does not have access to project (`404`)**
 
+**Feature locked to Pro (`403`)**
+
+```json
+{
+  "code": "feature_requires_pro",
+  "message": "Queue access requires a Pro-owned project."
+}
+```
+
 **Validation failure (`422`):**
 - Invalid type, missing `custom_title`, invalid `song_id`, etc.
 
@@ -161,6 +172,11 @@ Get played requests history (paginated).
 ### Success response (`200`)
 
 Same structure as queue, but with `status: "played"` and `played_at` populated.
+
+### Error response (`403`)
+
+Returned when the owning project does not expose
+`entitlements.can_access_history=true`.
 
 ---
 

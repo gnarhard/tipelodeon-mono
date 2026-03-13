@@ -18,6 +18,12 @@
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 - `GET /api/v1/me/payouts`
 
+Pro plan gates:
+- `wallet`, `stats`, `wallet/sessions`, and `payouts` require Pro.
+- Project-scoped wallet/stat endpoints also require project ownership.
+- When Pro is required and unavailable, API returns `403` with
+  `code=feature_requires_pro`.
+
 ---
 
 ## Payout account status model
@@ -98,7 +104,7 @@ Example success:
 ## Wallet summary endpoint
 
 `GET /api/v1/me/projects/{projectId}/wallet`:
-- Owner-only endpoint (403 for non-owners).
+- Pro-only owner endpoint (`403` for non-owners and Basic-owned projects).
 - Returns:
   - account-level Stripe balance (`available`, `pending`, USD totals),
   - project-level earnings aggregates from SongTipper request/session data,
@@ -114,7 +120,7 @@ Semantics:
 ## Project stats endpoint
 
 `GET /api/v1/me/projects/{projectId}/stats`:
-- Owner-only endpoint.
+- Pro-only owner endpoint.
 - Required query params:
   - `timezone` as an IANA identifier, for example `America/Denver`
   - `preset` as one of:
@@ -151,7 +157,7 @@ Semantics:
 ## Session earnings endpoint
 
 `GET /api/v1/me/projects/{projectId}/wallet/sessions`:
-- Owner-only endpoint.
+- Pro-only owner endpoint.
 - Paginated performance session aggregates:
   - `paid_request_count`
   - `total_tip_amount_cents`
@@ -162,6 +168,7 @@ Semantics:
 ## Payout history endpoint
 
 `GET /api/v1/me/payouts`:
+- Pro-only endpoint.
 - Returns connected-account payout objects from Stripe.
 - Query params:
   - `limit` (1..100, default 20)

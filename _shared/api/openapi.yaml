@@ -193,6 +193,21 @@ paths:
         '422':
           description: Validation failed
 
+  /me/usage:
+    get:
+      tags: [Projects]
+      summary: Get account usage, fair-use state, and plan limits
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Current usage summary for the authenticated owner account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountUsageResponse'
+        '401':
+          description: Unauthenticated
+
   /me/payout-account:
     get:
       tags: [Payouts]
@@ -276,6 +291,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PayoutHistoryResponse'
+        '403':
+          description: Forbidden (payout history requires Pro)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequiresProError'
         '422':
           description: Invalid status/limit query
         '502':
@@ -343,6 +364,7 @@ paths:
             application/json:
               schema:
                 oneOf:
+                  - $ref: '#/components/schemas/FeatureRequiresProError'
                   - $ref: '#/components/schemas/PayoutSetupIncompleteError'
                   - type: object
                     properties:
@@ -374,6 +396,39 @@ paths:
                 $ref: '#/components/schemas/ProjectMessageResponse'
         '422':
           description: Validation failed or payout setup incomplete
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/FeatureRequiresProError'
+                  - $ref: '#/components/schemas/PayoutSetupIncompleteError'
+                  - type: object
+                    properties:
+                      message: { type: string }
+                      errors:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items: { type: string }
+    delete:
+      tags: [Projects]
+      summary: Delete an owned project
+      description: Deletes the project and associated project-scoped data.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Project deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+        '403':
+          description: Forbidden (user is not the project owner)
 
   /me/projects/{projectId}/members:
     get:
@@ -441,7 +496,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectWalletResponse'
         '403':
-          description: Forbidden (user is not project owner)
+          description: Forbidden (wallet reporting requires Pro and owner access)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequiresProError'
         '502':
           description: Stripe wallet data unavailable
 
@@ -468,7 +527,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectStatsResponse'
         '403':
-          description: Forbidden (user is not project owner)
+          description: Forbidden (owner stats require Pro and owner access)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeatureRequiresProError'
         '422':
           description: Validation failed (invalid timezone, preset, or custom range)
         '502':
@@ -492,26 +555,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionWalletCollectionResponse'
         '403':
-          description: Forbidden (user is not project owner)
-    delete:
-      tags: [Projects]
-      summary: Delete an owned project
-      description: Deletes the project and associated project-scoped data.
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-        - $ref: '#/components/parameters/IdempotencyKey'
-      responses:
-        '200':
-          description: Project deleted
+          description: Forbidden (wallet reporting requires Pro and owner access)
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message: { type: string }
-        '403':
-          description: Forbidden (user is not the project owner)
+                $ref: '#/components/schemas/FeatureRequiresProError'
 
   /me/projects/{projectId}/repertoire:
     get:
@@ -537,6 +585,9 @@ paths:
     post:
       tags: [Repertoire]
       summary: Add repertoire song
+      description: |
+        Basic-owned projects are hard-capped at 100 repertoire songs.
+        Pro-owned projects do not have a repertoire-song cap.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -554,6 +605,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SingleRepertoireResponse'
+        '422':
+          description: Validation failed or repertoire limit reached
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/RepertoireLimitError'
+                  - type: object
+                    properties:
+                      message: { type: string }
+                      errors:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items: { type: string }
 
   /me/projects/{projectId}/repertoire/{projectSongId}:
     put:
@@ -593,7 +659,12 @@ paths:
     post:
       tags: [Repertoire]
       summary: Bulk-import repertoire from PDFs or CSV rows
-      description: Up to 20 chart PDFs or 20 metadata-only song rows per request. Each PDF max 2MB. When `files` is omitted, each `items[]` row must include `title` and `artist`.
+      description: |
+        Up to 20 chart PDFs or 20 metadata-only song rows per request.
+        Each PDF max 2MB.
+        Basic-owned projects stop importing once the project reaches 100 repertoire songs.
+        Large chart batches may defer AI enrichment for review while still accepting the upload.
+        When `files` is omitted, each `items[]` row must include `title` and `artist`.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -626,11 +697,18 @@ paths:
       responses:
         '200':
           description: Import accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkImportResponse'
 
   /me/projects/{projectId}/repertoire/copy-from:
     post:
       tags: [Repertoire]
       summary: Copy selected repertoire songs from another project
+      description: |
+        Basic-owned projects are hard-capped at 100 repertoire songs.
+        If the copy would exceed the cap, the API returns `422` with `code=repertoire_limit_reached`.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -652,6 +730,12 @@ paths:
       responses:
         '201':
           description: Copy complete
+        '422':
+          description: Repertoire limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepertoireLimitError'
 
   /me/projects/{projectId}/learning-songs:
     get:
@@ -1093,6 +1177,8 @@ paths:
       summary: Upload or replace a chart PDF for a song
       description: |
         Upserts by `(owner_user_id, project_id, song_id)`.
+        Single chart uploads accept PDFs up to 2MB.
+        Upload endpoints are rate-limited to 5 requests per minute per authenticated user.
         First upload returns `201`.
         Re-uploading the same PDF returns `200` without changing the chart.
         Re-uploading a different PDF returns `200`, keeps the existing chart ID,
@@ -1265,6 +1351,8 @@ paths:
       description: |
         Tip-only and original requests are mapped to placeholder songs internally.
         Persisted `requests.song_id` is never null.
+        Public requests are available only for Pro-owned projects whose
+        project entitlements expose `can_use_public_requests=true`.
       parameters:
         - $ref: '#/components/parameters/ProjectSlug'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -1594,10 +1682,34 @@ components:
           type: string
           enum: [not_started, pending, enabled, restricted]
         payout_status_reason: { type: string, nullable: true }
+        entitlements:
+          $ref: '#/components/schemas/ProjectEntitlements'
         owner:
           allOf:
             - $ref: '#/components/schemas/ProjectOwner'
           nullable: true
+    ProjectEntitlements:
+      type: object
+      properties:
+        plan_code: { type: string, example: basic_monthly }
+        plan_tier:
+          type: string
+          enum: [basic, pro]
+        repertoire_song_limit:
+          type: integer
+          nullable: true
+          description: Null means the current plan does not cap repertoire size.
+        single_chart_upload_limit_bytes: { type: integer, example: 2097152 }
+        bulk_chart_upload_limit_bytes: { type: integer, example: 2097152 }
+        bulk_chart_file_limit: { type: integer, example: 20 }
+        ai_interactive_per_minute: { type: integer, example: 10 }
+        bulk_ai_window_limit: { type: integer, example: 500 }
+        bulk_ai_window_hours: { type: integer, example: 6 }
+        can_use_public_requests: { type: boolean }
+        can_access_queue: { type: boolean }
+        can_access_history: { type: boolean }
+        can_view_owner_stats: { type: boolean }
+        can_view_wallet: { type: boolean }
     ProjectCollectionResponse:
       type: object
       properties:
@@ -1675,6 +1787,110 @@ components:
           type: string
           enum: [payout_setup_incomplete]
         message: { type: string }
+    FeatureRequiresProError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [feature_requires_pro]
+        message: { type: string }
+    RepertoireLimitError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [repertoire_limit_reached]
+        message: { type: string }
+        project_id: { type: integer }
+        repertoire_song_limit: { type: integer }
+    AccountUsageResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/AccountUsage'
+    AccountUsage:
+      type: object
+      properties:
+        plan:
+          $ref: '#/components/schemas/AccountUsagePlan'
+        storage:
+          $ref: '#/components/schemas/AccountUsageStorage'
+        ai:
+          $ref: '#/components/schemas/AccountUsageAi'
+        review:
+          $ref: '#/components/schemas/AccountUsageReview'
+        activity:
+          $ref: '#/components/schemas/AccountUsageActivity'
+        warnings:
+          type: array
+          items: { type: string }
+    AccountUsagePlan:
+      type: object
+      properties:
+        code: { type: string, example: basic_monthly }
+        tier:
+          type: string
+          enum: [basic, pro]
+    AccountUsageStorage:
+      type: object
+      properties:
+        used_bytes: { type: integer }
+        chart_pdf_bytes: { type: integer }
+        chart_render_bytes: { type: integer }
+        performer_image_bytes: { type: integer }
+        status:
+          type: string
+          enum: [ok, warning, under_review, blocked]
+        hard_limit_bytes: { type: integer, nullable: true }
+        warning_threshold_bytes: { type: integer, nullable: true }
+        review_threshold_bytes: { type: integer, nullable: true }
+        block_threshold_bytes: { type: integer, nullable: true }
+    AccountUsageAi:
+      type: object
+      properties:
+        operations_used: { type: integer }
+        estimated_cost_micros: { type: integer }
+        estimated_cost_usd: { type: number, format: float }
+        status:
+          type: string
+          enum: [ok, warning, blocked]
+        hard_limit: { type: integer, nullable: true }
+        warning_limits:
+          type: array
+          items: { type: integer }
+        block_limit: { type: integer, nullable: true }
+        bulk_window_limit: { type: integer }
+        bulk_window_hours: { type: integer }
+        bulk_window_used: { type: integer }
+        current_month_started_at:
+          type: string
+          format: date-time
+    AccountUsageReview:
+      type: object
+      properties:
+        state:
+          type: string
+          enum: [clear, under_review, blocked]
+        reason: { type: string, nullable: true }
+        blocked_at:
+          type: string
+          format: date-time
+          nullable: true
+    AccountUsageActivity:
+      type: object
+      properties:
+        last_activity_at:
+          type: string
+          format: date-time
+          nullable: true
+        inactivity_warning_sent_at:
+          type: string
+          format: date-time
+          nullable: true
+        archived_render_images_at:
+          type: string
+          format: date-time
+          nullable: true
     StripeBalanceBucket:
       type: object
       properties:
@@ -1875,6 +2091,32 @@ components:
             has_more: { type: boolean }
         payout_account:
           $ref: '#/components/schemas/PayoutAccount'
+    BulkImportSongResult:
+      type: object
+      properties:
+        filename: { type: string, nullable: true }
+        title: { type: string, nullable: true }
+        artist: { type: string, nullable: true }
+        action:
+          type: string
+          enum: [imported, duplicate, queued, deferred, limit_reached]
+        chart_id: { type: integer, nullable: true }
+        song_id: { type: integer, nullable: true }
+        duplicate_of: { type: string, nullable: true }
+        message: { type: string, nullable: true }
+    BulkImportResponse:
+      type: object
+      properties:
+        message: { type: string }
+        imported: { type: integer }
+        queued: { type: integer }
+        duplicates: { type: integer }
+        deferred: { type: integer }
+        limit_reached: { type: integer }
+        songs:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkImportSongResult'
     PublicRequestCreateResponse:
       type: object
       properties:
