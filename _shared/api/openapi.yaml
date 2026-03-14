@@ -1008,19 +1008,14 @@ paths:
                   set:
                     $ref: '#/components/schemas/SetlistSetResource'
 
-  /me/projects/{projectId}/setlists/{setlistId}/sets/generate-smart:
+  /me/projects/{projectId}/setlists/{setlistId}/sets/generate-ai:
     post:
       tags: [Setlists]
-      summary: Generate a smart set in an existing setlist
+      summary: Generate AI-powered sets in an existing setlist
       description: |
-        Smart generation selects project repertoire by:
-        1) Revenue (`SUM(requests.tip_amount_cents)`)
-        2) Popularity (`COUNT(requests.id)`)
-        3) Play count (`project_songs.performance_count`)
-        Then tie-breaks by title asc, artist asc, project_song_id asc.
-        When recorded setlist performance history exists, the generated set is
-        re-ordered to follow learned opener, transition, slot, and closer
-        patterns from real performances.
+        Uses AI to select songs from the project repertoire based on
+        natural language prompts for each set. Creates multiple sets
+        in one call.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -1031,48 +1026,16 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SmartSetGenerateRequest'
+              $ref: '#/components/schemas/AiSetGenerateRequest'
       responses:
         '201':
-          description: Smart set generated
+          description: AI sets generated
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SetGenerateResponse'
+                $ref: '#/components/schemas/AiSetGenerateResponse'
         '422':
-          description: Validation failed or no candidate songs available
-
-  /me/projects/{projectId}/setlists/{setlistId}/sets/generate-strategic:
-    post:
-      tags: [Setlists]
-      summary: Generate a strategic set in an existing setlist
-      description: |
-        Builds one set by matching metadata criteria.
-        Matching semantics:
-        - AND across criteria fields (`energy_levels`, `eras`, `genres`, `themes`)
-        - OR within each field array
-        - partial set allowed when matches are non-zero but below `song_count`
-        - request fails with 422 if zero songs match
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-        - $ref: '#/components/parameters/SetlistId'
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StrategicSetGenerateRequest'
-      responses:
-        '201':
-          description: Strategic set generated
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SetGenerateResponse'
-        '422':
-          description: Validation failed or strategic criteria resolved to zero matches
+          description: Validation failed, empty repertoire, or AI generation failed
 
   /me/projects/{projectId}/setlists/{setlistId}/sets/{setId}/songs/import-text:
     post:
@@ -2572,79 +2535,49 @@ components:
         order_index:
           type: integer
           nullable: true
-    SmartSetGenerateRequest:
+    AiSetGenerateRequest:
+      type: object
+      required: [sets]
+      properties:
+        sets:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: object
+            required: [song_count, prompt]
+            properties:
+              name:
+                type: string
+                nullable: true
+                maxLength: 255
+                description: If omitted or blank, backend defaults to "Set N".
+              song_count:
+                type: integer
+                minimum: 1
+                maximum: 50
+              prompt:
+                type: string
+                minLength: 3
+                maxLength: 500
+                description: Natural language description of the desired set vibe.
+    AiSetGenerateResponse:
       type: object
       properties:
-        name:
-          type: string
-          nullable: true
-          maxLength: 255
-          description: If omitted or blank, backend defaults to "Set N".
-        allow_existing_set_duplicates:
-          type: boolean
-          default: false
-    StrategicSetGenerateRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          nullable: true
-          maxLength: 255
-          description: If omitted or blank, backend defaults to "Set N".
-        seed:
-          type: integer
-          minimum: 1
-          nullable: true
-        song_count:
-          type: integer
-          minimum: 1
-          maximum: 50
-          default: 15
-        randomize:
-          type: boolean
-          default: false
-        allow_existing_set_duplicates:
-          type: boolean
-          default: false
-        criteria:
-          $ref: '#/components/schemas/StrategicSetCriteriaInput'
-    StrategicSetCriteriaInput:
-      type: object
-      properties:
-        energy_levels:
+        data:
           type: array
           items:
-            type: string
-            enum: [low, medium, high]
-        eras:
-          type: array
-          items:
-            type: string
-            enum: [50s, 60s, 70s, 80s, 90s, 2000s, 2010s, 2020s]
-        genres:
-          type: array
-          items:
-            type: string
-            enum:
-              [
-                Jazz,
-                Rock,
-                Pop,
-                Blues,
-                Country,
-                Classical,
-                R&B,
-                Hip Hop,
-                Folk,
-                Electronic,
-                Soul,
-                Reggae,
-                Latin,
-              ]
-        themes:
-          type: array
-          items:
-            $ref: '#/components/schemas/SongTheme'
+            $ref: '#/components/schemas/SetlistSetResource'
+        meta:
+          type: object
+          properties:
+            generation:
+              type: object
+              properties:
+                generation_version: { type: string }
+                provider: { type: string }
+                total_sets: { type: integer }
+                total_songs_placed: { type: integer }
     SetlistSongResource:
       type: object
       properties:
@@ -2720,27 +2653,6 @@ components:
         message: { type: string }
         data:
           $ref: '#/components/schemas/SharedSetlistAcceptance'
-    SetGenerationMeta:
-      type: object
-      properties:
-        generation_version: { type: string }
-        allow_existing_set_duplicates: { type: boolean }
-        randomize: { type: boolean }
-        seed: { type: integer }
-        requested_song_count: { type: integer }
-        selected_song_count: { type: integer }
-        criteria:
-          $ref: '#/components/schemas/StrategicSetCriteriaInput'
-    SetGenerateResponse:
-      type: object
-      properties:
-        data:
-          $ref: '#/components/schemas/SetlistSetResource'
-        meta:
-          type: object
-          properties:
-            generation:
-              $ref: '#/components/schemas/SetGenerationMeta'
     PerformanceSessionResponse:
       type: object
       properties:
