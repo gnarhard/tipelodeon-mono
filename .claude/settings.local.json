@@ -63,7 +63,9 @@
       "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper/app -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\))",
       "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\) -not -path */node_modules/* -not -path */.next/*)",
       "Bash(git checkout:*)",
-      "Bash(git -C mobile_app rev-parse --show-toplevel)"
+      "Bash(git -C mobile_app rev-parse --show-toplevel)",
+      "Bash(sort -t: -k1,1 -k2,2n)",
+      "Read(//tmp/**)"
     ],
     "read": {
       "deny": [
