@@ -142,12 +142,24 @@ Notes:
 
 - **Method**: `POST`
 - **Path**: `/api/v1/me/charts/cache-bundle`
-- **Purpose**: Stream a single zip archive containing all rendered chart page images for the authenticated user.
+- **Purpose**: Stream a zip archive of rendered chart page images for the authenticated user.
 - **Rate limit**: 2 requests per 5 minutes.
 - **Response**: `application/zip` streamed download.
 
+**Request body** (optional, `application/json`):
+```json
+{
+  "known_revisions": {
+    "42": "2026-03-10T08:30:00+00:00",
+    "43": "2026-03-09T15:00:00+00:00"
+  }
+}
+```
+
+When `known_revisions` is provided, charts whose `updated_at` matches the given value are excluded from the zip. This enables delta/incremental downloads — the client only receives charts that are new or have been updated since its last sync.
+
 The zip contains:
-- `manifest.json` at the root with chart metadata.
+- `manifest.json` at the root with metadata for included charts.
 - `{chartId}/{pageNumber}_{theme}.png` for each rendered page image.
 
 Page numbers in the zip are **0-indexed** (matching mobile convention, converted from the 1-indexed API convention).
@@ -175,4 +187,5 @@ Notes:
 - Returns `404` if the user has no charts with renders.
 - `updated_at` per chart serves as the revision token for cache staleness detection.
 - Render files that are missing from storage are silently skipped.
+- When all charts match `known_revisions`, the zip contains only `manifest.json` with an empty `charts` array.
 - Mobile clients use this as the primary refresh strategy, falling back to per-image downloads if the endpoint is unavailable.

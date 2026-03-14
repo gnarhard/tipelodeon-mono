@@ -1317,11 +1317,16 @@ paths:
   /me/charts/cache-bundle:
     post:
       tags: [Charts]
-      summary: Download a zip bundle of all rendered chart page images
+      summary: Download a zip bundle of rendered chart page images
       description: |
-        Streams a zip archive containing all rendered chart page images
+        Streams a zip archive containing rendered chart page images
         for the authenticated user across all projects. The zip includes
         a `manifest.json` at the root with chart metadata and file paths.
+
+        Supports delta downloads: send `known_revisions` in the request
+        body to skip charts the client already has at the current revision.
+        The server only includes charts whose `updated_at` differs from
+        the provided revision.
 
         Zip structure:
         ```
@@ -1332,6 +1337,20 @@ paths:
         Page numbers in the zip are 0-indexed (matching mobile convention).
         Rate-limited to 2 requests per 5 minutes.
       security: [{ bearerAuth: [] }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                known_revisions:
+                  type: object
+                  description: |
+                    Map of chartId (string) to updatedAt ISO 8601 timestamp.
+                    Charts matching the provided revision are excluded.
+                  additionalProperties:
+                    type: string
       responses:
         '200':
           description: Streamed zip archive
