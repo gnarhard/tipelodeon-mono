@@ -41,6 +41,18 @@ Instrumental flag:
 - When `true`, repertoire and audience song lists append ` (instrumental)` to
   the displayed song title
 
+Mashup flag:
+- Field: `mashup`
+- Scope: stored on `project_songs`
+- Type: boolean
+- Default: `false`
+- When `true`:
+  - Song does not participate in global dedup (skips `normalized_key` lookup)
+  - Global metadata is not written to the `songs` table
+  - Metadata enrichment will most likely be inaccurate
+  - Repertoire list shows a red "Mashup" pill
+  - Display title appends ` (mashup)`
+
 ### List
 - `GET /repertoire`
 - Supports `theme` filter.
@@ -53,8 +65,8 @@ Instrumental flag:
 
 ### Create
 - `POST /repertoire`
-- Supports theme, `instrumental`, and project-song `notes` in request and
-  response payloads.
+- Supports theme, `instrumental`, `mashup`, and project-song `notes` in request
+  and response payloads.
 
 Limit error:
 
@@ -69,8 +81,8 @@ Limit error:
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
-- Supports theme, `instrumental`, and project-song `notes` updates at project
-  override level.
+- Supports theme, `instrumental`, `mashup`, and project-song `notes` updates at
+  project override level.
 
 Project-song notes:
 - Field: `notes`
