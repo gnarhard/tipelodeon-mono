@@ -54,7 +54,9 @@
       "Bash(git log:*)",
       "Bash(dart analyze:*)",
       "mcp__chrome-devtools__list_pages",
-      "mcp__chrome-devtools__navigate_page"
+      "mcp__chrome-devtools__navigate_page",
+      "Bash(for f:*)",
+      "Bash(do echo:*)"
     ],
     "read": {
       "deny": [
