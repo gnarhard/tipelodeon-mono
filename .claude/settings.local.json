@@ -56,7 +56,9 @@
       "mcp__chrome-devtools__list_pages",
       "mcp__chrome-devtools__navigate_page",
       "Bash(for f:*)",
-      "Bash(do echo:*)"
+      "Bash(do echo:*)",
+      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper -path */vendor -prune -o -path */.git -prune -o -type f \\\\\\(-name *.conf -o -name *.toml -o -name *.yaml -o -name *.yml \\\\\\) -print)",
+      "Bash(grep -E \"\\\\.\\(dart\\)$\")"
     ],
     "read": {
       "deny": [
