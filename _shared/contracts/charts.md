@@ -137,3 +137,42 @@ Notes:
 Notes:
 - Returns `404` if no renders are available.
 - Clients should prefer this endpoint over per-page `page` requests when loading all chart pages.
+
+### Cache Bundle Endpoint
+
+- **Method**: `POST`
+- **Path**: `/api/v1/me/charts/cache-bundle`
+- **Purpose**: Stream a single zip archive containing all rendered chart page images for the authenticated user.
+- **Rate limit**: 2 requests per 5 minutes.
+- **Response**: `application/zip` streamed download.
+
+The zip contains:
+- `manifest.json` at the root with chart metadata.
+- `{chartId}/{pageNumber}_{theme}.png` for each rendered page image.
+
+Page numbers in the zip are **0-indexed** (matching mobile convention, converted from the 1-indexed API convention).
+
+**manifest.json structure**:
+```json
+{
+  "generated_at": "2026-03-14T12:00:00+00:00",
+  "charts": [
+    {
+      "id": 42,
+      "project_id": 1,
+      "page_count": 2,
+      "updated_at": "2026-03-10T08:30:00+00:00",
+      "pages": [
+        { "page_number": 0, "theme": "light", "path": "42/0_light.png" },
+        { "page_number": 0, "theme": "dark", "path": "42/0_dark.png" }
+      ]
+    }
+  ]
+}
+```
+
+Notes:
+- Returns `404` if the user has no charts with renders.
+- `updated_at` per chart serves as the revision token for cache staleness detection.
+- Render files that are missing from storage are silently skipped.
+- Mobile clients use this as the primary refresh strategy, falling back to per-image downloads if the endpoint is unavailable.

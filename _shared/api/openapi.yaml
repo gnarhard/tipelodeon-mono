@@ -1314,6 +1314,37 @@ paths:
         '422':
           description: Validation failed
 
+  /me/charts/cache-bundle:
+    post:
+      tags: [Charts]
+      summary: Download a zip bundle of all rendered chart page images
+      description: |
+        Streams a zip archive containing all rendered chart page images
+        for the authenticated user across all projects. The zip includes
+        a `manifest.json` at the root with chart metadata and file paths.
+
+        Zip structure:
+        ```
+        manifest.json
+        {chartId}/{pageNumber}_{theme}.png
+        ```
+
+        Page numbers in the zip are 0-indexed (matching mobile convention).
+        Rate-limited to 2 requests per 5 minutes.
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Streamed zip archive
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: No charts with renders available
+        '429':
+          description: Rate limited
+
   /me/charts/{chartId}:
     get:
       tags: [Charts]
