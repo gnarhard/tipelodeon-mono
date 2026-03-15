@@ -114,6 +114,31 @@ Removed (replaced by AI generation):
 - `POST /setlists/{setlistId}/sets/generate-smart`
 - `POST /setlists/{setlistId}/sets/generate-strategic`
 
+### Extract songs from setlist image
+
+- `POST /setlists/extract-songs-from-image`
+
+Request: multipart/form-data
+- `image`: required image file (jpeg, png, webp, heic), max 10MB
+
+Response:
+
+```json
+{
+  "data": {
+    "songs": ["Song Title 1", "Song Title 2", "Song Title 3"]
+  }
+}
+```
+
+Semantics:
+- Sends image to configured AI vision provider for OCR/title extraction.
+- Returns extracted song titles in the order they appear in the image.
+- Returns `422` if extraction fails or the image cannot be processed.
+- An empty `songs` array is valid (image was readable but contained no titles).
+- Client feeds extracted titles into the same CSV matching flow
+  (see "Manual CSV flow" below).
+
 ---
 
 ## Generation response format
