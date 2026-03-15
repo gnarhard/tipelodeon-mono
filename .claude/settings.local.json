@@ -68,7 +68,9 @@
       "Read(//tmp/**)",
       "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper -type f \\\\\\(-name *chart* -o -name *pdf* \\\\\\))",
       "Bash(xargs basename:*)",
-      "Bash(git submodule:*)"
+      "Bash(git submodule:*)",
+      "Bash(2)",
+      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper -type f \\\\\\(-name *.vue -o -name *.jsx -o -name *.tsx -o -name *.ts \\\\\\))"
     ],
     "read": {
       "deny": [
