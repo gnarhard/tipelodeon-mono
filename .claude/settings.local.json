@@ -66,7 +66,9 @@
       "Bash(git -C mobile_app rev-parse --show-toplevel)",
       "Bash(sort -t: -k1,1 -k2,2n)",
       "Read(//tmp/**)",
-      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper -type f \\\\\\(-name *chart* -o -name *pdf* \\\\\\))"
+      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper -type f \\\\\\(-name *chart* -o -name *pdf* \\\\\\))",
+      "Bash(xargs basename:*)",
+      "Bash(git submodule:*)"
     ],
     "read": {
       "deny": [
