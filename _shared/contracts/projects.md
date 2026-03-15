@@ -61,6 +61,7 @@ Core fields:
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
+- `notify_on_request` (default true; when true, owner receives email on new requests/tips)
 - `show_persistent_queue_strip`
 - `chart_viewport_prefs` (deprecated, nullable object)
 
@@ -172,6 +173,7 @@ If the owning project is not on Pro, these endpoints return `403` with
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
+- `notify_on_request`
 - `show_persistent_queue_strip`
 - `remove_performer_profile_image`
 - `chart_viewport_prefs` (deprecated write target, kept temporarily)
