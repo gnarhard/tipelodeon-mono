@@ -78,98 +78,67 @@ Mobile behavior:
 - Request supports optional `name` and optional `order_index`.
 - If `name` is omitted or blank, backend auto-labels as `Set N`.
 
-### Smart set
+### AI set generation
 
+- `POST /setlists/{setlistId}/sets/generate-ai`
+
+Request:
+
+```json
+{
+  "sets": [
+    { "name": "Dinner", "song_count": 15, "prompt": "Relaxing dinner music" },
+    { "name": "Party", "song_count": 15, "prompt": "High energy rock songs" },
+    { "name": "Wind Down", "song_count": 15, "prompt": "Mellow country to close the night" }
+  ]
+}
+```
+
+Validation:
+- `sets`: required array, min 1, max 10
+- `sets.*.name`: optional, nullable string, max 255 (auto-labeled `Set N` if omitted)
+- `sets.*.song_count`: required integer, `1..50`
+- `sets.*.prompt`: required string, min 3, max 500
+
+Semantics:
+- The backend loads the full project repertoire with effective metadata
+  (energy, era, genre, theme) and sends it to the configured AI provider
+  along with the per-set prompts.
+- The AI selects songs from the repertoire only (no invented songs).
+- Songs are not duplicated across sets unless the repertoire is too small.
+- If the repertoire is empty, endpoint returns `422`.
+- If the AI provider fails, endpoint returns `422`.
+- Creates multiple sets in one call, each populated with the AI-selected songs.
+
+Removed (replaced by AI generation):
 - `POST /setlists/{setlistId}/sets/generate-smart`
-
-Request:
-
-```json
-{
-  "name": "Set 1",
-  "allow_existing_set_duplicates": false
-}
-```
-
-Semantics:
-- Candidate pool is full project repertoire.
-- By default (`allow_existing_set_duplicates=false`), songs already present in other sets of the same setlist are excluded.
-- If no candidates remain, endpoint returns `422`.
-- Creates one new set containing all ranked candidates.
-- After candidate selection, song order is adjusted using recorded setlist
-  performance history when available so openers, transitions, slot patterns,
-  and closers mimic real performances.
-
-Candidate selection order:
-1. Revenue: `SUM(requests.tip_amount_cents)` per song (all statuses)
-2. Popularity: `COUNT(requests.id)` per song
-3. Play count: `project_songs.performance_count`
-4. Tie-breakers: `title ASC`, `artist ASC`, `project_song_id ASC`
-
-Ordering fallback:
-- If there is no recorded setlist performance history with
-  `performed_order_index`, backend keeps the candidate-selection order above.
-
-### Strategic set
-
 - `POST /setlists/{setlistId}/sets/generate-strategic`
-
-Request:
-
-```json
-{
-  "name": "Set 2",
-  "seed": 12345,
-  "song_count": 15,
-  "randomize": false,
-  "allow_existing_set_duplicates": false,
-  "criteria": {
-    "energy_levels": ["low", "medium"],
-    "eras": ["90s"],
-    "genres": ["Rock"],
-    "themes": ["love"]
-  }
-}
-```
-
-Validation/defaults:
-- `song_count`: optional, `1..50`, default `15`
-- `randomize`: optional, default `false`
-- `allow_existing_set_duplicates`: optional, default `false`
-- Enum validation for energy/era/genre/theme uses canonical values.
-
-Semantics:
-- Effective metadata:
-  - Energy/genre/theme: `project_songs` override first, fallback to `songs`
-  - Era: `songs.era`
-- Matching is AND across fields, OR within each field.
-- Genre/theme matching is case-insensitive.
-- If duplicates are not allowed, songs already present in other sets are excluded.
-- If filtered pool is empty, endpoint returns `422`.
-- If filtered pool has fewer than `song_count`, backend creates a partial set.
-- Ordering:
-  - `randomize=false`: ranked by same smart ranking rules
-  - `randomize=true`: deterministic seed-based shuffle, then truncate
 
 ---
 
 ## Generation response format
 
-Both generation endpoints return:
+The AI generation endpoint returns:
 
 ```json
 {
-  "data": { "...set resource..." },
+  "data": [
+    { "...set resource..." },
+    { "...set resource..." }
+  ],
   "meta": {
     "generation": {
-      "...generation summary..."
+      "generation_version": "ai-set-v1",
+      "provider": "anthropic",
+      "total_sets": 3,
+      "total_songs_placed": 40
     }
   }
 }
 ```
 
 Notes:
-- Generation metadata is response-only for set-level generation.
+- Generation metadata is response-only.
 - No generation metadata is persisted to `setlists` or `setlist_sets`.
 
 ---
