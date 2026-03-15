@@ -190,6 +190,44 @@ Behavior:
 
 ---
 
+## Import from Image
+
+- `POST /repertoire/import-from-image`
+- Accepts a single image file containing a list of songs (e.g., a setlist,
+  printed song list, handwritten notes, or screenshot).
+- Uses AI vision to extract song titles and artists from the image.
+- For each extracted song:
+  - Uses `Song::findOrCreateByTitleAndArtist` for global dedup.
+  - Saves AI-provided metadata (energy_level, era, genre, theme,
+    original_musical_key, duration_in_seconds) to newly created songs only.
+  - Creates `ProjectSong` via `firstOrCreate` — duplicates are skipped.
+  - Checks repertoire limit; songs beyond the cap are reported as
+    `limit_reached`.
+- Tracks AI usage via `AccountUsageService::recordAiOperation()` with
+  category `image_import`.
+- Request validation:
+  - `image`: required, file, mimetypes `image/jpeg,image/png,image/webp,image/heic`, max 10MB.
+- Throttle: `throttle:chart-uploads`.
+
+Response (`200`):
+
+```json
+{
+  "message": "Extracted 12 songs. Imported 10, skipped 2 duplicates.",
+  "extracted": 12,
+  "imported": 10,
+  "duplicates": 2,
+  "limit_reached": 0,
+  "songs": [
+    { "title": "...", "artist": "...", "action": "imported", "song_id": 123 },
+    { "title": "...", "artist": "...", "action": "duplicate", "duplicate_of": "..." },
+    { "title": "...", "artist": "...", "action": "limit_reached" }
+  ]
+}
+```
+
+---
+
 ## To-Learn list
 
 - `GET /learning-songs`

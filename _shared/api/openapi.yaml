@@ -958,6 +958,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/RepertoireLimitError'
 
+  /me/projects/{projectId}/repertoire/import-from-image:
+    post:
+      tags: [Repertoire]
+      summary: Import songs from an image using AI vision
+      description: |
+        Accepts an image file (photo of a setlist, printed song list, handwritten
+        notes, or screenshot) and uses AI to extract song titles and artists.
+        Extracted songs are added to the project repertoire, skipping duplicates.
+        Basic-owned projects stop importing once the 100-song cap is reached.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP, or HEIC; max 10 MB)
+      responses:
+        '200':
+          description: Extraction and import completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageImportResponse'
+        '422':
+          description: Validation failed (invalid image type or missing file)
+
   /me/projects/{projectId}/learning-songs:
     get:
       tags: [Learning]
@@ -2510,6 +2544,26 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/BulkImportSongResult'
+    ImageImportResponse:
+      type: object
+      properties:
+        message: { type: string }
+        extracted: { type: integer }
+        imported: { type: integer }
+        duplicates: { type: integer }
+        limit_reached: { type: integer }
+        songs:
+          type: array
+          items:
+            type: object
+            properties:
+              title: { type: string }
+              artist: { type: string }
+              action:
+                type: string
+                enum: [imported, duplicate, limit_reached]
+              song_id: { type: integer, nullable: true }
+              duplicate_of: { type: string, nullable: true }
     AppPlatform:
       type: string
       enum: [ios, android, macos, windows, linux]
