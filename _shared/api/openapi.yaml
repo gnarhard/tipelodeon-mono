@@ -633,6 +633,83 @@ paths:
         '502':
           description: Stripe settlement data unavailable
 
+  /me/projects/{projectId}/cash-tips:
+    get:
+      tags: [Payouts]
+      summary: List cash tips for a project
+      description: |
+        Returns cash tips recorded for the project, optionally filtered by
+        local date. Paginated using standard Laravel pagination.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: local_date
+          in: query
+          required: false
+          schema: { type: string, format: date, example: '2026-03-15' }
+          description: Filter to a single local date (YYYY-MM-DD)
+        - name: per_page
+          in: query
+          required: false
+          schema: { type: integer, default: 50 }
+        - name: page
+          in: query
+          required: false
+          schema: { type: integer, default: 1 }
+      responses:
+        '200':
+          description: Paginated cash tips
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashTipCollectionResponse'
+    post:
+      tags: [Payouts]
+      summary: Record a cash tip
+      description: |
+        Record a cash tip received for a specific local date. Cash tips are
+        standalone monetary records not tied to song requests or the queue.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCashTipRequest'
+      responses:
+        '201':
+          description: Cash tip recorded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashTipResponse'
+        '422':
+          description: Validation failed
+
+  /me/projects/{projectId}/cash-tips/{cashTipId}:
+    delete:
+      tags: [Payouts]
+      summary: Delete a cash tip
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: cashTipId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Cash tip deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Cash tip deleted. }
+
   /me/projects/{projectId}/wallet/sessions:
     get:
       tags: [Payouts]
@@ -2136,6 +2213,7 @@ components:
         gross_tip_amount_cents: { type: integer }
         fee_amount_cents: { type: integer }
         net_tip_amount_cents: { type: integer }
+        cash_tip_amount_cents: { type: integer, default: 0 }
     ProjectStatsCounts:
       type: object
       properties:
@@ -2739,3 +2817,39 @@ components:
         expected_render_count: { type: integer, minimum: 0, nullable: true }
         has_renders: { type: boolean }
         missing_render_file_count: { type: integer, minimum: 0 }
+    CashTipResource:
+      type: object
+      properties:
+        id: { type: integer }
+        project_id: { type: integer }
+        amount_cents: { type: integer }
+        local_date: { type: string, format: date, example: '2026-03-15' }
+        timezone: { type: string, example: America/Denver }
+        note: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+    StoreCashTipRequest:
+      type: object
+      required: [amount_cents, local_date, timezone]
+      properties:
+        amount_cents: { type: integer, minimum: 1 }
+        local_date: { type: string, format: date, example: '2026-03-15' }
+        timezone: { type: string, example: America/Denver }
+        note: { type: string, maxLength: 255, nullable: true }
+    CashTipResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/CashTipResource'
+    CashTipCollectionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CashTipResource'
+        links:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          additionalProperties: true
