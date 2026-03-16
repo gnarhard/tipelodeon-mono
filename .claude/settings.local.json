@@ -81,7 +81,8 @@
       "Bash(curl -sk -D - -o /dev/null https://songtipper.test/up)",
       "Bash(curl -sk https://songtipper.test/login)",
       "mcp__chrome-devtools__list_network_requests",
-      "Bash(curl -sk https://songtipper.test/)"
+      "Bash(curl -sk https://songtipper.test/)",
+      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper/web -type f \\\\\\(-name *.ts -o -name *.tsx \\\\\\) -not -path */node_modules/* -not -path */vendor/*)"
     ],
     "read": {
       "deny": [
