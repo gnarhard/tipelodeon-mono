@@ -2387,6 +2387,7 @@ components:
         tip_amount_dollars: { type: string }
         status:
           $ref: '#/components/schemas/SongRequestStatus'
+        requester_name: { type: string, nullable: true }
         note: { type: string, nullable: true }
         played_at: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
