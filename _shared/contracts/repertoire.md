@@ -64,6 +64,16 @@ Mashup flag:
   - Repertoire list shows a red "Mashup" pill
   - Display title appends ` (mashup)`
 
+Public visibility:
+- Field: `is_public`
+- Scope: stored on `project_songs`
+- Type: boolean
+- Default: `true`
+- When `false`, the song remains in the performer's repertoire but is hidden
+  from the audience on the public request page
+- Public repertoire API and Livewire page filter out songs where
+  `is_public=false`
+
 ### List
 - `GET /repertoire`
 - Supports `theme` filter.
@@ -76,8 +86,8 @@ Mashup flag:
 
 ### Create
 - `POST /repertoire`
-- Supports theme, `instrumental`, `mashup`, and project-song `notes` in request
-  and response payloads.
+- Supports theme, `instrumental`, `mashup`, `is_public`, and project-song `notes`
+  in request and response payloads.
 
 Limit error:
 
@@ -92,8 +102,8 @@ Limit error:
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
-- Supports theme, `instrumental`, `mashup`, and project-song `notes` updates at
-  project override level.
+- Supports theme, `instrumental`, `mashup`, `is_public`, and project-song `notes`
+  updates at project override level.
 
 Project-song notes:
 - Field: `notes`

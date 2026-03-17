@@ -856,6 +856,7 @@ paths:
                     - $ref: '#/components/schemas/SongTheme'
                   nullable: true
                 instrumental: { type: boolean }
+                is_public: { type: boolean, default: true }
                 performed_musical_key: { type: string, nullable: true }
                 tuning: { type: string, nullable: true }
                 capo: { type: integer, nullable: true, minimum: 0, maximum: 12 }
@@ -2641,6 +2642,7 @@ components:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
         instrumental: { type: boolean }
+        is_public: { type: boolean, default: true }
         energy_level: { type: string, nullable: true }
         era: { type: string, nullable: true }
         genre: { type: string, nullable: true }
@@ -2701,6 +2703,7 @@ components:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
         instrumental: { type: boolean, nullable: true }
+        is_public: { type: boolean, nullable: true }
         energy_level: { type: string, nullable: true }
         era: { type: string, nullable: true }
         genre: { type: string, nullable: true }
