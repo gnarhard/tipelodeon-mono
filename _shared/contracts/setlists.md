@@ -87,9 +87,9 @@ Request:
 ```json
 {
   "sets": [
-    { "name": "Dinner", "song_count": 15, "prompt": "Relaxing dinner music" },
-    { "name": "Party", "song_count": 15, "prompt": "High energy rock songs" },
-    { "name": "Wind Down", "song_count": 15, "prompt": "Mellow country to close the night" }
+    { "name": "Dinner", "prompt": "15 relaxing dinner songs" },
+    { "name": "Party", "prompt": "15 high energy rock songs" },
+    { "name": "Wind Down", "prompt": "15 mellow country songs to close the night" }
   ]
 }
 ```
@@ -97,8 +97,7 @@ Request:
 Validation:
 - `sets`: required array, min 1, max 10
 - `sets.*.name`: optional, nullable string, max 255 (auto-labeled `Set N` if omitted)
-- `sets.*.song_count`: required integer, `1..50`
-- `sets.*.prompt`: required string, min 3, max 500
+- `sets.*.prompt`: required string, min 3, max 500 (should include desired song count)
 
 Semantics:
 - The backend loads the full project repertoire with effective metadata
