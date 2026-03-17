@@ -100,6 +100,12 @@ From the monorepo root:
 ./start-mcp-servers.sh
 ```
 
+## Admin designation
+
+Use the following command to add admin privileges to an account:
+
+`php artisan admin:designate admin@example.com`
+
 ## Stripe Integration
 
 Stripe is used in two ways:
@@ -117,16 +123,56 @@ First run: `stripe login`
 
 Then, run this: `stripe listen --forward-to https://songtipper.test/stripe/webhook`
 
-## Admin designation
-
-Use the following command to add admin privileges to an account:
-
-`php artisan admin:designate admin@example.com`
-
-## Connect Express Relink
+### Connect Express Relink
 
 `php artisan payout:relink-stripe-account your@email.com acct_XXXXXXXXXXXXXXXXX`
 
-## Restore Lost Requests Data
+### Restore Lost Requests Data
 
 `php artisan requests:restore-from-stripe user@example.com`
+
+## Song Data Integrity
+
+Two complementary tools keep the songs table clean: rule-based checks (instant) and AI-powered review (async batch).
+
+### Rule-based checks
+
+```bash
+# List all available checks
+php artisan songs:check-integrity --list
+
+# Run all checks
+php artisan songs:check-integrity
+
+# Run a specific check
+php artisan songs:check-integrity --check=extra_whitespace
+
+# Auto-fix safe issues (casing, whitespace, AI-suggested fixes)
+php artisan songs:check-integrity --fix
+```
+
+Available checks: `duplicate_normalized_keys`, `near_duplicates`, `title_casing`, `artist_casing`, `extra_whitespace`, `suspicious_characters`, `placeholder_values`, `very_short_values`, `title_contains_artist`, `orphaned_songs`, `ai_flagged_issues`.
+
+### AI-powered review
+
+Songs are submitted to Anthropic's Batch API for review of misspellings, wrong artist names, bad formatting, and incorrect titles. Results are stored as `SongIntegrityIssue` records.
+
+```bash
+# Preview which songs will be submitted
+php artisan songs:ai-review --dry-run
+
+# Submit a batch (default limit: 500)
+php artisan songs:ai-review
+
+# Limit batch size
+php artisan songs:ai-review --limit=100
+
+# Re-review songs that have already been reviewed
+php artisan songs:ai-review --force
+```
+
+Each song is only reviewed once. After review, `last_integrity_review_at` is set and the song is permanently skipped in future runs. Use `--force` to override this.
+
+The batch runs daily at 3:00 AM MT via the scheduler. Results are polled every 5 minutes by the `PollBatchResults` job and written to the `song_integrity_issues` table. Issues surface in `songs:check-integrity` under the `ai_flagged_issues` check and can be auto-fixed with `--fix`.
+
+
