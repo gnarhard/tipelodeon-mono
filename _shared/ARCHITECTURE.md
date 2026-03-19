@@ -48,7 +48,7 @@
 
 ### Core Value Proposition
 
-Song Tipper transforms the traditional tip jar into an interactive, digital experience that increases audience engagement and performer revenue while providing powerful repertoire management tools.
+Song Tipper consolidates the tedious, fragmented workflows of managing a live act into a single tool. It handles chart and repertoire management, setlist creation, band synchronization, audience requests, and integrated tipping.
 
 ---
 

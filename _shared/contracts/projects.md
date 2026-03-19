@@ -72,19 +72,41 @@ Payout readiness fields:
 
 Entitlements fields:
 - `entitlements.plan_code`
-- `entitlements.plan_tier` (`basic|pro`)
-- `entitlements.repertoire_song_limit` (`100` for Basic, `null` for Pro)
+- `entitlements.plan_tier` (`free|basic|pro`)
+- `entitlements.repertoire_song_limit` (`20` for Free, `200` for Basic, `null` for Pro)
+- `entitlements.project_limit` (`1` for Free, `3` for Basic, `null` for Pro)
 - `entitlements.single_chart_upload_limit_bytes` (`2097152`)
 - `entitlements.bulk_chart_upload_limit_bytes` (`2097152`)
 - `entitlements.bulk_chart_file_limit` (`20`)
-- `entitlements.ai_interactive_per_minute` (`10` Basic, `30` Pro)
+- `entitlements.ai_interactive_per_minute` (`10` Free/Basic, `30` Pro)
 - `entitlements.bulk_ai_window_limit` (`500`)
 - `entitlements.bulk_ai_window_hours` (`6`)
-- `entitlements.can_use_public_requests`
-- `entitlements.can_access_queue`
-- `entitlements.can_access_history`
-- `entitlements.can_view_owner_stats`
-- `entitlements.can_view_wallet`
+- `entitlements.can_use_public_requests` (Pro-only)
+- `entitlements.can_access_queue` (Pro-only)
+- `entitlements.can_access_history` (Pro-only)
+- `entitlements.can_view_owner_stats` (Pro-only)
+- `entitlements.can_view_wallet` (Pro-only)
+- `entitlements.can_invite_members` (Pro-only — band sync)
+
+Project creation limit:
+- When a user's owned project count reaches `entitlements.project_limit`, `POST /`
+  returns `422`:
+
+```json
+{
+  "code": "project_limit_reached",
+  "message": "Your plan allows up to 1 project(s). Upgrade for more.",
+  "project_limit": 1
+}
+```
+
+Downgrade behavior:
+- When downgrading from a higher tier, existing projects and songs are never
+  deleted. Users retain read-only access to all existing content.
+- New project creation and song addition are blocked when the user exceeds the
+  new tier's limits.
+- Tipping and requests are disabled immediately on all owned projects when
+  downgrading from Pro.
 
 ---
 

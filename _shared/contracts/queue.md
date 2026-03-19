@@ -7,9 +7,9 @@
 - Route prefix: `/api/v1/me/projects/{project_id}`
 - Queue and history access require the owning project to expose
   `entitlements.can_access_queue=true` / `entitlements.can_access_history=true`.
-- On Pro-owned projects, invited members keep queue/history access even if
-  their own account plan is Basic.
-- On Basic-owned projects, queue and history endpoints return `403`.
+- These entitlements are Pro-only. On Pro-owned projects, invited members keep
+  queue/history access even if their own account plan is Free or Basic.
+- On Free-owned or Basic-owned projects, queue and history endpoints return `403`.
 
 ---
 

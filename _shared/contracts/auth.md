@@ -12,17 +12,19 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
 
 - New web signups must verify their email address before they can reach billing setup or the performer dashboard.
 - After web registration, performers must complete billing setup before accessing the web dashboard.
+- New registrations default to the **free** tier (`billing_plan = 'free'`). Free users bypass billing setup entirely — no credit card required.
 - Available billing plans:
+  - `free` at `$0/forever` (no credit card, 1 project, 20 songs)
   - `basic_monthly` at `$4.99/month`
   - `basic_yearly` at `$49.99/year`
   - `pro_monthly` at `$19.99/month`
   - `pro_yearly` at `$199.99/year`
-- Paid plans collect a payment method up front and begin with a 30-day free trial.
+- Paid plans collect a payment method up front and begin with a 14-day free trial.
 - Complimentary access can be granted in two forms:
   - `free_year` expires after the configured complimentary period
   - `lifetime` never expires
 - Complimentary users still select a plan so the app knows whether they are on the Basic or Pro tier, but they may skip payment method collection while the discount is active.
-- This billing setup is currently enforced in the web session flow and is not represented as a dedicated API contract field in the mobile auth payload.
+- Billing setup is enforced in the web session flow for paid plans only. Free-tier users are considered setup-complete without payment.
 
 ---
 
