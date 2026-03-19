@@ -60,6 +60,25 @@ Recipients:
 - Acceptance is idempotent per `(share link, user)`:
   - first accept creates one copied setlist
   - later accepts reopen the same copied setlist instead of creating duplicates
+- The acceptance response includes `shared_assets` — a map keyed by
+  `project_song_id` containing the sharer's charts and audio files:
+  ```json
+  {
+    "data": {
+      "project": { ... },
+      "setlist": { ... },
+      "was_already_accepted": false,
+      "shared_assets": {
+        "42": {
+          "sharer_charts": [{ "id": 1, "page_count": 2, "has_renders": true, "page_urls": ["..."] }],
+          "audio_files": [{ "id": 5, "label": "Rehearsal", "original_filename": "...", "signed_url": "..." }]
+        }
+      }
+    }
+  }
+  ```
+- Sharer charts include signed page URLs (light theme) for preview.
+- Audio files include signed playback URLs (60-min TTL).
 
 Mobile behavior:
 - The public `share_url` redirects into the mobile app.

@@ -84,6 +84,27 @@ Notes:
 
 ---
 
+## Chart Adoption
+
+- **Method**: `POST`
+- **Path**: `/api/v1/me/charts/{chartId}/adopt`
+- **Purpose**: Copies another user's chart into the adopter's collection.
+- **Preconditions**:
+  - Adopter must have access to the chart's project (not necessarily the chart owner).
+  - Adopter must not already have a chart for the same project song.
+- **Response**: `201` with chart resource (new chart owned by the adopter).
+- **Errors**:
+  - `409` if the adopter already has a chart for the same project song.
+  - `403` if the adopter lacks project access.
+- **Side effects**:
+  - Copies the source PDF to a new storage path under the adopter's namespace.
+  - Creates a new `Chart` record with the adopter as `owner_user_id`.
+  - Dispatches `RenderChartPages` for the new chart.
+  - Creates `ProjectSongChart` link.
+  - Increments adopter's `chart_pdf_bytes` storage counter.
+
+---
+
 ## Chart Render and Download
 
 - `GET /api/v1/me/charts/{chartId}`
