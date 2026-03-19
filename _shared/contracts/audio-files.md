@@ -12,7 +12,7 @@
 ## Limits
 
 - **File type**: MP3 only (`audio/mpeg`).
-- **Max file size**: 20 MB per file.
+- **Max file size**: 10 MB per file.
 - **Max files per song**: 3 per project song.
 - **Dedup**: SHA-256 hash-based. Uploading the same MP3 to the same song returns 409.
 
@@ -48,7 +48,7 @@
 - **Method**: `POST`
 - **Path**: `/audio-files`
 - **Body**: multipart
-  - `file`: MP3 (required, max 20 MB)
+  - `file`: MP3 (required, max 10 MB)
   - `label`: string (optional, max 100)
 - **Response**: `201` with audio file resource
 - **Errors**: `422` (validation), `409` (duplicate SHA-256)
@@ -76,7 +76,7 @@
 - **Method**: `POST`
 - **Path**: `/audio-files/{audioFile}/replace`
 - **Body**: multipart
-  - `file`: MP3 (required, max 20 MB)
+  - `file`: MP3 (required, max 10 MB)
 - **Response**: `200` with updated audio file resource
 - Replaces the MP3 file in storage. Keeps the same record ID, sort_order, and label.
 - Old file is soft-deleted via trash service.
