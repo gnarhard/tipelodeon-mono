@@ -28,7 +28,7 @@ Song Tipper is split into multiple repositories:
 - PHP 8.4+, Composer, Node.js, npm
 - MySQL and Redis (for `web/`)
 - Flutter 3.41+, Dart 3.10.7+, Xcode, CocoaPods, Android Studio (for `mobile_app/`)
-- Server must accept 30 MBs uploads, 3 simultaneous 10 MB mp3 uploads are allowed.
+- Server must accept 45 MBs uploads, 3 simultaneous 15 MB mp3 uploads are allowed.
 
 ## First-time setup
 
