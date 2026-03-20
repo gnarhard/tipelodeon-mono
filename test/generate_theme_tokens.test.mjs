@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 const rootDir = path.resolve(import.meta.dirname, '..');
 const dartOutputPath = path.join(
   rootDir,
-  'mobile_app',
+  'app',
   'lib',
   'core',
   'theme',

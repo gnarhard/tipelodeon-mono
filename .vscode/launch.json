@@ -8,13 +8,13 @@
       "name": "debug",
       "request": "launch",
       "type": "dart",
-      "program": "mobile_app/lib/main.dart"
+      "program": "app/lib/main.dart"
     },
     {
       "name": "debug offline",
       "request": "launch",
       "type": "dart",
-      "program": "mobile_app/lib/main.dart",
+      "program": "app/lib/main.dart",
       "args": ["--no-pub"]
     },
     {
@@ -22,21 +22,21 @@
       "request": "launch",
       "type": "dart",
       "flutterMode": "profile",
-      "program": "mobile_app/lib/main.dart"
+      "program": "app/lib/main.dart"
     },
     {
       "name": "release",
       "request": "launch",
       "type": "dart",
       "flutterMode": "release",
-      "program": "mobile_app/lib/main.dart"
+      "program": "app/lib/main.dart"
     },
     {
       "name": "macOS debug",
       "request": "launch",
       "type": "dart",
       "flutterMode": "debug",
-      "program": "mobile_app/lib/main.dart",
+      "program": "app/lib/main.dart",
       "deviceId": "macos"
     }
   ]

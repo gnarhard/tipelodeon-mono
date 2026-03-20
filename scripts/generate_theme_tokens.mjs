@@ -70,7 +70,7 @@ const orderedWaveKeys = [
 
 const dartOutputPath = path.join(
   rootDir,
-  'mobile_app',
+  'app',
   'lib',
   'core',
   'theme',
