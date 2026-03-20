@@ -99,7 +99,8 @@
       "mcp__playwright__browser_evaluate",
       "mcp__playwright__browser_resize",
       "Bash(rm /Users/gerhard/Code/Sites/Valet/songtipper/web/.claude/launch.json)",
-      "Bash(rmdir /Users/gerhard/Code/Sites/Valet/songtipper/web/.claude)"
+      "Bash(rmdir /Users/gerhard/Code/Sites/Valet/songtipper/web/.claude)",
+      "mcp__playwright__browser_run_code"
     ],
     "read": {
       "deny": [
