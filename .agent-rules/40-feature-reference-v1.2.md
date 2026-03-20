@@ -60,6 +60,13 @@
 - Original requests map to the placeholder song `"Original Request"` by `"Audience"`
 - Clients may send `tip_only` or `is_original`; the backend maps them to the placeholder songs
 
+## Audio files
+
+- Per-song CRUD: `GET|POST|PUT|DELETE /repertoire/{projectSong}/audio-files`
+- Signed playback URL: `GET /repertoire/{projectSong}/audio-files/{audioFile}/signed-url`
+- Replace: `POST /repertoire/{projectSong}/audio-files/{audioFile}/replace`
+- **Batch fetch**: `POST /repertoire/audio-files/batch` — accepts `{ "project_song_ids": [1, 2, 3] }` (max 50), returns `{ "data": { "1": [...], "2": [...] } }`. Use this instead of N individual index calls when loading audio for multiple songs (e.g. setlist playlists).
+
 ## Bulk import
 
 - Mobile sends at most `20` files per request

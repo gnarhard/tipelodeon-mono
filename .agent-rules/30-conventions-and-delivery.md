@@ -33,6 +33,14 @@ Use the standard Laravel paginator shape unless the API already defines somethin
 }
 ```
 
+## Batch requests
+
+When a feature needs the same data for multiple entities (e.g. audio files for every song in a setlist), use or create a single batch endpoint instead of issuing N individual requests. Batch endpoints reduce latency, simplify error handling, and avoid blocking the UI while many requests complete sequentially.
+
+- Existing batch endpoints are listed in `40-feature-reference-v1.2.md`.
+- New batch endpoints should accept an array of IDs in the request body and return results keyed by ID.
+- Cap batch size with a validation rule (e.g. `max:50`).
+
 ## Idempotency
 
 - All write operations support `Idempotency-Key`.
