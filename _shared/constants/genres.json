@@ -18,7 +18,7 @@
     },
     {
       "label": "Folk",
-      "aliases": ["folk", "singer songwriter", "singer-songwriter", "acoustic"]
+      "aliases": ["folk", "acoustic"]
     },
     {
       "label": "Hip Hop",
@@ -47,6 +47,10 @@
     {
       "label": "Rock",
       "aliases": ["rock", "punk", "metal", "grunge", "emo", "hardcore", "alternative"]
+    },
+    {
+      "label": "Singer/Songwriter",
+      "aliases": ["singer songwriter", "singer-songwriter", "singer/songwriter"]
     },
     {
       "label": "Soul",
