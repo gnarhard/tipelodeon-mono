@@ -141,5 +141,11 @@ Cash tips are included in the project stats `money` section as a separate
 `gross_tip_amount_cents`, `fee_amount_cents`, or `net_tip_amount_cents` — those
 fields reflect only SongTipper (digital/Stripe) request tips.
 
-Cash tips **are** included in the best-day record calculation, which sums both
-digital request tips and cash tips per local date.
+Tips on manual queue items (`payment_provider = 'none'`) are also included in
+`cash_tip_amount_cents` alongside manually-recorded cash tips. They are excluded
+from the digital tip fields (`gross_tip_amount_cents`, `net_tip_amount_cents`,
+`fee_amount_cents`) and from the tip-amount distribution and fee breakdown.
+
+Cash tips and manual queue item tips **are** included in the best-day record
+calculation, which sums digital request tips, cash tips, and manual queue item
+tips per local date.

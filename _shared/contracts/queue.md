@@ -51,6 +51,7 @@ Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
       "status": "active",
       "requester_name": "Jane Smith",
       "note": "Happy birthday!",
+      "is_manual": false,
       "request_location": "Denver, Colorado, US",
       "played_at": null,
       "created_at": "2026-02-03T11:55:00+00:00"
@@ -152,6 +153,7 @@ Manually add an item to the active queue as an authenticated performer/project m
     "status": "active",
     "requester_name": null,
     "note": "Mash two choruses if possible",
+    "is_manual": true,
     "request_location": null,
     "played_at": null,
     "created_at": "2026-02-14T17:10:00+00:00"
@@ -180,6 +182,83 @@ Manually add an item to the active queue as an authenticated performer/project m
 ```json
 {
   "message": "This project is not currently accepting original requests."
+}
+```
+
+---
+
+## Update Manual Queue Item
+
+- **Method**: `PATCH`
+- **Path**: `/queue/{requestId}`
+
+Update the tip amount on a manual (performer-added) queue item. Only manual items
+(`is_manual=true`) that are still active can be edited.
+
+### Request body
+
+```json
+{
+  "tip_amount_cents": 1000
+}
+```
+
+**Validation Rules:**
+- `tip_amount_cents`: required, integer, min 0
+- `tip_amount_cents` values with cents are rounded up to the next whole-dollar
+  amount before persistence and response serialization
+
+### Success response (`200`)
+
+```json
+{
+  "message": "Queue item updated.",
+  "request": {
+    "id": 42,
+    "song": {
+      "id": 1,
+      "title": "Crowd Favorite Mashup",
+      "artist": "Custom Request"
+    },
+    "tip_amount_cents": 1000,
+    "tip_amount_dollars": "10",
+    "status": "active",
+    "requester_name": null,
+    "note": null,
+    "is_manual": true,
+    "request_location": null,
+    "played_at": null,
+    "created_at": "2026-02-14T17:10:00+00:00"
+  }
+}
+```
+
+### Error responses
+
+**User does not have access to project (`404`)**
+
+**Feature locked to Pro (`403`)**
+
+```json
+{
+  "code": "feature_requires_pro",
+  "message": "Queue access requires a Pro-owned project."
+}
+```
+
+**Not a manual queue item (`403`)**
+
+```json
+{
+  "message": "Only manual queue items can be edited."
+}
+```
+
+**Item already played (`422`)**
+
+```json
+{
+  "message": "Only active queue items can be edited."
 }
 ```
 
@@ -243,6 +322,7 @@ Mark a request as played.
     "status": "played",
     "requester_name": "Jane Smith",
     "note": "Happy birthday!",
+    "is_manual": false,
     "request_location": "Denver, Colorado, US",
     "activated_at": "2026-02-03T12:00:00+00:00",
     "played_at": "2026-02-03T12:30:00+00:00",
