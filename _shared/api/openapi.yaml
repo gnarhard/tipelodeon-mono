@@ -690,6 +690,36 @@ paths:
           description: Validation failed
 
   /me/projects/{projectId}/cash-tips/{cashTipId}:
+    patch:
+      tags: [Payouts]
+      summary: Update a cash tip
+      description: |
+        Update a previously recorded cash tip. All mutable fields must be
+        provided (amount_cents, local_date, timezone, note).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: cashTipId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreCashTipRequest'
+      responses:
+        '200':
+          description: Cash tip updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashTipResponse'
+        '404':
+          description: Project or cash tip not found
+        '422':
+          description: Validation failed
     delete:
       tags: [Payouts]
       summary: Delete a cash tip

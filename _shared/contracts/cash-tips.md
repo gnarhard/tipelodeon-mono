@@ -62,6 +62,57 @@ Record a cash tip received for a specific local date.
 
 ---
 
+## Update Cash Tip
+
+- **Method**: `PATCH`
+- **Path**: `/cash-tips/{cashTipId}`
+
+Update a previously recorded cash tip.
+
+### Request body
+
+```json
+{
+  "amount_cents": 3000,
+  "local_date": "2026-03-16",
+  "timezone": "America/Denver",
+  "note": "Updated note"
+}
+```
+
+**Validation Rules:**
+- `amount_cents`: required, integer, min 1
+- `local_date`: required, date format `Y-m-d`
+- `timezone`: required, valid IANA timezone identifier
+- `note`: optional, string, max 255 characters
+
+### Success response (`200`)
+
+```json
+{
+  "data": {
+    "id": 1,
+    "project_id": 5,
+    "amount_cents": 3000,
+    "local_date": "2026-03-16",
+    "timezone": "America/Denver",
+    "note": "Updated note",
+    "created_at": "2026-03-15T22:30:00+00:00"
+  }
+}
+```
+
+### Error responses
+
+**User does not have access to project (`404`)**
+
+**Cash tip not found or does not belong to project (`404`)**
+
+**Validation failure (`422`):**
+- Invalid `amount_cents`, missing `local_date`, invalid `timezone`, etc.
+
+---
+
 ## List Cash Tips
 
 - **Method**: `GET`
