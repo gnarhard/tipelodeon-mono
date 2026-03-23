@@ -1184,9 +1184,9 @@ Response:
 ### Queue Polling (ETag-Based)
 
 ```
-1. QueueController starts 5-second interval timer
+1. QueueController starts 10-second interval timer
    ↓
-2. Every 5 seconds:
+2. Every 10 seconds:
      → GET /api/v1/me/projects/{id}/queue
      → Headers: If-None-Match: {lastEtag}
    ↓
