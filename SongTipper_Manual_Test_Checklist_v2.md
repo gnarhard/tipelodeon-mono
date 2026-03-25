@@ -543,18 +543,7 @@ Exhaustive feature verification for Web & Mobile App
 - [ ] **[NEW]** Secondary instrument selector (optional)
 - [ ] Persistent queue strip toggle & position
 - [ ] **[NEW]** Public repertoire set selector (public_repertoire_set_id)
-- [ ] Head tilt detection enable/disable
-- [ ] Head tilt calibration onboarding
 - [ ] **[NEW]** Audio cache refresh button (downloads all audio via manifest)
-
-### Head Tilt Detection
-
-- [ ] Camera permission request
-- [ ] Calibration flow
-- [ ] Left tilt detected (triggers action)
-- [ ] Right tilt detected (triggers action)
-- [ ] Neutral zone resets gesture state
-- [ ] Toggle on/off from settings
 
 ### Offline & Connectivity
 
