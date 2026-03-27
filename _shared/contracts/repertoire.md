@@ -412,3 +412,6 @@ Fields:
     `https://www.youtube.com/results?search_query=<title+by+artist+music+video>`
 - `ultimate_guitar_url` (optional, link/search only; no scraping)
 - `notes` (optional)
+- `promote_to_repertoire` (optional, boolean, PUT only) — creates a
+  `ProjectSong`, deletes the learning song, and returns
+  `{ "message": "Song promoted to repertoire.", "promoted": true }`

@@ -1467,6 +1467,40 @@ paths:
         '422':
           description: Validation failed
 
+  /me/charts/generate-lyrics:
+    post:
+      tags: [Charts]
+      summary: Generate an AI lyric + chord sheet
+      description: |
+        Creates an AI-generated lyric and chord chart for the given song.
+        Returns 202 with a Chart resource. The chart starts with
+        import_status 'generating'. Client polls render-status until ready.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [song_id, project_id]
+              properties:
+                song_id:
+                  type: integer
+                project_id:
+                  type: integer
+      responses:
+        '202':
+          description: Generation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '409':
+          description: Chart already exists for this song/project
+        '422':
+          description: Validation failed
+        '429':
+          description: AI quota exceeded
+
   /me/charts/cache-bundle:
     post:
       tags: [Charts]
@@ -2925,6 +2959,14 @@ components:
         project_id: { type: integer }
         has_renders: { type: boolean }
         page_count: { type: integer, minimum: 0 }
+        source_type:
+          type: string
+          nullable: true
+          enum: [uploaded, ai_generated]
+        import_status:
+          type: string
+          nullable: true
+          enum: [generating, identifying, identified, failed]
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time, nullable: true }
     ChartResponse:
