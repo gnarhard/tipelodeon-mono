@@ -159,17 +159,18 @@ Semantics:
 
 `GET /api/v1/me/projects/{projectId}/stats/history`:
 - Pro-only, owner-only endpoint.
-- Returns lifetime monthly earnings buckets for charting.
+- Returns year-to-date daily earnings buckets for charting.
+- Only days with at least some income are included (zero-income days omitted).
 - Query params:
   - `timezone` (required, IANA timezone, e.g. `America/Denver`)
 - Response:
-  - `buckets` — chronologically ordered array of monthly objects:
-    - `year_month` — `YYYY-MM` string
-    - `label` — human-readable label, e.g. `"Jan '24"`
+  - `buckets` — chronologically ordered array of daily objects:
+    - `year_month` — `YYYY-MM-DD` date string
+    - `label` — human-readable label, e.g. `"Mar 5"`
     - `net_cents` — Stripe net tip amount after fees
     - `fee_cents` — Stripe platform fee amount
     - `cash_cents` — cash tips + manual queue tips (no fees)
-- Empty `buckets` array returned when no activity exists.
+- Empty `buckets` array returned when no YTD activity exists.
 
 ---
 
