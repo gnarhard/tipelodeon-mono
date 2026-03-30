@@ -8,23 +8,21 @@ Route prefix: `/api/v1/auth`
 
 All auth write endpoints accept an optional `Idempotency-Key` header.
 
-## Performer Billing Setup (web)
+## Performer Billing (earnings-based)
 
-- New web signups must verify their email address before they can reach billing setup or the performer dashboard.
-- After web registration, performers must complete billing setup before accessing the web dashboard.
-- New registrations default to the **free** tier (`billing_plan = 'free'`). Free users bypass billing setup entirely — no credit card required.
+- New signups get all features immediately with no credit card required.
+- Billing is earnings-based — subscription activates only after the performer earns $400 cumulative in tips.
 - Available billing plans:
-  - `free` at `$0/forever` (no credit card, 1 project, 20 songs)
-  - `basic_monthly` at `$4.99/month`
-  - `basic_yearly` at `$49.99/year`
-  - `pro_monthly` at `$19.99/month`
-  - `pro_yearly` at `$199.99/year`
-- Paid plans collect a payment method up front and begin with a 14-day free trial.
+  - `free` — all features, no card required, until $400 cumulative tips earned
+  - `pro_monthly` at `$20/month` — auto-activates at $400 cumulative threshold
+  - `pro_yearly` at `$200/year` — offered alongside monthly at activation
+  - `top_earner` at `$50/month` — auto-upgrades when earning $2,500+/mo
+- After $400 threshold: 14-day grace period to add payment. If no card after 14 days, audience requesting feature is gated until subscription activated.
+- Auto-skip: if monthly tips < $200, billing is automatically skipped (monthly plans only).
 - Complimentary access can be granted in two forms:
   - `free_year` expires after the configured complimentary period
   - `lifetime` never expires
-- Complimentary users still select a plan so the app knows whether they are on the Basic or Pro tier, but they may skip payment method collection while the discount is active.
-- Billing setup is enforced in the web session flow for paid plans only. Free-tier users are considered setup-complete without payment.
+- No billing setup wall at registration — performers go directly to the dashboard after email verification.
 
 ---
 
@@ -66,20 +64,20 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
         "payout_account_status": "pending",
         "payout_status_reason": "requirements_due",
         "entitlements": {
-          "plan_code": "basic_monthly",
-          "plan_tier": "basic",
-          "repertoire_song_limit": 100,
+          "plan_code": "pro_monthly",
+          "plan_tier": "pro",
+          "repertoire_song_limit": null,
           "single_chart_upload_limit_bytes": 2097152,
           "bulk_chart_upload_limit_bytes": 2097152,
           "bulk_chart_file_limit": 20,
-          "ai_interactive_per_minute": 10,
+          "ai_interactive_per_minute": 30,
           "bulk_ai_window_limit": 500,
           "bulk_ai_window_hours": 6,
-          "can_use_public_requests": false,
-          "can_access_queue": false,
-          "can_access_history": false,
-          "can_view_owner_stats": false,
-          "can_view_wallet": false
+          "can_use_public_requests": true,
+          "can_access_queue": true,
+          "can_access_history": true,
+          "can_view_owner_stats": true,
+          "can_view_wallet": true
         }
       }
     ]
