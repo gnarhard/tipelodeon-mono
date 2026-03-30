@@ -43,11 +43,12 @@
 - **Body** (JSON):
   - `song_id`: int (required)
   - `project_id`: int (required)
-- **Semantics**: Creates an AI-generated lyric + chord chart for the given song.
+- **Semantics**: Creates an AI-generated lyric sheet for the given song. Uses Gemini with Google Search grounding to look up accurate lyrics (no chords).
   - Returns `202` with a Chart resource. The chart has `import_status = 'generating'` and `source_type = 'ai_generated'`.
   - Client polls `GET /me/charts/{chartId}/render-status` until `import_status` is null and `status` is `ready`.
   - Returns `409` if a chart already exists for this user + song + project.
   - Returns `429` if the monthly AI usage quota is exceeded.
+  - Requires Gemini API key to be configured (`services.gemini.api_key`).
 - **Response fields**: Same as Upload Chart response, plus:
   - `chart.source_type`: `'ai_generated'`
   - `chart.import_status`: `'generating'` (initially), then null when complete, or `'failed'` on error
