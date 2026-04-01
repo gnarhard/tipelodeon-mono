@@ -16,6 +16,8 @@
 - `PATCH /{projectId}` - partial settings update
 - `DELETE /{projectId}` - owner-only delete
 - `POST /{projectId}/performer-image` - upload performer profile image
+- `POST /{projectId}/header-banner-image` - upload header banner image for public page
+- `POST /{projectId}/background-image` - upload background image for public page
 - `GET /{projectId}/members` - list owner and invited members
 - `POST /{projectId}/members` - owner-only invite of an existing SongTipper user
 - `DELETE /{projectId}/members/{membershipId}` - owner-only removal of a project member
@@ -61,6 +63,9 @@ Core fields:
 - `owner_user_id`
 - `performer_info_url` (nullable)
 - `performer_profile_image_url` (nullable)
+- `header_banner_image_url` (nullable; full-width banner displayed on the public project page)
+- `background_image_url` (nullable; subtle background watermark on the public project page)
+- `brand_color_hex` (nullable; 7-char hex string like `#ff5733` used to tint the public project page)
 - `min_tip_cents` (rounded up to a whole-dollar cent value on write)
 - `free_request_threshold_cents` (cumulative tip threshold for earning a free request; 0 = disabled; default 4000; rounded up to whole dollar on write)
 - `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
@@ -208,7 +213,10 @@ If the owning project is not on Pro, these endpoints return `403` with
 - `notify_on_request`
 - `show_persistent_queue_strip`
 - `public_repertoire_set_id` (nullable int; set to override public song list, null to reset)
+- `brand_color_hex` (nullable; 7-char hex string or null to clear)
 - `remove_performer_profile_image`
+- `remove_header_banner_image`
+- `remove_background_image`
 - `chart_viewport_prefs` (deprecated write target, kept temporarily)
 
 ---
