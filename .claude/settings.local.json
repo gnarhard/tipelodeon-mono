@@ -102,7 +102,10 @@
       "Bash(rmdir /Users/gerhard/Code/Sites/Valet/songtipper/web/.claude)",
       "mcp__playwright__browser_run_code",
       "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper/web -path */node_modules -prune -o -type f \\\\\\(-name *queue* -o -name *request* \\\\\\) -print)",
-      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper/web/resources -type f \\\\\\(-name *queue* -o -name *request* \\\\\\))"
+      "Bash(find /Users/gerhard/Code/Sites/Valet/songtipper/web/resources -type f \\\\\\(-name *queue* -o -name *request* \\\\\\))",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(/opt/homebrew/bin/php artisan:*)"
     ],
     "read": {
       "deny": [
