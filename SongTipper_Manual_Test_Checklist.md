@@ -78,17 +78,6 @@ Exhaustive feature verification for Web & Mobile App
 - [ ] Admin access page -- manage user access
 - [ ] Song integrity page -- view/fix data issues
 
-### Legal & Marketing Pages
-
-- [ ] Homepage renders
-- [ ] Terms page loads
-- [ ] Privacy page loads
-- [ ] EULA page loads
-- [ ] Blog listing page
-- [ ] Blog article pages
-- [ ] Contact form submits
-- [ ] Shared setlist redirect link works
-
 ---
 
 ## MOBILE APP (Flutter)
@@ -463,7 +452,20 @@ Exhaustive feature verification for Web & Mobile App
 
 ---
 
-## Public Audience Pages (No Auth)
+## Public Pages
+
+### Legal & Marketing Pages
+
+- [ ] Homepage renders
+- [ ] Terms page loads
+- [ ] Privacy page loads
+- [ ] EULA page loads
+- [ ] Blog listing page
+- [ ] Blog article pages
+- [ ] Contact form submits
+- [ ] Shared setlist redirect link works
+
+### Audience Request Page
 
 - [ ] View performer project page
 - [ ] Songs with is_public=false are hidden from the public page
