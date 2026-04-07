@@ -37,11 +37,11 @@ Exhaustive feature verification for Web & Mobile App
 - [ ] New signup lands directly on dashboard (no billing wall, no credit card required)
 - [ ] Free tier: audience requesting/tipping and all features enabled from day one (no card required, until $200 cumulative)
 - [ ] Subscription auto-activates at $200 cumulative tips threshold (`pro_monthly` default, `pro_yearly` offered)
-- [ ] Pro pricing: `$20/month` or `$200/year`
+- [ ] Pro pricing: `$19.99/month` or `$199.99/year`
 - [ ] 14-day grace period begins at threshold to add payment method
 - [ ] After 14-day grace without card: `billing_status=card_needed`, audience requesting blocked until subscription active
 - [ ] Yearly plan nudge email sent after $600 cumulative tips ($400 past threshold)
-- [ ] Veteran plan (`veteran_monthly`, `$50/month`) auto-upgrade when earning $2,500+/month (Top Earner badge)
+- [ ] Veteran plan (`veteran_monthly`, `$49.99/month`) auto-upgrade when earning $2,500+/month (Top Earner badge)
 - [ ] Complimentary access: `free_year` expires after configured period
 - [ ] Complimentary access: `lifetime` never expires
 - [ ] Update payment method
