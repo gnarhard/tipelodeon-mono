@@ -72,49 +72,6 @@ Exhaustive feature verification for Web & Mobile App
 
 > **Note:** All performer-facing features (repertoire, charts, audio, setlists, queue, performance sessions, cash tips, stats) are **mobile-only**. The web app handles only auth, billing, payout onboarding, a read-only dashboard, admin, and public audience pages.
 
-### Public Audience Pages (No Auth)
-
-- [ ] View performer project page
-- [ ] Browse public repertoire
-- [ ] Songs with is_public=false are hidden from the public page
-- [ ] When public_repertoire_set_id is set, only songs from that set are shown
-- [ ] Set-specific filtering ignores is_public flags and version_label filters
-- [ ] Instrumental songs display with " (instrumental)" appended
-- [ ] Filter songs (theme, era, genre, energy, search)
-- [ ] Theme filter uses strict enum validation (invalid value -> 422)
-- [ ] Sort songs (request count, tip amount, title, artist)
-- [ ] Pagination (50/page)
-- [ ] "Surprise me" random song picker
-- [ ] Submit song request (repertoire song)
-- [ ] Submit original request
-- [ ] Submit tip-only
-- [ ] Tip-only maps to placeholder song "Tip Jar Support" by "Audience"
-- [ ] Original request maps to placeholder "Original Request" by "Audience"
-- [ ] Tip amount input (presets and custom)
-- [ ] Stripe payment processes correctly
-- [ ] Minimum tip enforcement
-- [ ] Tip-disabled mode: tip_amount_cents=0 required, min_tip_cents ignored
-- [ ] Paid tips increment audience member's `cumulative_tip_cents` (grows only, never resets)
-- [ ] Reward thresholds displayed when project has `reward_thresholds` configured
-- [ ] Repeating threshold: available claims = `floor(cumulative / threshold) - claims_made`
-- [ ] Non-repeating threshold: earned once when cumulative >= threshold
-- [ ] `free_request` reward: progress shown ("You're $X away from: Free Song Request!")
-- [ ] `free_request` reward: claim button appears when earned
-- [ ] `free_request` claim submits with `payment_provider=awarded`, `tip_amount_cents=0`
-- [ ] `free_request` bypasses min_tip_cents requirements
-- [ ] Tip-only submissions cannot use a free request credit
-- [ ] Non-`free_request` reward types (e.g. `free_cd`, `custom`) display label and manual fulfillment message
-- [ ] Each claim written to `audience_reward_claims` table
-- [ ] Performer receives email notification when audience crosses a threshold
-- [ ] Project with no reward thresholds: no reward UI shown
-- [ ] Backward compat: project payload still includes deprecated `free_request_threshold_cents`
-- [ ] Queue priority guidance based on tip
-- [ ] Request confirmation page displays
-- [ ] View current requests in queue (visitor cookie tracking)
-- [ ] Queue position polling (60s interval)
-- [ ] Public request rate limiting (60/min)
-- [ ] "Learn more" page loads
-
 ### Admin Features
 
 - [ ] Admin songs page -- search, edit, delete songs
@@ -505,6 +462,48 @@ Exhaustive feature verification for Web & Mobile App
 - [ ] Owner removes member on mobile -> removed member loses access to project on next app launch
 
 ---
+
+## Public Audience Pages (No Auth)
+
+- [ ] View performer project page
+- [ ] Songs with is_public=false are hidden from the public page
+- [ ] When public_repertoire_set_id is set, only songs from that set are shown
+- [ ] Set-specific filtering ignores is_public flags and version_label filters
+- [ ] Instrumental songs display with " (instrumental)" appended
+- [ ] Filter songs (theme, era, genre, energy, search)
+- [ ] Theme filter uses strict enum validation (invalid value -> 422)
+- [ ] Sort songs (request count, tip amount, title, artist)
+- [ ] Pagination (50/page)
+- [ ] "Surprise me" random song picker
+- [ ] Submit song request (repertoire song)
+- [ ] Submit original request
+- [ ] Submit tip-only
+- [ ] Tip-only maps to placeholder song "Tip Jar Support" by "Audience"
+- [ ] Original request maps to placeholder "Original Request" by "Audience"
+- [ ] Tip amount input (presets and custom)
+- [ ] Stripe payment processes correctly
+- [ ] Minimum tip enforcement
+- [ ] Tip-disabled mode: tip_amount_cents=0 required, min_tip_cents ignored
+- [ ] Paid tips increment audience member's `cumulative_tip_cents` (grows only, never resets)
+- [ ] Reward thresholds displayed when project has `reward_thresholds` configured
+- [ ] Repeating threshold: available claims = `floor(cumulative / threshold) - claims_made`
+- [ ] Non-repeating threshold: earned once when cumulative >= threshold
+- [ ] `free_request` reward: progress shown ("You're $X away from: Free Song Request!")
+- [ ] `free_request` reward: claim button appears when earned
+- [ ] `free_request` claim submits with `payment_provider=awarded`, `tip_amount_cents=0`
+- [ ] `free_request` bypasses min_tip_cents requirements
+- [ ] Tip-only submissions cannot use a free request credit
+- [ ] Non-`free_request` reward types (e.g. `free_cd`, `custom`) display label and manual fulfillment message
+- [ ] Each claim written to `audience_reward_claims` table
+- [ ] Performer receives email notification when audience crosses a threshold
+- [ ] Project with no reward thresholds: no reward UI shown
+- [ ] Backward compat: project payload still includes deprecated `free_request_threshold_cents`
+- [ ] Queue priority guidance based on tip
+- [ ] Request confirmation page displays
+- [ ] View current requests in queue (visitor cookie tracking)
+- [ ] Queue position polling (60s interval)
+- [ ] Public request rate limiting (60/min)
+- [ ] "Learn more" page loads
 
 ## API-SPECIFIC VALIDATIONS
 
