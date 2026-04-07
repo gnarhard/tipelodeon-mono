@@ -15,11 +15,14 @@
 - Created setlists store generation metadata such as `seed`, version, and constraints
 - Regeneration with different parameters is supported
 
-## To-learn list
+## To-learn songs (merged into repertoire as of v1.4)
 
-- Routes: `GET|POST|PUT|DELETE /learning-songs`
-- Fields: `youtube_video_url`, `ultimate_guitar_url`, `notes`
-- This list is separate from repertoire
+- To-learn is now a boolean flag on `project_songs` — see `_shared/contracts/repertoire.md`.
+- Set `learned: false` via `PUT /repertoire/{projectSongId}` or in bulk via
+  `POST /repertoire/bulk-update`.
+- Filter with `GET /repertoire?learned=0`.
+- Reference links (`youtube_video_url`, `ultimate_guitar_url`) live on the
+  global `songs` table and are returned in the nested `song` object.
 
 ## Copy repertoire
 

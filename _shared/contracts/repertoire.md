@@ -1,4 +1,4 @@
-# Repertoire API Contracts (v1.3)
+# Repertoire API Contracts (v1.4)
 
 ## Scope and auth
 
@@ -110,20 +110,43 @@ Public visibility:
 - Public repertoire API and Livewire page filter out songs where
   `is_public=false`
 
+Learned flag:
+- Field: `learned`
+- Scope: stored on `project_songs`
+- Type: boolean
+- Default: `true`
+- When `false`, the song is still in the performer's repertoire but is
+  conceptually "to-learn" — surfaced by filter, sort, and bulk update.
+- Filter: `GET /repertoire?learned=1` / `?learned=0`.
+
+Reference links:
+- Fields on `songs`: `youtube_video_url`, `ultimate_guitar_url` (nullable).
+- Scope: global per canonical song, shared across all projects that use the
+  song.
+- Auto-resolution: on repertoire song create, and on any update that flips
+  `learned` to `false`, the backend resolves missing URLs via
+  `YoutubeVideoResolver` (falls back to a YouTube search URL) and builds an
+  Ultimate Guitar title search URL. Existing URLs are never overwritten.
+- Returned in the nested `song` object on repertoire list/show payloads.
+
 ### List
 - `GET /repertoire`
-- Supports `theme` filter.
+- Supports `theme` and `learned` filters.
 - Repertoire list items include:
   - `instrumental`
+  - `learned`
   - `performance_count`
   - `request_count`
   - `total_tip_amount_cents`
   - `last_performed_at`
+  - Nested `song` object: `youtube_video_url`, `ultimate_guitar_url`
 
 ### Create
 - `POST /repertoire`
-- Supports theme, `instrumental`, `mashup`, `is_public`, and project-song `notes`
-  in request and response payloads.
+- Supports theme, `instrumental`, `mashup`, `is_public`, `learned`, and
+  project-song `notes` in request and response payloads.
+- On create, the backend auto-resolves the canonical Song's
+  `youtube_video_url` and `ultimate_guitar_url` when they are null.
 
 Limit error:
 
@@ -138,10 +161,12 @@ Limit error:
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
-- Supports `title`, `artist`, theme, `instrumental`, `mashup`, `is_public`, and
-  project-song `notes` updates at project override level.
+- Supports `title`, `artist`, theme, `instrumental`, `mashup`, `is_public`,
+  `learned`, and project-song `notes` updates at project override level.
 - Title/artist changes are saved to `project_songs` only (the `songs` table
   and `song_id` are not modified).
+- When `learned` flips to `false`, the backend backfills the canonical
+  Song's reference URLs if they are currently null.
 
 Project-song notes:
 - Field: `notes`
@@ -151,15 +176,16 @@ Project-song notes:
 - Validation: max `3000` characters
 - Response: included on repertoire list and single-song payloads
 
-Demote to learn:
-- Field: `demote_to_learn`
-- Type: boolean (optional)
-- When `true`: creates a `ProjectLearningSong` for the underlying song (with
-  auto-resolved YouTube and Ultimate Guitar URLs), then deletes the
-  `ProjectSong` from the repertoire.
-- Response: `{ "message": "Song demoted to learning list.", "demoted": true }`
-- If the song already exists in the learning list, the existing record is
-  updated (no duplicate).
+### Bulk update
+- `POST /repertoire/bulk-update`
+- Body: `{ project_song_ids: [int], fields: { is_public?, learned?, mashup?, instrumental? } }`
+- Limits: 1–500 IDs per request; at least one whitelisted field is required.
+- Access: IDs outside the current user/project are silently skipped.
+- Response: `{ "message": "Updated N song(s).", "updated_count": N }`.
+- Single DB transaction.
+- This replaces the old per-row `demote_to_learn` flag — callers now flip
+  `learned: false` through either this bulk endpoint or the standard
+  update endpoint.
 
 ### Create version
 - `POST /repertoire/{projectSongId}/versions`
@@ -393,25 +419,11 @@ Response (`200`):
 
 ---
 
-## To-Learn list
+## To-Learn songs
 
-- `GET /learning-songs`
-- `POST /learning-songs`
-- `PUT /learning-songs/{learningSongId}`
-- `DELETE /learning-songs/{learningSongId}`
-
-Fields:
-- `youtube_video_url` (optional)
-  - Backend query: `"<title> by <artist> music video"`
-  - If omitted or null on create, backend attempts to resolve the top YouTube
-    video result (by view count) and stores a direct watch URL
-  - If omitted on update and current value is null, backend backfills using the
-    same resolver behavior
-  - If resolver is unavailable or no video is found, backend stores fallback
-    search URL:
-    `https://www.youtube.com/results?search_query=<title+by+artist+music+video>`
-- `ultimate_guitar_url` (optional, link/search only; no scraping)
-- `notes` (optional)
-- `promote_to_repertoire` (optional, boolean, PUT only) — creates a
-  `ProjectSong`, deletes the learning song, and returns
-  `{ "message": "Song promoted to repertoire.", "promoted": true }`
+As of v1.3, to-learn songs live in the regular repertoire as a
+`ProjectSong` with `learned=false`. The legacy `/learning-songs` endpoints
+and `project_learning_songs` table have been removed; see the "Learned
+flag", "Reference links", and "Bulk update" sections above for the current
+contract. Existing learning-song rows were migrated into `project_songs`
+on deploy.

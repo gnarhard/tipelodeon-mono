@@ -236,6 +236,7 @@ Exhaustive feature verification for Web & Mobile App
 - [ ] Genre list includes "Singer/Songwriter"
 - [ ] Instrumental / mashup flags
 - [ ] Public toggle (is_public, default true)
+- [ ] Learned toggle (learned, default true) — off saves the song as to-learn
 - [ ] Performed & original key pickers
 - [ ] Tuning, capo, duration fields
 - [ ] MusicBrainz auto-fetch
@@ -270,16 +271,21 @@ Exhaustive feature verification for Web & Mobile App
 - [ ] Duplicate detection
 - [ ] Pending review for ambiguous matches
 
-### Learning Songs
+### To-Learn (merged into Repertoire)
 
-- [ ] View to-learn list
-- [ ] Add song to learn
-- [ ] Toggle learned/unlearned
-- [ ] View YouTube / tabs / MusicBrainz links
-- [ ] Open external resources
-- [ ] Filter and sort
-- [ ] Demote from repertoire to learn list
-- [ ] Promote learning song to repertoire (creates ProjectSong, removes from learn list)
+- [ ] Toggle Learned off on a song → song stays in repertoire, filter shows it
+      as to-learn
+- [ ] Filter repertoire by Learned=Yes / Learned=No
+- [ ] Sort repertoire by Learned
+- [ ] Song detail "Reference Links" section opens YouTube and Ultimate Guitar
+- [ ] Open YouTube link (falls back to search if not resolved)
+- [ ] Open Ultimate Guitar link (falls back to search if not resolved)
+- [ ] Bulk: Mark as Learned / Mark as To-Learn (flips learned via the
+      POST /repertoire/bulk-update endpoint in a single request)
+- [ ] Bulk: Mark as Mashup / Unmark Mashup
+- [ ] Bulk: Mark as Instrumental / Unmark Instrumental
+- [ ] Legacy `/learning-songs` endpoints return 404 (removed)
+- [ ] `project_learning_songs` table no longer exists (data-migrated on deploy)
 
 ### Setlists
 

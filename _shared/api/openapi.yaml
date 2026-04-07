@@ -1023,25 +1023,15 @@ paths:
         '422':
           description: Validation failed (invalid image type or missing file)
 
-  /me/projects/{projectId}/learning-songs:
-    get:
-      tags: [Learning]
-      summary: List to-learn songs
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-        - in: query
-          name: theme
-          schema:
-            $ref: '#/components/schemas/SongTheme'
-      responses:
-        '200':
-          description: Learning songs list
-        '422':
-          description: Validation failed (invalid theme filter)
+  /me/projects/{projectId}/repertoire/bulk-update:
     post:
-      tags: [Learning]
-      summary: Add learning song
+      tags: [Repertoire]
+      summary: Bulk update boolean flags on repertoire songs
+      description: >-
+        Applies the same boolean field change (`is_public`, `learned`,
+        `mashup`, `instrumental`) to many repertoire songs in a single
+        transaction. IDs that do not belong to the current user/project
+        are silently skipped. Replaces the legacy `demote_to_learn` flag.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -1052,71 +1042,28 @@ paths:
           application/json:
             schema:
               type: object
-              required: [song_id]
+              required: [project_song_ids, fields]
               properties:
-                song_id: { type: integer }
-                youtube_video_url:
-                  type: string
-                  nullable: true
-                  description: >-
-                    Optional explicit YouTube URL. If omitted or null, backend
-                    queries YouTube for "<title> by <artist> music video" and
-                    stores the top video match (view_count order). If no match
-                    is found, backend stores a YouTube search URL fallback.
-                ultimate_guitar_url: { type: string, nullable: true }
-                notes: { type: string, nullable: true }
-                theme:
-                  allOf:
-                    - $ref: '#/components/schemas/SongTheme'
-                  nullable: true
-      responses:
-        '201':
-          description: Learning song created
-
-  /me/projects/{projectId}/learning-songs/{learningSongId}:
-    put:
-      tags: [Learning]
-      summary: Update learning song
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-        - $ref: '#/components/parameters/LearningSongId'
-        - $ref: '#/components/parameters/IdempotencyKey'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                youtube_video_url:
-                  type: string
-                  nullable: true
-                  description: >-
-                    Optional explicit YouTube URL. If omitted, current value is
-                    retained; if current value is null, backend attempts the
-                    same "<title> by <artist> music video" resolver and falls
-                    back to a YouTube search URL.
-                ultimate_guitar_url: { type: string, nullable: true }
-                notes: { type: string, nullable: true }
-                theme:
-                  allOf:
-                    - $ref: '#/components/schemas/SongTheme'
-                  nullable: true
+                project_song_ids:
+                  type: array
+                  minItems: 1
+                  maxItems: 500
+                  items: { type: integer }
+                fields:
+                  type: object
+                  description: At least one of the whitelisted keys is required.
+                  properties:
+                    is_public: { type: boolean }
+                    learned: { type: boolean }
+                    mashup: { type: boolean }
+                    instrumental: { type: boolean }
       responses:
         '200':
-          description: Learning song updated
-    delete:
-      tags: [Learning]
-      summary: Remove learning song
-      security: [{ bearerAuth: [] }]
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-        - $ref: '#/components/parameters/LearningSongId'
-        - $ref: '#/components/parameters/IdempotencyKey'
-      responses:
-        '200':
-          description: Learning song deleted
+          description: Rows updated; response includes `updated_count`.
+        '422':
+          description: Validation failed (missing fields, too many IDs, etc.)
+        '404':
+          description: Project not accessible by the current user.
 
   /me/projects/{projectId}/setlists/{setlistId}/share-link:
     post:
@@ -1845,11 +1792,6 @@ components:
       name: projectSlug
       required: true
       schema: { type: string }
-    LearningSongId:
-      in: path
-      name: learningSongId
-      required: true
-      schema: { type: integer }
 
   schemas:
     AuthLoginRequest:
