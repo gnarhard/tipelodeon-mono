@@ -13,6 +13,7 @@ Read as needed:
 - `.agent-rules/30-conventions-and-delivery.md` for JSON/date/pagination/idempotency conventions, PR requirements, and delivery expectations.
 - `.agent-rules/40-feature-reference-v1.2.md` for the current feature and endpoint capability reference.
 - `.agent-rules/50-mcp-servers.md` for MCP server configuration and discovery.
+- `.agent-rules/60-embed-widgets.md` for the public iframe-embed contract — required reading before touching the public repertoire view, the `?embed=1` query, or any element that renders inside `⚡project-page.blade.php`.
 
 If you need to edit app code, also read the repo-specific rules in the corresponding app worktree:
 
