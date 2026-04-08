@@ -79,6 +79,15 @@ Song versions:
 - Each version has independent metadata (key, capo, tuning, notes, etc.) and charts
 - Alternate versions count against the repertoire limit
 - Public repertoire only shows primary versions
+- Accepted on `POST /repertoire` to create a versioned song directly
+- When `version_label` is provided on create, the duplicate check compares
+  both `song_id` and `version_label` — the same song may have multiple
+  versions with different labels
+- Clients group songs by `song_id` and display versions indented beneath the
+  parent song title. If a song has only one version with no label, no indented
+  versions are shown. When multiple versions exist, each shows its own metadata
+- When displayed in a setlist, the version label is appended to the song title
+  in red text
 
 Instrumental flag:
 - Field: `instrumental`
@@ -143,8 +152,11 @@ Reference links:
 
 ### Create
 - `POST /repertoire`
-- Supports theme, `instrumental`, `mashup`, `is_public`, `learned`, and
-  project-song `notes` in request and response payloads.
+- Supports theme, `instrumental`, `mashup`, `is_public`, `learned`,
+  `version_label`, and project-song `notes` in request and response payloads.
+- `version_label` is optional (nullable string, max 50 chars). When provided,
+  the duplicate check compares both `song_id` and `version_label` instead of
+  `song_id` alone, allowing multiple versions of the same song.
 - On create, the backend auto-resolves the canonical Song's
   `youtube_video_url` and `ultimate_guitar_url` when they are null.
 
@@ -186,29 +198,6 @@ Project-song notes:
 - This replaces the old per-row `demote_to_learn` flag — callers now flip
   `learned: false` through either this bulk endpoint or the standard
   update endpoint.
-
-### Create version
-- `POST /repertoire/{projectSongId}/versions`
-- Creates an alternate version of an existing repertoire song.
-- Body:
-
-```json
-{
-  "version_label": "Acoustic",
-  "performed_musical_key": "G",
-  "tuning": "Open G",
-  "capo": 0,
-  "copy_charts": true
-}
-```
-
-- `version_label` is required (string, max 50 chars).
-- All metadata fields from Create are accepted (except `song_id`/`title`/`artist`).
-- Optional `copy_charts` (boolean, default `false`): clones charts from the
-  source version to the new version.
-- Returns `409` if a version with the same label already exists for the song.
-- Returns `422` with `code=repertoire_limit_reached` if plan limit exceeded.
-- Update via `PUT /repertoire/{projectSongId}` supports `version_label` to rename.
 
 ### Delete
 - `DELETE /repertoire/{projectSongId}`
