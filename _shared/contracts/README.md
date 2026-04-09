@@ -59,6 +59,12 @@ Contract markdown files in this directory provide domain-oriented explanations a
   - Add/remove/reorder songs
   - Bulk operations
 
+- **[venues.md](./venues.md)** - Venue management
+  - CRUD operations for project venues
+  - GPS-based venue suggestion (nearby DB match + Google Places fallback)
+  - Venue merging
+  - Linked to performance sessions for venue-scoped analytics
+
 ### Public/Audience Resources
 
 - **[public.md](./public.md)** - Public audience-facing endpoints

@@ -295,13 +295,134 @@ Routes:
 - `POST /performances/start`
 - `POST /performances/stop`
 - `GET /performances/current`
+- `PATCH /performances/{sessionId}`
 - `POST /performances/current/complete`
 - `POST /performances/current/skip`
 - `POST /performances/current/random`
 
-Rules:
+### PerformanceSessionResponse
+
+```json
+{
+  "id": 1,
+  "project_id": 5,
+  "setlist_id": 3,
+  "venue_id": 1,
+  "venue": { "id": 1, "name": "Mike's Bar" },
+  "mode": "manual",
+  "is_active": true,
+  "is_implicit": false,
+  "timezone": "America/Denver",
+  "latitude": 39.7392358,
+  "longitude": -104.990251,
+  "gig_type": "public",
+  "ended_reason": null,
+  "seed": null,
+  "generation_version": null,
+  "started_at": "2026-04-01T20:00:00+00:00",
+  "ended_at": null,
+  "created_at": "...",
+  "updated_at": "..."
+}
+```
+
+**Fields:**
+- `venue_id`: nullable integer. FK to `venues`.
+- `venue`: nullable embedded object with `id` and `name`. Null when `venue_id` is null.
+- `is_implicit`: boolean. `true` for sessions auto-created by incoming public requests; `false` for performer-initiated sessions.
+- `timezone`: IANA timezone string. Required on explicit sessions.
+- `latitude`, `longitude`: nullable decimals. GPS coordinates of the performance location.
+- `gig_type`: string, one of `public`, `private_event`, `open_mic`, `rehearsal`. Defaults to `public`.
+- `ended_reason`: nullable string, one of `manual`, `inactivity`, `max_duration`, `superseded`. Set when the session ends.
+
+### Start Performance -- `POST /performances/start`
+
+Start a new explicit performance session.
+
+**Request body:**
+
+```json
+{
+  "setlist_id": 3,
+  "mode": "manual",
+  "venue_id": 1,
+  "latitude": 39.7392358,
+  "longitude": -104.990251,
+  "timezone": "America/Denver",
+  "gig_type": "public"
+}
+```
+
+**Validation Rules:**
+- `setlist_id`: nullable integer. Not required. Implicit sessions have no setlist.
+- `mode`: required, one of `manual`, `smart`.
+- `venue_id`: optional, integer, must belong to the project.
+- `latitude`: optional, decimal, -90 to 90.
+- `longitude`: optional, decimal, -180 to 180.
+- `timezone`: required, valid IANA timezone identifier.
+- `gig_type`: optional, string, one of `public`, `private_event`, `open_mic`, `rehearsal`. Defaults to `public`.
+
+**Implicit session promotion:** If an implicit session (`is_implicit = true`) already exists for the project, the `start` call promotes it instead of returning `409`. The existing session's `venue_id`, `timezone`, `latitude`, `longitude`, `gig_type`, and `setlist_id` are updated with the provided values, and `is_implicit` is flipped to `false`. No new session is created.
+
+**Explicit session conflict:** If an explicit session (`is_implicit = false`) already exists, returns `409 Conflict` as before.
+
+**Success response:** `200` with `{ "data": { PerformanceSessionResponse } }`.
+
+### Update Past Session -- `PATCH /performances/{sessionId}`
+
+Update fields on a past (inactive) performance session. Use case: post-hoc venue labeling from sessions history.
+
+**Request body:**
+
+```json
+{
+  "venue_id": 1,
+  "gig_type": "private_event",
+  "timezone": "America/Denver",
+  "latitude": 39.7392358,
+  "longitude": -104.990251
+}
+```
+
+**Validation Rules:**
+- Only works on inactive sessions (`is_active = false`). Returns `422` on active sessions.
+- `venue_id`: optional, nullable integer, must belong to the project.
+- `gig_type`: optional, string, one of `public`, `private_event`, `open_mic`, `rehearsal`.
+- `timezone`: optional, valid IANA timezone identifier.
+- `latitude`: optional, decimal, -90 to 90.
+- `longitude`: optional, decimal, -180 to 180.
+
+**Success response:** `200` with `{ "data": { PerformanceSessionResponse } }`.
+
+**Error responses:**
+
+**Session is still active (`422`):**
+```json
+{
+  "message": "Active sessions cannot be edited. Stop the session first."
+}
+```
+
+**Session not found or cross-project (`404`):**
+```json
+{
+  "message": "Resource not found."
+}
+```
+
+### Auto-end rules
+
+Active sessions are automatically ended by a server-side scheduled task running every 5 minutes. A session is ended when any of these conditions is met:
+
+- **Inactivity**: no new request, completed performance item, or cash tip linked to the session in the last 4 hours.
+- **Hard cap**: `started_at` is more than 6 hours ago.
+- **Superseded**: a new explicit session is started for the same project.
+
+The `ended_reason` field records which rule triggered the end: `manual`, `inactivity`, `max_duration`, or `superseded`.
+
+### General rules
+
 - Exactly one active session per project.
-- Starting while active returns `409 Conflict`.
 - Session mode: `manual` or `smart`.
 - `complete` records sequential `performed_order_index`.
 - `complete` for `source=setlist` also sends `setlist_song_id` so duplicate
