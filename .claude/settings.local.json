@@ -106,7 +106,8 @@
       "Read(//opt/homebrew/bin/**)",
       "Read(//usr/local/bin/**)",
       "Bash(/opt/homebrew/bin/php artisan:*)",
-      "Bash(./vendor/bin/pint --dirty --format agent)"
+      "Bash(./vendor/bin/pint --dirty --format agent)",
+      "Bash(dart format:*)"
     ],
     "read": {
       "deny": [
