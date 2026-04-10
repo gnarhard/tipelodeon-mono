@@ -15,6 +15,13 @@ be the project owner or a project member. Non-members receive a `404`.
 
 Returns the last 10 song performances for the project, ordered most-recent first.
 
+**Query parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `start_date` | `YYYY-MM-DD` | Optional. Only include performances on or after this local date. |
+| `end_date` | `YYYY-MM-DD` | Optional. Only include performances on or before this local date (inclusive through `23:59:59`). |
+
 **Response `200`**
 
 ```json
@@ -28,6 +35,7 @@ Returns the last 10 song performances for the project, ordered most-recent first
       "artist": "Queen",
       "performed_at": "2026-04-08T22:30:00+00:00",
       "source": "setlist",
+      "source_name": "Friday Night Set",
       "is_first_performance": true,
       "was_requested": true,
       "earned_cents": 500
@@ -47,6 +55,7 @@ Returns the last 10 song performances for the project, ordered most-recent first
 | `artist` | string | Project-specific artist name |
 | `performed_at` | ISO 8601 UTC string | When the performance occurred |
 | `source` | `"repertoire"` \| `"setlist"` | How the performance was logged |
+| `source_name` | string \| null | The setlist name when `source` is `"setlist"`, otherwise `null` |
 | `is_first_performance` | boolean | True when this is the earliest ever performance of this project-song |
 | `was_requested` | boolean | True when a played `requests` row matches this session + song |
 | `earned_cents` | integer | Net tip earnings in cents from the matching request (`stripe_net_amount_cents`), or 0 |
@@ -84,6 +93,7 @@ enriched performances that occurred in that session.
           "artist": "Queen",
           "performed_at": "2026-04-08T22:30:00+00:00",
           "source": "setlist",
+          "source_name": "Friday Night Set",
           "is_first_performance": true,
           "was_requested": true,
           "earned_cents": 500

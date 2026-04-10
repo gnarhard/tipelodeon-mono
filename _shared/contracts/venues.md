@@ -22,6 +22,8 @@ List all venues for the project, paginated and ordered by `name ASC`.
 |-------|------|-------------|
 | `per_page` | int | Items per page (default: 50) |
 | `page` | int | Page number |
+| `start_date` | `YYYY-MM-DD` | Optional. Scopes `session_count` to sessions starting on or after this date. When provided, venues with no qualifying sessions in the range are excluded. |
+| `end_date` | `YYYY-MM-DD` | Optional. Scopes `session_count` to sessions ending on or before this date (inclusive through `23:59:59`). |
 
 ### Success response (`200`)
 
@@ -40,6 +42,7 @@ List all venues for the project, paginated and ordered by `name ASC`.
       "longitude": -104.990251,
       "timezone": "America/Denver",
       "places_provider_id": "ChIJ...",
+      "session_count": 4,
       "created_at": "2026-04-01T10:00:00+00:00",
       "updated_at": "2026-04-01T10:00:00+00:00"
     }
