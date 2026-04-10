@@ -2389,6 +2389,32 @@ components:
           allOf:
             - $ref: '#/components/schemas/ProjectStatsBestDayRecord'
           nullable: true
+    ProjectStatsRewardsGifted:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of rewards gifted in the reporting window.
+        rewards:
+          type: array
+          items:
+            type: object
+            properties:
+              reward_threshold_id: { type: integer }
+              reward_label: { type: string }
+              reward_icon: { type: string }
+              count: { type: integer }
+    PaymentMethodBreakdownEntry:
+      type: object
+      properties:
+        method:
+          type: string
+          description: Payment method type (e.g. card, apple_pay, google_pay, cash, unknown).
+          example: apple_pay
+        count:
+          type: integer
+          description: Number of tips using this payment method in the reporting window.
+          example: 5
     ProjectStatsResponse:
       type: object
       properties:
@@ -2404,6 +2430,13 @@ components:
           $ref: '#/components/schemas/ProjectStatsRankings'
         records:
           $ref: '#/components/schemas/ProjectStatsRecords'
+        rewards_gifted:
+          $ref: '#/components/schemas/ProjectStatsRewardsGifted'
+        payment_method_breakdown:
+          type: array
+          description: Count of tips grouped by payment method type for the reporting window.
+          items:
+            $ref: '#/components/schemas/PaymentMethodBreakdownEntry'
     SongRequestStatus:
       type: string
       enum: [active, played]
