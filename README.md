@@ -140,6 +140,15 @@ Then, run this: `stripe listen --forward-to https://songtipper.test/stripe/webho
 A BillingOffer is an invitation to the platform.
 `php artisan billing:revoke-discount user@example.com --delete-offer`
 
+### Why Venmo/PayPal are not used for tips
+
+PayPal and Venmo cannot be used for performer tips because Song Tipper's architecture requires that audience money bypass the platform entirely and flow directly to performers. This direct payment flow is critical for:
+
+- **Performer trust**: Ensures musicians see immediate, direct payment to their accounts without intermediary processing
+- **Legal risk mitigation**: Direct performer payments significantly reduce liability exposure for the company
+
+PayPal and Venmo explicitly prohibit direct transfers between accounts because that's their core function—they prevent exactly the flow Song Tipper requires. While an alternative architecture where money flows through Song Tipper first (with performers requesting payouts) would technically be possible with these services, it doesn't align with the platform's trust and legal strategy.
+
 ## Song Data Integrity
 
 Two complementary tools keep the songs table clean: rule-based checks (instant) and AI-powered review (async batch).
