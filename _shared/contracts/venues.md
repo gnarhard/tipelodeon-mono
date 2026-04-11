@@ -16,7 +16,7 @@
 
 List all venues for the project, paginated and ordered by `name ASC`.
 
-`session_count` reflects only **qualifying sessions** — the same criteria as the Venue Analytics endpoint (completed, duration ≥ 45 min, tips ≥ 1 cent, non-private). Active or short sessions with no tips are excluded.
+`session_count` reflects all **completed sessions** (`is_active=false`, `ended_at` not null). Active sessions are excluded.
 
 ### Query parameters
 
@@ -377,14 +377,7 @@ Merge two venues by repointing all `performance_sessions` from the source venue 
 - **Path**: `/venues/{venueId}/analytics`
 - **Route prefix**: `/api/v1/me/projects/{project_id}`
 
-Returns personal analytics for a venue scoped to the authenticated project.
-
-### Qualifying session rules
-
-- Session must be completed (`is_active=false`, `ended_at` not null).
-- Session duration >= 45 minutes.
-- Session total tips (digital + cash) >= 1 cent.
-- `gig_type` must not be `private_event`.
+Returns personal analytics for a venue scoped to the authenticated project. All completed sessions (`is_active=false`, `ended_at` not null) are included regardless of duration, tips, or gig type.
 
 ### Success response (`200`)
 

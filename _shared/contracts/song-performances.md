@@ -84,19 +84,35 @@ enriched performances that occurred in that session.
       "ended_at": "2026-04-08T23:30:00+00:00",
       "venue_name": "The Rusty Nail",
       "gig_type": "public",
-      "performances": [
+      "duration_minutes": 210,
+      "song_count": 14,
+      "total_tips_cents": 4800,
+      "events": [
         {
+          "event_type": "song",
           "id": 42,
           "project_song_id": 15,
           "performance_session_id": 3,
           "title": "Bohemian Rhapsody",
           "artist": "Queen",
-          "performed_at": "2026-04-08T22:30:00+00:00",
+          "occurred_at": "2026-04-08T22:30:00+00:00",
           "source": "setlist",
           "source_name": "Friday Night Set",
           "is_first_performance": true,
           "was_requested": true,
-          "earned_cents": 500
+          "tip_amount_cents": 500
+        },
+        {
+          "event_type": "tip_only",
+          "id": 7,
+          "occurred_at": "2026-04-08T21:45:00+00:00",
+          "tip_amount_cents": 300
+        },
+        {
+          "event_type": "cash_tip",
+          "id": 3,
+          "occurred_at": "2026-04-08T21:00:00+00:00",
+          "tip_amount_cents": 1000
         }
       ]
     }
@@ -124,8 +140,42 @@ enriched performances that occurred in that session.
 | `started_at` | ISO 8601 UTC string \| null | When the session started |
 | `ended_at` | ISO 8601 UTC string \| null | When the session ended, or null if still active |
 | `venue_name` | string \| null | Venue name if a venue was assigned, otherwise null |
-| `gig_type` | string \| null | Gig type enum value (e.g. `public`, `private`, `rehearsal`), or null |
-| `performances` | array | Enriched performances for this session (same shape as the recent endpoint) |
+| `gig_type` | string \| null | Gig type enum value (e.g. `public`, `private_event`, `open_mic`, `rehearsal`), or null |
+| `duration_minutes` | integer \| null | Session duration in minutes; null when `started_at` or `ended_at` is unavailable |
+| `song_count` | integer | Number of `song_performances` records logged in this session |
+| `total_tips_cents` | integer | Combined digital + cash tips earned during this session, in cents |
+| `events` | array | All timeline events for this session, sorted most-recent first (see Event types below) |
+
+**Event types**
+
+Each event object has a discriminator field `event_type`. Shared fields:
+
+| Field | Type | Present on |
+|---|---|---|
+| `event_type` | `"song"` \| `"tip_only"` \| `"original"` \| `"cash_tip"` | all |
+| `id` | integer | all |
+| `occurred_at` | ISO 8601 UTC string | all |
+| `tip_amount_cents` | integer | all (0 when no tip) |
+
+Additional fields for `event_type: "song"`:
+
+| Field | Type | Description |
+|---|---|---|
+| `project_song_id` | integer | The project-song that was performed |
+| `performance_session_id` | integer \| null | The session this performance belongs to |
+| `title` | string | Project-specific song title |
+| `artist` | string | Project-specific artist name |
+| `source` | `"repertoire"` \| `"setlist"` | How the performance was logged |
+| `source_name` | string \| null | The setlist name when `source` is `"setlist"`, otherwise null |
+| `is_first_performance` | boolean | True when this is the earliest ever performance of this project-song |
+| `was_requested` | boolean | True when a played request matched this session and song |
+| `tip_amount_cents` | integer | Gross tip from the matching request (`tip_amount_cents`), or 0 |
+
+`event_type: "tip_only"` — audience tip not attached to a specific song (Tip Jar Support requests).
+
+`event_type: "original"` — audience request for an original song.
+
+`event_type: "cash_tip"` — cash tip logged by the performer during the session.
 
 ## Notes
 
