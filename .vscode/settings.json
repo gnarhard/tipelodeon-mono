@@ -20,6 +20,7 @@
     "**/.vscode": true,
     "**/.idea": true,
     "**/Pods": true,
-    "**/vendor": true
+    "**/vendor": true,
+    ".claude/worktrees": true
   },
 }
