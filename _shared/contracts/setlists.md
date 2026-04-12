@@ -315,7 +315,6 @@ Routes:
   "venue": { "id": 1, "name": "Mike's Bar" },
   "mode": "manual",
   "is_active": true,
-  "is_implicit": false,
   "timezone": "America/Denver",
   "latitude": 39.7392358,
   "longitude": -104.990251,
@@ -333,17 +332,17 @@ Routes:
 **Fields:**
 - `venue_id`: nullable integer. FK to `venues`.
 - `venue`: nullable embedded object with `id` and `name`. Null when `venue_id` is null.
-- `is_implicit`: boolean. `true` for sessions auto-created by incoming public requests; `false` for performer-initiated sessions.
-- `timezone`: IANA timezone string. Required on explicit sessions.
+- `setlist_id`: nullable integer. Null for free-play sessions.
+- `timezone`: IANA timezone string. Required at start.
 - `latitude`, `longitude`: nullable decimals. GPS coordinates of the performance location.
 - `gig_type`: string, one of `public`, `private_event`, `open_mic`, `rehearsal`. Defaults to `public`.
 - `ended_reason`: nullable string, one of `manual`, `inactivity`, `max_duration`, `superseded`. Set when the session ends.
 
 ### Start Performance -- `POST /performances/start`
 
-Start a new explicit performance session.
+Start a new performance session. Two modes are available:
 
-**Request body:**
+**Setlist-based (mode = `manual` or `smart`):**
 
 ```json
 {
@@ -357,20 +356,30 @@ Start a new explicit performance session.
 }
 ```
 
+**Free-play (mode = `free_play`):**
+
+```json
+{
+  "mode": "free_play",
+  "venue_id": 1,
+  "timezone": "America/Denver",
+  "gig_type": "public"
+}
+```
+
 **Validation Rules:**
-- `setlist_id`: nullable integer. Not required. Implicit sessions have no setlist.
-- `mode`: required, one of `manual`, `smart`.
+- `mode`: required, one of `manual`, `smart`, `free_play`.
+- `setlist_id`: required when mode is `manual` or `smart`; **prohibited** when mode is `free_play`.
+- `seed`: optional integer when mode is `manual`/`smart`; **prohibited** when mode is `free_play`.
 - `venue_id`: optional, integer, must belong to the project.
 - `latitude`: optional, decimal, -90 to 90.
 - `longitude`: optional, decimal, -180 to 180.
 - `timezone`: required, valid IANA timezone identifier.
 - `gig_type`: optional, string, one of `public`, `private_event`, `open_mic`, `rehearsal`. Defaults to `public`.
 
-**Implicit session promotion:** If an implicit session (`is_implicit = true`) already exists for the project, the `start` call promotes it instead of returning `409`. The existing session's `venue_id`, `timezone`, `latitude`, `longitude`, `gig_type`, and `setlist_id` are updated with the provided values, and `is_implicit` is flipped to `false`. No new session is created.
+**Session conflict:** If any active session already exists for the project, returns `409 Conflict`.
 
-**Explicit session conflict:** If an explicit session (`is_implicit = false`) already exists, returns `409 Conflict` as before.
-
-**Success response:** `200` with `{ "data": { PerformanceSessionResponse } }`.
+**Success response:** `201` with `{ "data": { PerformanceSessionResponse } }`.
 
 ### Update Past Session -- `PATCH /performances/{sessionId}`
 

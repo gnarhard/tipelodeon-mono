@@ -111,11 +111,11 @@ returned. Matching includes both the queue payload and the record-event state.
 
 ---
 
-## Implicit Session Auto-Creation
+## Session Linking for Public Requests
 
-When a public request (digital tip) arrives for a project that has no active performance session, the server automatically creates an implicit session. This session has `is_implicit = true`, `venue_id = null`, and `started_at` set to the request's `created_at` timestamp. The implicit session follows the same auto-end rules as explicit sessions (4-hour inactivity, 6-hour hard cap).
+When a public request (digital tip) arrives, it is linked to the project's current active performance session if one exists. The request's `performance_session_id` is set to the active session's `id`. If no session is active, `performance_session_id` is `null` — no session is created automatically.
 
-If the performer later taps "Start Performance" while an implicit session is already active, the implicit session is promoted in place: the venue, timezone, latitude, longitude, gig type, and setlist are set on the existing session, and `is_implicit` flips to `false`. No new session is created.
+Performers who want public requests tracked against a session must explicitly start one (setlist-based or free-play) before requests arrive.
 
 ---
 

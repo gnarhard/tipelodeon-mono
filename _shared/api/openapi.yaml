@@ -1265,12 +1265,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [setlist_id, mode]
+              required: [mode]
               properties:
-                setlist_id: { type: integer }
+                setlist_id: { type: integer, description: 'Required when mode is manual or smart; prohibited when mode is free_play.' }
                 mode:
                   type: string
-                  enum: [manual, smart]
+                  enum: [manual, smart, free_play]
       responses:
         '201':
           description: Session started
@@ -2925,7 +2925,7 @@ components:
             setlist_id: { type: integer, nullable: true }
             mode:
               type: string
-              enum: [manual, smart]
+              enum: [manual, smart, free_play]
             is_active: { type: boolean }
             started_at: { type: string, format: date-time, nullable: true }
             ended_at: { type: string, format: date-time, nullable: true }
