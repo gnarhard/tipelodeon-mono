@@ -60,6 +60,7 @@ Core fields:
 - `slug`
 - `owner_user_id`
 - `performer_info_url` (nullable)
+- `performer_track_url` (nullable; external URL for a "track performer" link shown on the public project page alongside "learn more")
 - `performer_profile_image_url` (nullable)
 - `min_tip_cents` (rounded up to a whole-dollar cent value on write)
 - `queue_nudge_cents` (additional cents required to claim #1 queue position; rounded up to whole dollar on write; minimum 100; default 500)
@@ -203,6 +204,12 @@ Stats response fields:
     by the project (ordered by `sort_order` then `id`), even when its
     `count` for the period is 0. Each entry includes `reward_threshold_id`,
     `reward_label`, `reward_icon` (nullable curated icon code), and `count`.
+- `link_clicks` reports audience clicks on performer links scoped to the
+  selected period's UTC window (based on `clicked_at`):
+  - `link_clicks.learn_more` (int) — clicks on the "Learn More About the
+    Performer" link
+  - `link_clicks.track_performer` (int) — clicks on the "Track the
+    Performer" link
 
 If the owning project is not on Pro, these endpoints return `403` with
 `code=feature_requires_pro`.
@@ -213,6 +220,7 @@ If the owning project is not on Pro, these endpoints return `403` with
 
 - `name`
 - `performer_info_url`
+- `performer_track_url`
 - `min_tip_cents` (backend rounds cent inputs up to the next whole dollar)
 - `queue_nudge_cents` (minimum 100; backend rounds up to whole dollar; default 500)
 - `free_request_threshold_cents` (0 to disable; backend rounds up to whole dollar)
