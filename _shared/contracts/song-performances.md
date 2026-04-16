@@ -152,7 +152,7 @@ Each event object has a discriminator field `event_type`. Shared fields:
 
 | Field | Type | Present on |
 |---|---|---|
-| `event_type` | `"song"` \| `"tip_only"` \| `"original"` \| `"cash_tip"` | all |
+| `event_type` | `"song"` \| `"tip_only"` \| `"original"` \| `"cash_tip"` \| `"reward_claimed"` | all |
 | `id` | integer | all |
 | `occurred_at` | ISO 8601 UTC string | all |
 | `tip_amount_cents` | integer | all (0 when no tip) |
@@ -171,11 +171,24 @@ Additional fields for `event_type: "song"`:
 | `was_requested` | boolean | True when a played request matched this session and song |
 | `tip_amount_cents` | integer | Gross tip from the matching request (`tip_amount_cents`), or 0 |
 
-`event_type: "tip_only"` — audience tip not attached to a specific song (Tip Jar Support requests).
+`event_type: "tip_only"` — audience tip not attached to a specific song (Tip Jar Support requests). Appears as soon as the tip is received; does not require the performer to mark it played.
 
-`event_type: "original"` — audience request for an original song.
+`event_type: "original"` — audience request for an original song. Appears once the performer marks the request played.
 
 `event_type: "cash_tip"` — cash tip logged by the performer during the session.
+
+`event_type: "reward_claimed"` — an audience reward claim that occurred during this session window. For non-free reward types this is when the audience crossed the threshold; for `free_request` rewards it is when the audience redeemed their free request. Anchored on `audience_reward_claims.created_at`. Sessions in progress (no `ended_at`) include claims up to "now"; ended sessions are frozen and do not gain reward entries afterward.
+
+Additional fields for `event_type: "reward_claimed"`:
+
+| Field | Type | Description |
+|---|---|---|
+| `reward_label` | string | Performer-defined label for the reward (e.g. "Free Song Request") |
+| `reward_icon` | string \| null | Curated icon code (e.g. `music_note`, `star`, `album`); null if unset |
+| `reward_type` | string | One of `free_request`, `free_cd`, `custom` |
+| `threshold_cents` | integer | Cumulative-tip threshold (in cents) at which the reward unlocks |
+| `audience_name` | string \| null | The audience member's display name, if known |
+| `tip_amount_cents` | integer | Always `0` for reward claims |
 
 ## Notes
 
