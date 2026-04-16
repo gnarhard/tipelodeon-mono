@@ -152,12 +152,14 @@ Each event object has a discriminator field `event_type`. Shared fields:
 
 | Field | Type | Present on |
 |---|---|---|
-| `event_type` | `"song"` \| `"tip_only"` \| `"original"` \| `"cash_tip"` \| `"reward_claimed"` | all |
+| `event_type` | `"song"` \| `"request"` \| `"tip_only"` \| `"original"` \| `"cash_tip"` \| `"reward_claimed"` | all |
 | `id` | integer | all |
 | `occurred_at` | ISO 8601 UTC string | all |
 | `tip_amount_cents` | integer | all (0 when no tip) |
 
-Additional fields for `event_type: "song"`:
+`event_type: "song"` is emitted when the performance was not tied to an audience request. `event_type: "request"` is emitted when the same row matched a played request (`was_requested = true`); both event types share the identical field set below.
+
+Additional fields for `event_type: "song"` and `event_type: "request"`:
 
 | Field | Type | Description |
 |---|---|---|
