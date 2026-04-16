@@ -94,28 +94,29 @@ Rate limited: **10 calls per minute per project.**
 
 ```json
 {
-  "data": {
-    "nearby_existing": [
-      { "id": 1, "name": "Mike's Bar", "address": "123 Main St", "distance_meters": 42.5 }
-    ],
-    "places_suggestions": [
-      {
-        "name": "Gaylord of the Rockies",
-        "address": "6700 N Gaylord Rockies Blvd",
-        "latitude": 39.8283,
-        "longitude": -104.7614,
-        "places_provider_id": "ChIJ...",
-        "distance_meters": 120.3
-      }
-    ]
-  }
+  "nearby_existing": [
+    { "id": 1, "name": "Mike's Bar", "address": "123 Main St", "distance_meters": 42.5 }
+  ],
+  "places_suggestions": [
+    {
+      "name": "Gaylord of the Rockies",
+      "address": "6700 N Gaylord Rockies Blvd",
+      "city": "Aurora",
+      "region": "Colorado",
+      "country": "US",
+      "latitude": 39.8283,
+      "longitude": -104.7614,
+      "places_provider_id": "ChIJ...",
+      "distance_meters": 120.3
+    }
+  ]
 }
 ```
 
 **Response fields:**
 
-- `nearby_existing`: project locations within 152 meters (500 ft) of the provided coordinates, ordered by distance ASC. These are Layer 1 results (DB-only, no external API cost).
-- `places_suggestions`: Google Places Nearby Search results within 2000 meters of the coordinates. Always populated regardless of whether `nearby_existing` has results. These are Layer 2/3 results (cached POI lookup, falling back to a live Google Places API call). Google Places responses are cached server-side with a 30-day TTL using a rounded-coordinate key.
+- `nearby_existing`: project locations within 152 meters (500 ft) of the provided coordinates, ordered by distance ASC. Each entry is a compact shape — `{ id, name, address, distance_meters }` — not the full location resource. These are Layer 1 results (DB-only, no external API cost).
+- `places_suggestions`: Google Places Nearby Search results within 2000 meters of the coordinates. Always populated regardless of whether `nearby_existing` has results. `city`, `region`, and `country` are parsed from the Place's `addressComponents` (`locality`, `administrative_area_level_1`, `country.shortText`) and may be `null` when Google omits them. These are Layer 2/3 results (cached POI lookup, falling back to a live Google Places API call). Google Places responses are cached server-side with a 30-day TTL using a rounded-coordinate key.
 
 ### Error responses
 
@@ -134,7 +135,7 @@ Rate limited: **10 calls per minute per project.**
 - **Method**: `POST`
 - **Path**: `/locations/search-places`
 
-Search Google Places by text query near the performer's current position. Used for the location picker's text search field, allowing performers to find locations by name when GPS-based suggestions are insufficient.
+Search Google Places by text query, optionally biased toward the performer's current position. Used for the location picker's text search field, allowing performers to find locations by name when GPS-based suggestions are insufficient. When coordinates are provided, results are biased toward that location (50km radius). Without coordinates, results are unbiased.
 
 Rate limited: **10 calls per minute per project.**
 
@@ -150,8 +151,8 @@ Rate limited: **10 calls per minute per project.**
 
 **Validation Rules:**
 - `query`: required, string, min 2 characters
-- `latitude`: required, decimal, -90 to 90
-- `longitude`: required, decimal, -180 to 180
+- `latitude`: optional, decimal, -90 to 90
+- `longitude`: optional, decimal, -180 to 180
 
 ### Success response (`200`)
 
@@ -161,6 +162,9 @@ Rate limited: **10 calls per minute per project.**
     {
       "name": "The Blue Note",
       "address": "123 Jazz St, Denver, CO",
+      "city": "Denver",
+      "region": "Colorado",
+      "country": "US",
       "latitude": 39.7392,
       "longitude": -104.9903,
       "places_provider_id": "ChIJ...",
@@ -172,7 +176,7 @@ Rate limited: **10 calls per minute per project.**
 
 **Response fields:**
 
-- `places_suggestions`: Google Places Text Search results biased toward the provided coordinates (50km radius). Up to 10 results. Not cached (text queries are too variable).
+- `places_suggestions`: Google Places Text Search results, biased toward the provided coordinates (50km radius) when available. Up to 10 results. Not cached (text queries are too variable). `distance_meters` is `0.0` when coordinates are not provided. `city`, `region`, and `country` are parsed from the Place's `addressComponents` and may be `null` when Google omits them.
 
 ### Error responses
 
@@ -185,7 +189,7 @@ Rate limited: **10 calls per minute per project.**
 ```
 
 **Validation failure (`422`):**
-- Missing `query`, `latitude`, or `longitude`. Query must be at least 2 characters.
+- Missing `query`. Query must be at least 2 characters. Invalid `latitude`/`longitude` range if provided.
 
 ---
 
