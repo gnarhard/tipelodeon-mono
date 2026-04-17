@@ -18,16 +18,16 @@ Read as needed:
 If you need to edit app code, also read the repo-specific rules in the corresponding app worktree:
 
 - `web/AGENTS.md`
-- `mobile_app/AGENTS.md`
-- If `mobile_app/AGENTS.md` is missing in that worktree, read:
-  `mobile_app/.agent-rules/flutter.md`,
-  `mobile_app/.agent-rules/presentation-boundaries.md`, and
-  `mobile_app/.agent-rules/app-architecture.md`
+- `app/AGENTS.md`
+- If `app/AGENTS.md` is missing in that worktree, read:
+  `app/.agent-rules/flutter.md`,
+  `app/.agent-rules/presentation-boundaries.md`, and
+  `app/.agent-rules/app-architecture.md`
 
 Notes:
 
-- This root worktree may contain only shared docs and `_shared/` files. Do not assume `web/` or `mobile_app/` exist here.
-- Keep `web`, `mobile_app`, and `_shared` in sync for any API or contract change.
+- This root worktree may contain only shared docs and `_shared/` files. Do not assume `web/` or `app/` exist here.
+- Keep `web`, `app`, and `_shared` in sync for any API or contract change.
 - For mobile work, repo-local architecture rules override generic Flutter
   advice. Do not rely on generic framework guidance alone.
 - Do not add backwards-compatible shims unless explicitly requested.
@@ -37,5 +37,5 @@ Notes:
 
 ## MCP Servers
 
-- `mobile_app` development can be assisted with the globally installed Dart MCP server.
+- `app` development can be assisted with the globally installed Dart MCP server.
 - `web` development can be assisted with the locally installed Laravel Boost MCP server available at `./web/.mcp.json`. See `./web/CLAUDE.md` for agent instructions and `./web/.claude/skills` for skills.
