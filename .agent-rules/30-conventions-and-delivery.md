@@ -41,6 +41,14 @@ When a feature needs the same data for multiple entities (e.g. audio files for e
 - New batch endpoints should accept an array of IDs in the request body and return results keyed by ID.
 - Cap batch size with a validation rule (e.g. `max:50`).
 
+## Avoid unnecessary network requests
+
+Do not send a write request when zero data has changed. Writes that repeat the server's known state are wasted bandwidth, add noise to logs, and can trigger real side effects (cache invalidations, `updated_at` bumps, audit entries, downstream syncs).
+
+- Compare the outgoing payload against a baseline of what was last synced (or what was loaded from the server) and skip the call if they are equal.
+- On dispose, route changes, or flush-on-exit paths, this check matters most — those are the points where a "save just in case" pattern quietly fires empty updates.
+- This applies to the mobile outbox too: do not enqueue an outbox item when the payload matches the last-enqueued payload for the same context.
+
 ## Idempotency
 
 - All write operations support `Idempotency-Key`.
