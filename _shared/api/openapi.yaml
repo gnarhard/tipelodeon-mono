@@ -1402,6 +1402,36 @@ paths:
         '422':
           description: Session is already active
 
+  /me/projects/{projectId}/performances/{performanceSessionId}/stats:
+    get:
+      tags: [Performances]
+      summary: Get stats scoped to a single performance session
+      description: |
+        Returns aggregated stats for one performance session, bounded by its
+        own `started_at`/`ended_at` rather than a timeline preset. Played
+        counts and the `most_played` ranking come from `song_performances`
+        scoped by `performance_session_id` (so free-play songs count even
+        when not tied to requests). `rewards_gifted` is bounded by the
+        session time window AND restricted to audience profiles that placed
+        at least one request in the session. For active sessions the upper
+        window bound is `now()` (UTC).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - in: path
+          name: performanceSessionId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Per-session stats summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PerformanceSessionStatsResponse'
+        '404':
+          description: Session belongs to another project, or project is inaccessible
+
   /me/charts:
     get:
       tags: [Charts]
@@ -2475,6 +2505,15 @@ components:
               reward_label: { type: string }
               reward_icon: { type: string }
               count: { type: integer }
+    ProjectStatsAudienceLoyalty:
+      type: object
+      properties:
+        one_time_count:
+          type: integer
+          description: Audience profiles with exactly one request in the window.
+        repeat_count:
+          type: integer
+          description: Audience profiles with two or more requests in the window.
     PaymentMethodBreakdownEntry:
       type: object
       properties:
@@ -2506,6 +2545,38 @@ components:
         payment_method_breakdown:
           type: array
           description: Count of tips grouped by payment method type for the reporting window.
+          items:
+            $ref: '#/components/schemas/PaymentMethodBreakdownEntry'
+    PerformanceSessionStatsResponse:
+      type: object
+      description: |
+        Stats aggregates scoped to a single performance session. Unlike
+        `ProjectStatsResponse`, there is no `period`/`highlights`/`records`
+        block — the session itself defines the window via `started_at`/`ended_at`.
+      properties:
+        started_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: UTC timestamp when the session started.
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: UTC timestamp when the session ended. Null for active sessions.
+        money:
+          $ref: '#/components/schemas/ProjectStatsMoney'
+        counts:
+          $ref: '#/components/schemas/ProjectStatsCounts'
+        rankings:
+          $ref: '#/components/schemas/ProjectStatsRankings'
+        audience_loyalty:
+          $ref: '#/components/schemas/ProjectStatsAudienceLoyalty'
+        rewards_gifted:
+          $ref: '#/components/schemas/ProjectStatsRewardsGifted'
+        payment_method_breakdown:
+          type: array
+          description: Count of tips grouped by payment method type for this session.
           items:
             $ref: '#/components/schemas/PaymentMethodBreakdownEntry'
     SongRequestStatus:

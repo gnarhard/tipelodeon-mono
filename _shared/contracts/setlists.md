@@ -312,6 +312,7 @@ Routes:
 - `POST /performances/start`
 - `POST /performances/stop`
 - `GET /performances/current`
+- `GET /performances/{sessionId}/stats`
 - `PATCH /performances/{sessionId}`
 - `POST /performances/current/complete`
 - `POST /performances/current/skip`
@@ -390,6 +391,55 @@ Start a new performance session. Two modes are available:
 **Session conflict:** If any active session already exists for the project, returns `409 Conflict`.
 
 **Success response:** `201` with `{ "data": { PerformanceSessionResponse } }`.
+
+### Session Stats -- `GET /performances/{sessionId}/stats`
+
+Returns aggregated stats scoped to a single performance session. Used to
+render the "Stats" section on the Performance Detail screen.
+
+**Access:** Authenticated user with access to the project. No Pro gate
+(this is a drill-down for content the user already sees in the session
+detail). Returns `404` when the session does not belong to the project or
+the caller cannot access the project.
+
+**Response `200`:**
+
+```json
+{
+  "started_at": "2026-04-01T20:00:00+00:00",
+  "ended_at": "2026-04-01T23:00:00+00:00",
+  "money": {
+    "gross_tip_amount_cents": 5000,
+    "fee_amount_cents": 500,
+    "net_tip_amount_cents": 4500,
+    "cash_tip_amount_cents": 2000
+  },
+  "counts": { "request_count": 12, "played_count": 14 },
+  "rankings": {
+    "most_played": [],
+    "most_requested": [],
+    "highest_earning": []
+  },
+  "audience_loyalty": { "one_time_count": 3, "repeat_count": 2 },
+  "rewards_gifted": { "total": 1, "rewards": [] },
+  "payment_method_breakdown": []
+}
+```
+
+**Scoping rules:**
+
+- `money`, `counts.request_count`, `rankings.most_requested`,
+  `rankings.highest_earning`, `audience_loyalty`, and
+  `payment_method_breakdown` are scoped to requests with
+  `performance_session_id = {sessionId}`.
+- `counts.played_count` and `rankings.most_played` are scoped to
+  `song_performances` with `performance_session_id = {sessionId}` (so
+  free-play songs count even when not tied to requests).
+- `rewards_gifted` is bounded by `session.started_at` through
+  `session.ended_at ?? now()` (UTC) AND restricted to audience profiles
+  that placed at least one request in the session.
+- `ended_at` is `null` for active sessions; the window upper bound in
+  that case is `now()` (UTC).
 
 ### Update Past Session -- `PATCH /performances/{sessionId}`
 
