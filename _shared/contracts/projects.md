@@ -270,6 +270,12 @@ Stats response fields:
     by the project (ordered by `sort_order` then `id`), even when its
     `count` for the period is 0. Each entry includes `reward_threshold_id`,
     `reward_label`, `reward_icon` (nullable curated icon code), and `count`.
+- `link_clicks` reports audience clicks on performer links scoped to the
+  selected period's UTC window (based on `clicked_at`):
+  - `link_clicks.learn_more` (int) — clicks on the "Learn More About the
+    Performer" link
+  - `link_clicks.track_performer` (int) — clicks on the "Track the
+    Performer" link
 
 If the owning project is not on Pro, these endpoints return `403` with
 `code=feature_requires_pro`.
