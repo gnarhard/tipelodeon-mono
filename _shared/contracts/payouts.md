@@ -144,8 +144,14 @@ Semantics:
 - Week presets use Monday-start local weeks.
 - `custom` uses inclusive local calendar dates in the supplied timezone.
 - `all_time` spans from project creation through report generation time.
-- Money and request counts use the accepted request timestamp.
-- Played counts use `played_at`.
+- Money, request counts, played counts, reward claims, and the per-day record
+  all aggregate `performance_events` filtered by `event_type` and scoped to
+  rows with `performance_session_id IS NOT NULL`. Window filtering uses the
+  event's `occurred_at` (not the source row's `created_at` / `local_date` /
+  `claimed_at`). Activity that was never attached to a performance session is
+  excluded from every total above.
+- `link_clicks` is the one exception: link clicks are audience-level and are
+  intentionally counted regardless of session attachment.
 - Song rankings only consider repertoire-linked songs in the current project.
 - Tip-only placeholders, original-request placeholders, and custom manual titles
   are excluded from the top-song cards.
@@ -170,6 +176,10 @@ Semantics:
     - `net_cents` — Stripe net tip amount after fees
     - `fee_cents` — Stripe platform fee amount
     - `cash_cents` — cash tips + manual queue tips (no fees)
+- Buckets aggregate `performance_events` scoped to
+  `performance_session_id IS NOT NULL`, bucketed by the event's
+  `occurred_at` translated into the requested timezone. Activity not
+  attached to a performance session is excluded.
 - Empty `buckets` array returned when no YTD activity exists.
 
 ---
