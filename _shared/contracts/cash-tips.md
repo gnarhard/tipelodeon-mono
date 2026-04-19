@@ -14,7 +14,7 @@
 - **Method**: `POST`
 - **Path**: `/cash-tips`
 
-Record a cash tip received for a specific local date.
+Record a cash tip received for a specific performance session.
 
 ### Headers
 
@@ -24,6 +24,7 @@ Record a cash tip received for a specific local date.
 
 ```json
 {
+  "performance_session_id": 42,
   "amount_cents": 2500,
   "local_date": "2026-03-15",
   "timezone": "America/Denver",
@@ -32,6 +33,7 @@ Record a cash tip received for a specific local date.
 ```
 
 **Validation Rules:**
+- `performance_session_id`: required, integer, must belong to the project (422 otherwise)
 - `amount_cents`: required, integer, min 1
 - `local_date`: required, date format `Y-m-d`
 - `timezone`: required, valid IANA timezone identifier
@@ -48,23 +50,22 @@ Record a cash tip received for a specific local date.
     "local_date": "2026-03-15",
     "timezone": "America/Denver",
     "note": "Wedding gig",
-    "performance_session_id": null,
+    "performance_session_id": 42,
     "created_at": "2026-03-15T22:30:00+00:00"
   }
 }
 ```
 
 **Fields:**
-- `performance_session_id`: nullable integer. Links the cash tip to the active performance session, if one existed at recording time. Set server-side; not a client input.
-
-When an active performance session exists for the project at the time of recording, the cash tip is automatically linked to that session (`performance_session_id` is set server-side). This ensures cash tips inherit location attribution from the ongoing gig. If no active session exists, `performance_session_id` remains `null` -- a new session is NOT auto-created for cash tips.
+- `performance_session_id`: integer. The performance session this cash tip is explicitly linked to. Selected by the client; required on every request.
 
 ### Error responses
 
 **User does not have access to project (`404`)**
 
 **Validation failure (`422`):**
-- Invalid `amount_cents`, missing `local_date`, invalid `timezone`, etc.
+- Missing or invalid `performance_session_id`, invalid `amount_cents`, missing `local_date`, invalid `timezone`, etc.
+- Session does not belong to the project → `422`.
 
 ---
 
@@ -79,6 +80,7 @@ Update a previously recorded cash tip.
 
 ```json
 {
+  "performance_session_id": 43,
   "amount_cents": 3000,
   "local_date": "2026-03-16",
   "timezone": "America/Denver",
@@ -87,6 +89,7 @@ Update a previously recorded cash tip.
 ```
 
 **Validation Rules:**
+- `performance_session_id`: required, integer, must belong to the project (422 otherwise)
 - `amount_cents`: required, integer, min 1
 - `local_date`: required, date format `Y-m-d`
 - `timezone`: required, valid IANA timezone identifier
@@ -103,13 +106,11 @@ Update a previously recorded cash tip.
     "local_date": "2026-03-16",
     "timezone": "America/Denver",
     "note": "Updated note",
-    "performance_session_id": null,
+    "performance_session_id": 43,
     "created_at": "2026-03-15T22:30:00+00:00"
   }
 }
 ```
-
-**Note:** `performance_session_id` is read-only and not updatable via this endpoint.
 
 ### Error responses
 
@@ -118,7 +119,8 @@ Update a previously recorded cash tip.
 **Cash tip not found or does not belong to project (`404`)**
 
 **Validation failure (`422`):**
-- Invalid `amount_cents`, missing `local_date`, invalid `timezone`, etc.
+- Missing or invalid `performance_session_id`, invalid `amount_cents`, missing `local_date`, invalid `timezone`, etc.
+- Session does not belong to the project → `422`.
 
 ---
 
@@ -151,7 +153,7 @@ Standard paginated shape:
       "local_date": "2026-03-15",
       "timezone": "America/Denver",
       "note": "Wedding gig",
-      "performance_session_id": null,
+      "performance_session_id": 42,
       "created_at": "2026-03-15T22:30:00+00:00"
     }
   ],
@@ -211,4 +213,4 @@ Cash tips and manual queue item tips **are** included in the best-day record
 calculation, which sums digital request tips, cash tips, and manual queue item
 tips per local date.
 
-Cash tips with a `performance_session_id` inherit location attribution through the linked session. Cash tips without a session are excluded from per-location analytics but included in project-wide totals.
+Cash tips inherit location attribution through the linked performance session.
