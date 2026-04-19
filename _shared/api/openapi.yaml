@@ -1267,12 +1267,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [setlist_id, mode]
+              required: [mode]
               properties:
-                setlist_id: { type: integer }
+                setlist_id: { type: integer, description: 'Required when mode is manual; prohibited when mode is free_play.' }
                 mode:
                   type: string
-                  enum: [manual, smart]
+                  enum: [manual, free_play]
       responses:
         '201':
           description: Session started
@@ -1362,7 +1362,7 @@ paths:
   /me/projects/{projectId}/performances/current/random:
     post:
       tags: [Performances]
-      summary: Pick weighted random pending song in smart mode
+      summary: Pick weighted random pending song
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -2597,7 +2597,7 @@ components:
         id: { type: integer }
         mode:
           type: string
-          enum: [manual, smart]
+          enum: [manual, free_play]
           nullable: true
         is_active: { type: boolean }
         started_at: { type: string, format: date-time, nullable: true }
@@ -2996,7 +2996,7 @@ components:
             setlist_id: { type: integer, nullable: true }
             mode:
               type: string
-              enum: [manual, smart]
+              enum: [manual, free_play]
             is_active: { type: boolean }
             started_at: { type: string, format: date-time, nullable: true }
             ended_at: { type: string, format: date-time, nullable: true }
