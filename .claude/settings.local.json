@@ -113,7 +113,8 @@
       "Bash(git -C /Users/gerhard/Code/Sites/Valet/songtipper/app show -s --format='%ci | %s' ece5558)",
       "Bash(kill 8147)",
       "Bash(fvm flutter *)",
-      "Bash(fvm dart *)"
+      "Bash(fvm dart *)",
+      "Bash(./vendor/bin/pest --filter=\"TipBucketTotal\" --parallel)"
     ],
     "read": {
       "deny": [

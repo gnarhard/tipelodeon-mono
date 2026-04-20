@@ -638,9 +638,9 @@ paths:
   /me/projects/{projectId}/tip-bucket-totals:
     get:
       tags: [Payouts]
-      summary: List tip bucket totals for a project
+      summary: List cash tip bucket totals for a project
       description: |
-        Returns tip bucket totals recorded for the project, optionally
+        Returns cash tip bucket totals recorded for the project, optionally
         filtered by local date. Paginated using standard Laravel pagination.
       security: [{ bearerAuth: [] }]
       parameters:
@@ -660,17 +660,17 @@ paths:
           schema: { type: integer, default: 1 }
       responses:
         '200':
-          description: Paginated tip bucket totals
+          description: Paginated cash tip bucket totals
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TipBucketTotalCollectionResponse'
     post:
       tags: [Payouts]
-      summary: Record a tip bucket total
+      summary: Record a cash tip bucket total
       description: |
         Record the total cash collected in the performer's tip bucket over a
-        performance session. Tip bucket totals are standalone monetary
+        performance session. Cash tip bucket totals are standalone monetary
         records not tied to song requests or the queue.
       security: [{ bearerAuth: [] }]
       parameters:
@@ -684,7 +684,7 @@ paths:
               $ref: '#/components/schemas/StoreTipBucketTotalRequest'
       responses:
         '201':
-          description: Tip bucket total recorded
+          description: Cash tip bucket total recorded
           content:
             application/json:
               schema:
@@ -695,9 +695,9 @@ paths:
   /me/projects/{projectId}/tip-bucket-totals/{tipBucketTotalId}:
     patch:
       tags: [Payouts]
-      summary: Update a tip bucket total
+      summary: Update a cash tip bucket total
       description: |
-        Update a previously recorded tip bucket total. All mutable fields
+        Update a previously recorded cash tip bucket total. All mutable fields
         must be provided (amount_cents, local_date, timezone, note).
       security: [{ bearerAuth: [] }]
       parameters:
@@ -714,18 +714,18 @@ paths:
               $ref: '#/components/schemas/StoreTipBucketTotalRequest'
       responses:
         '200':
-          description: Tip bucket total updated
+          description: Cash tip bucket total updated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/TipBucketTotalResponse'
         '404':
-          description: Project or tip bucket total not found
+          description: Project or cash tip bucket total not found
         '422':
           description: Validation failed
     delete:
       tags: [Payouts]
-      summary: Delete a tip bucket total
+      summary: Delete a cash tip bucket total
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -735,13 +735,13 @@ paths:
           schema: { type: integer }
       responses:
         '200':
-          description: Tip bucket total deleted
+          description: Cash tip bucket total deleted
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message: { type: string, example: Tip bucket total deleted. }
+                  message: { type: string, example: Cash tip bucket total deleted. }
 
   /me/projects/{projectId}/wallet/sessions:
     get:
