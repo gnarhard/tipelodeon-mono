@@ -111,6 +111,7 @@ enriched performances that occurred in that session.
         {
           "event_type": "cash_tip",
           "id": 3,
+          "cash_tip_id": 17,
           "occurred_at": "2026-04-08T21:00:00+00:00",
           "tip_amount_cents": 1000
         }
@@ -148,6 +149,7 @@ enriched performances that occurred in that session.
 | `duration_minutes` | integer \| null | Session duration in minutes; null when `started_at` or `ended_at` is unavailable |
 | `song_count` | integer | Number of `song_performances` records logged in this session |
 | `total_tips_cents` | integer | Combined digital + cash tips earned during this session, in cents |
+| `performer_notes` | string \| null | Free-form notes the performer wrote about the session. Editable on past sessions only via the same `PATCH …/performances/{id}` endpoint as other session edits. Max 2000 characters. Fed into the AI synopsis prompt when set. |
 | `events` | array | All timeline events for this session, sorted most-recent first (see Event types below) |
 
 **Event types**
@@ -182,6 +184,12 @@ Additional fields for `event_type: "song"` and `event_type: "request"`:
 `event_type: "original"` — audience request for an original song. Appears once the performer marks the request played.
 
 `event_type: "cash_tip"` — cash tip logged by the performer during the session.
+
+Additional field for `event_type: "cash_tip"`:
+
+| Field | Type | Description |
+|---|---|---|
+| `cash_tip_id` | integer \| null | Foreign key into `cash_tips.id`. Use this — not `id` (which is `performance_events.id`) — when calling `/cash-tips/{id}` endpoints. Null only on legacy rows that pre-date the link. |
 
 `event_type: "reward_claimed"` — an audience reward claim that occurred during this session window. For non-free reward types this is when the audience crossed the threshold; for `free_request` rewards it is when the audience redeemed their free request. Anchored on `audience_reward_claims.created_at`. Sessions in progress (no `ended_at`) include claims up to "now"; ended sessions are frozen and do not gain reward entries afterward.
 
