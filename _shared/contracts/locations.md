@@ -71,7 +71,7 @@ List all locations for the project, paginated and ordered by `name ASC`.
 - **Method**: `POST`
 - **Path**: `/locations/suggest`
 
-Suggest nearby locations based on the performer's current GPS coordinates. Returns both existing project locations (Layer 1, DB within 152m) and Google Places Nearby Search results (Layer 2/3, within 2000m, cached POI or live API call). Both layers are always populated.
+Suggest nearby locations based on the performer's current GPS coordinates. Returns three layers: existing project locations (Layer 1, DB within 152m), crowd-sourced nearby locations from other projects (Layer 2, DB within 15m / ~50ft), and Google Places Nearby Search results (Layer 3, within 2000m, cached POI or live API call). All layers are always present in the response (arrays may be empty).
 
 Rate limited: **10 calls per minute per project.**
 
@@ -97,6 +97,20 @@ Rate limited: **10 calls per minute per project.**
   "nearby_existing": [
     { "id": 1, "name": "Mike's Bar", "address": "123 Main St", "distance_meters": 42.5 }
   ],
+  "crowd_sourced_nearby": [
+    {
+      "places_provider_id": "ChIJ_TEST",
+      "name": "The Rusty Nail",
+      "address": "123 Main St",
+      "city": "Denver",
+      "region": "Colorado",
+      "country": "US",
+      "latitude": 39.7392,
+      "longitude": -104.9903,
+      "distance_meters": 10.2,
+      "performer_count": 3
+    }
+  ],
   "places_suggestions": [
     {
       "name": "Gaylord of the Rockies",
@@ -116,7 +130,8 @@ Rate limited: **10 calls per minute per project.**
 **Response fields:**
 
 - `nearby_existing`: project locations within 152 meters (500 ft) of the provided coordinates, ordered by distance ASC. Each entry is a compact shape — `{ id, name, address, distance_meters }` — not the full location resource. These are Layer 1 results (DB-only, no external API cost).
-- `places_suggestions`: Google Places Nearby Search results within 2000 meters of the coordinates. Always populated regardless of whether `nearby_existing` has results. `city`, `region`, and `country` are parsed from the Place's `addressComponents` (`locality`, `administrative_area_level_1`, `country.shortText`) and may be `null` when Google omits them. These are Layer 2/3 results (cached POI lookup, falling back to a live Google Places API call). Google Places responses are cached server-side with a 30-day TTL using a rounded-coordinate key.
+- `crowd_sourced_nearby`: locations from **other projects** within **15 meters (~50 ft)** of the provided coordinates, grouped by `places_provider_id` and ordered by distance ASC. Only places-linked locations (`places_provider_id IS NOT NULL`) are included — manually-typed locations are excluded for privacy. Excludes any `places_provider_id` already present in the caller's project (those are surfaced in `nearby_existing` instead). Capped at 5 entries. `address`, `city`, `region`, `country` may be `null`. `performer_count` is the number of distinct projects with at least one completed session at this venue. No extra API cost (DB-only). Privacy stance: same as `/me/locations/search` — only places-linked names are shared.
+- `places_suggestions`: Google Places Nearby Search results within 2000 meters of the coordinates. Always populated regardless of whether `nearby_existing` has results. `city`, `region`, and `country` are parsed from the Place's `addressComponents` (`locality`, `administrative_area_level_1`, `country.shortText`) and may be `null` when Google omits them. These are Layer 3 results (cached POI lookup, falling back to a live Google Places API call). Google Places responses are cached server-side with a 30-day TTL using a rounded-coordinate key.
 
 ### Error responses
 

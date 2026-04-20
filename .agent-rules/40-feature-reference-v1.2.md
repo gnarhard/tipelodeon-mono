@@ -84,5 +84,6 @@
 - Locations are project-scoped named locations where performers play
 - Linked to performance sessions via `performance_sessions.location_id`
 - Location suggestion uses GPS (500ft/152m radius match against existing locations) → Google Places Nearby Search fallback
+- **Crowd-sourced nearby layer**: `/locations/suggest` also returns `crowd_sourced_nearby` — cross-project, places-linked locations within 15m (~50ft), capped at 5, excludes caller's own project. Rendered at the top of the location picker. See `_shared/contracts/locations.md`.
 - Google Places responses are cached server-side (30-day TTL, rounded-coord key)
 - Rate limit on `/locations/suggest`: 10/min per project
