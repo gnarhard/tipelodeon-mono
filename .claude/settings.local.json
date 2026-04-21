@@ -115,7 +115,15 @@
       "Bash(fvm flutter *)",
       "Bash(fvm dart *)",
       "Bash(./vendor/bin/pest --filter=\"TipBucketTotal\" --parallel)",
-      "Bash(./vendor/bin/pest --parallel)"
+      "Bash(./vendor/bin/pest --parallel)",
+      "mcp__dart__list_devices",
+      "mcp__dart__launch_app",
+      "mcp__dart__get_app_logs",
+      "mcp__dart__connect_dart_tooling_daemon",
+      "mcp__dart__hot_reload",
+      "Bash(git -C app status)",
+      "Bash(git -C app diff)",
+      "Bash(git -C app commit -m ' *)"
     ],
     "read": {
       "deny": [
