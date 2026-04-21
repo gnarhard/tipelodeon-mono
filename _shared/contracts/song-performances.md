@@ -180,6 +180,11 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 | `id` | integer | `performance_events.id` |
 | `occurred_at` | ISO 8601 UTC string | When the event occurred |
 | `tip_amount_cents` | integer | 0 when not applicable |
+| `payment_provider` | `"stripe"` \| `"none"` \| `"awarded"` \| null | How the request was paid. `"stripe"` = digital card/wallet; `"none"` = manual/cash; `"awarded"` = free-request reward redemption; null = not a payment event. |
+| `payment_method` | `"card"` \| `"apple_pay"` \| `"google_pay"` \| `"link"` \| `"cashapp"` \| `"cash"` \| null | Specific payment instrument. Derived from `requests.stripe_payment_method_type` for Stripe payments; `"cash"` for `payment_provider="none"`; null for `"awarded"` or non-payment events. |
+| `request_kind` | `"repertoire"` \| `"custom"` \| null | Populated on `request` events only. `"repertoire"` = song from catalog; `"custom"` = performer-entered free-text title; null for all other event types. |
+| `audience_ordinal` | integer \| null | Session-scoped 1..N ordinal for the audience member. Assigned by first-seen event per `audience_profile_id` ordered by `occurred_at` ASC then `id` ASC. All later events for the same profile share the same ordinal. Null when no `audience_profile_id` is present. |
+| `note` | string \| null | Audience-provided note on `request` events; null otherwise. |
 
 **Complete event-type reference**
 
@@ -187,23 +192,24 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 |---|---|---|
 | `session_started` | Session was started | — |
 | `session_ended` | Session was stopped | — |
-| `song_queued` | Song was added to the queue (before played) | `project_song_id`, `title`, `artist` |
+| `song_queued` | Song was added to the queue (before played) | `project_song_id`, `title`, `artist`, `audience_profile_id`, `audience_name` |
 | `song` | Song was performed — no matching audience request | `project_song_id`, `performance_session_id`, `title`, `artist`, `source`, `source_name`, `is_first_performance`, `was_requested` |
-| `request` | Song was performed and matched a played audience request | Same fields as `song` above, plus non-zero `tip_amount_cents` |
+| `request` | Song was performed and matched a played audience request | Same fields as `song` above, plus non-zero `tip_amount_cents`, `audience_profile_id`, `audience_name` |
 | `song_skipped` | Song was skipped in the queue | `project_song_id`, `title`, `artist` |
 | `song_reordered` | Queue was reordered | — |
-| `tip_only` | Audience tip not attached to a song (Tip Jar Support) | non-zero `tip_amount_cents` |
-| `original` | Original song request marked as played | non-zero `tip_amount_cents` |
-| `request_updated` | A manual queue item's tip amount was edited | `tip_amount_cents` (new), `previous_tip_amount_cents` |
-| `request_voided` | A manual queue item was removed | `tip_amount_cents` (original amount) |
+| `tip_only` | Audience tip not attached to a song (Tip Jar Support) | non-zero `tip_amount_cents`, `audience_profile_id`, `audience_name` |
+| `original` | Original song request marked as played | non-zero `tip_amount_cents`, `audience_profile_id`, `audience_name` |
+| `request_updated` | A manual queue item's tip amount was edited | `tip_amount_cents` (new), `previous_tip_amount_cents`, `audience_profile_id`, `audience_name` |
+| `request_voided` | A manual queue item was removed | `tip_amount_cents` (original amount), `audience_profile_id`, `audience_name` |
 | `tip_bucket_total` | Cash tip bucket total logged by the performer | `tip_bucket_total_id`, `tip_amount_cents` |
 | `tip_bucket_total_updated` | Cash tip bucket total was edited | `tip_bucket_total_id`, `tip_amount_cents` (new value) |
 | `tip_bucket_total_voided` | Cash tip bucket total was deleted | `tip_bucket_total_id`, `tip_amount_cents` (deleted amount) |
 | `reward_claimed` | Audience crossed a reward threshold during the session window | `reward_label`, `reward_icon`, `reward_type`, `threshold_cents`, `audience_name` |
 | `reward_delivered` | Performer confirmed a reward was physically delivered | `reward_label`, `reward_icon`, `reward_type`, `threshold_cents`, `audience_name` |
-| `link_clicked` | Audience member clicked a link on the project page | `link_type` |
-| `audience_page_viewed` | Audience member opened the project page | — |
-| `new_audience_member_viewed` | First time a given visitor opened the project page during an active session (idempotent per visitor token per session) | `visitor_token` |
+| `reward_used` | Audience redeemed a free_request reward for a specific song | `reward_label`, `reward_icon`, `reward_type`, `project_song_id`, `title`, `artist`, `audience_profile_id`, `audience_name`, `audience_ordinal` |
+| `link_clicked` | Audience member clicked a link on the project page | `link_type`, `audience_profile_id`, `audience_name` |
+| `audience_page_viewed` | Audience member opened the project page | `audience_profile_id`, `audience_name` |
+| `new_audience_member_viewed` | First time a given visitor opened the project page during an active session (idempotent per visitor token per session) | `visitor_token`, `audience_profile_id`, `audience_name` |
 
 **Field details for song / request events**
 
@@ -238,7 +244,9 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 
 **Ordering**: all events within `data.events` are sorted most-recent first by `occurred_at`.
 
-**Raw `request` performance_events**: Not surfaced. When an audience member places a request, a `song_queued` event appears immediately. When the performer plays the song, a `song` (or `request` if matched) event appears. This avoids duplicate entries.
+**`request` event lifecycle**: When an audience member places a request, two events appear simultaneously: a raw `request` event (the "placed" moment, carrying `payment_provider`, `payment_method`, `request_kind`, `note`) and a `song_queued` event. When the performer plays the song, a `song` or `request` (promoted) event appears. The placed `request` event is distinguished from the performed one by the presence of `payment_provider` (placed) vs `was_requested: true` (performed).
+
+**`reward_used` vs `reward_claimed`**: `reward_claimed` fires when the audience crosses the tip threshold (money side). `reward_used` fires when the audience redeems that reward for a specific song (request side). Both can appear in the same session for the same audience member.
 
 ### GET `/api/v1/me/projects/{project}/performances/{performanceSession}/events`
 
@@ -290,6 +298,32 @@ events.
 Clients should poll `GET …/performances/{performanceSession}/events` and
 detect completion by observing a new `ai_synopsis_generated_at` timestamp on
 the session payload.
+
+## UI label ↔ wire name mapping
+
+| Wire `event_type` | Condition | UI label |
+|---|---|---|
+| `session_started` | — | "Session Started" |
+| `session_ended` | — | "Session Ended" |
+| `audience_page_viewed` | — | "View: Project Page" |
+| `new_audience_member_viewed` | — | "View: Project Page" |
+| `tip_only` | — | "Tip: $X.XX" |
+| `request` | `payment_provider=stripe`, `request_kind=repertoire` | "Digital Request: Title — Artist" |
+| `request` | `payment_provider=none`, `request_kind=repertoire` | "Manual Request: Title — Artist" |
+| `request` | `payment_provider=awarded`, `request_kind=repertoire` | "Manual Request: Title — Artist" |
+| `request` | `payment_provider=none`, `request_kind=custom` | "Manual Custom Request: "{note}"" |
+| `original` | `payment_provider=stripe` | "Digital Request: Original" |
+| `original` | `payment_provider=none` | "Manual Request: Original" |
+| `song_queued` | — | "Queued: Title — Artist" |
+| `song` | — | "Performed: Title — Artist" |
+| `request` | `was_requested=true` (promoted on play) | "Performed: Title — Artist" |
+| `link_clicked` | — | "Link Click: {linkType}" |
+| `reward_claimed` | — | "Reward Earned: {rewardLabel}" |
+| `reward_delivered` | — | "Reward Claimed: {rewardLabel}" |
+| `reward_used` | — | "Reward Claimed: Title — Artist" |
+| `tip_bucket_total` | — | "Counted Cash Tip Bucket Total" |
+
+**Invariant — audience ordinal**: Within a session, each distinct non-null `audience_profile_id` is assigned ordinal `1..N` based on the earliest `occurred_at` (tie-broken by ascending `performance_events.id`) of any event that references it. All later events referencing the same profile receive the same ordinal.
 
 ## Notes
 
