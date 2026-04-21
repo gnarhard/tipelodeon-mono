@@ -151,14 +151,14 @@ Audience reward thresholds:
 
 ## Performer link tracking
 
-- `GET /project/{projectSlug}/learn-more` — redirects to `performer_info_url`
-  and records a `learn_more` click in `performer_link_clicks`.
+- `GET /project/{projectSlug}/website` — redirects to `performer_info_url`
+  and records a `website` click in `performer_link_clicks`.
 - `GET /project/{projectSlug}/track-performer` — redirects to
-  `performer_track_url` and records a `track_performer` click in
-  `performer_link_clicks`.
+  `performer_track_url` and records a `follow` click in
+  `performance_events`.
 - Both routes fall back to the project page if the corresponding URL is unset.
-- Clicks are recorded with `clicked_at` in UTC and the audience
+- Clicks are recorded with `occurred_at` in UTC and the audience
   `visitor_token` (cookie-based).
 - Click counts are surfaced in the owner-facing stats report under
-  `link_clicks.learn_more` and `link_clicks.track_performer`, scoped to
+  `link_clicks.website` and `link_clicks.follow`, scoped to
   the selected timeline window.

@@ -17,7 +17,7 @@ There is no other place where `embed=1` is honoured. Do not invent new embed ent
 When `$embed === true`, the rendered markup MUST NOT contain any of the following:
 
 1. **Server-action buttons** — anything with `wire:click`, `wire:submit`, `<form method="post|put|patch|delete">`, or a submit button. The audience embed is read-only browsing; tipping, requesting, surprising, and clearing filters all belong to the full project page.
-2. **Same-window navigation links** — any `<a href="...">` that would navigate the iframe away from the embed view (no `target="_blank"`). This includes links to the request flow, login, dashboard, learn-more page, or any other Song Tipper route. A navigation click inside the iframe replaces the host page's widget content with an unrelated page, which is broken.
+2. **Same-window navigation links** — any `<a href="...">` that would navigate the iframe away from the embed view (no `target="_blank"`). This includes links to the request flow, login, dashboard, website page, or any other Song Tipper route. A navigation click inside the iframe replaces the host page's widget content with an unrelated page, which is broken.
 3. **Auth-gated UI** — login/logout, account, dashboard, or admin affordances. The embed renders for anonymous audience visitors and must never expose performer-only controls.
 4. **Outbound POST forms** — even GET forms that would change the visible state outside Livewire are forbidden; use `wire:model.live` on inputs instead.
 

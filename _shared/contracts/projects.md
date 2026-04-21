@@ -272,10 +272,8 @@ Stats response fields:
     `reward_label`, `reward_icon` (nullable curated icon code), and `count`.
 - `link_clicks` reports audience clicks on performer links scoped to the
   selected period's UTC window (based on `clicked_at`):
-  - `link_clicks.learn_more` (int) — clicks on the "Learn More About the
-    Performer" link
-  - `link_clicks.track_performer` (int) — clicks on the "Track the
-    Performer" link
+  - `link_clicks.website` (int) — clicks on the "Website" link
+  - `link_clicks.follow` (int) — clicks on the "Follow" link
 
 If the owning project is not on Pro, these endpoints return `403` with
 `code=feature_requires_pro`.
