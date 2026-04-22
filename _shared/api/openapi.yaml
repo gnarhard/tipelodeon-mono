@@ -1268,12 +1268,22 @@ paths:
           application/json:
             schema:
               type: object
-              required: [mode]
+              required: [mode, timezone]
               properties:
                 setlist_id: { type: integer, description: 'Required when mode is manual; prohibited when mode is free_play.' }
                 mode:
                   type: string
                   enum: [manual, free_play]
+                timezone: { type: string, example: America/Denver, description: 'IANA timezone name. Required.' }
+                location_id: { type: integer, nullable: true }
+                latitude: { type: number, nullable: true }
+                longitude: { type: number, nullable: true }
+                gig_type: { type: string, enum: [public, private] }
+                started_at:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: 'Optional ISO-8601 UTC timestamp. Must fall within today in the supplied timezone. Defaults to server now() when omitted.'
       responses:
         '201':
           description: Session started
