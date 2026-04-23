@@ -103,6 +103,17 @@ Instrumental flag:
 - When `true`, repertoire and audience song lists append ` (instrumental)` to
   the displayed song title
 
+Original flag:
+- Field: `original`
+- Scope: stored on `project_songs`
+- Type: boolean
+- Default: `false`
+- When `true`, repertoire and audience song lists append ` (original)` to
+  the displayed song title. Indicates the performer wrote the song
+  themselves (as opposed to a cover).
+- Independent of the audience-side `is_original` field on `POST /requests`
+  (see public.md), which flags an audience *request* for an original song.
+
 Mashup flag:
 - Field: `mashup`
 - Scope: stored on `project_songs`
@@ -149,6 +160,7 @@ Reference links:
 - Supports `theme` and `learned` filters.
 - Repertoire list items include:
   - `instrumental`
+  - `original`
   - `learned`
   - `performance_count`
   - `request_count`
@@ -158,8 +170,9 @@ Reference links:
 
 ### Create
 - `POST /repertoire`
-- Supports theme, `instrumental`, `mashup`, `is_public`, `learned`,
-  `version_label`, and project-song `notes` in request and response payloads.
+- Supports theme, `instrumental`, `original`, `mashup`, `is_public`,
+  `learned`, `version_label`, and project-song `notes` in request and
+  response payloads.
 - `version_label` is optional (nullable string, max 50 chars). When provided,
   the duplicate check compares both `song_id` and `version_label` instead of
   `song_id` alone, allowing multiple versions of the same song.
@@ -179,8 +192,9 @@ Limit error:
 
 ### Update
 - `PUT /repertoire/{projectSongId}`
-- Supports `title`, `artist`, theme, `instrumental`, `mashup`, `is_public`,
-  `learned`, and project-song `notes` updates at project override level.
+- Supports `title`, `artist`, theme, `instrumental`, `original`, `mashup`,
+  `is_public`, `learned`, and project-song `notes` updates at project
+  override level.
 - Title/artist changes are saved to `project_songs` only (the `songs` table
   and `song_id` are not modified).
 - When `learned` flips to `false`, the backend backfills the canonical
@@ -196,7 +210,7 @@ Project-song notes:
 
 ### Bulk update
 - `POST /repertoire/bulk-update`
-- Body: `{ project_song_ids: [int], fields: { is_public?, learned?, mashup?, instrumental? } }`
+- Body: `{ project_song_ids: [int], fields: { is_public?, learned?, mashup?, instrumental?, original? } }`
 - Limits: 1–500 IDs per request; at least one whitelisted field is required.
 - Access: IDs outside the current user/project are silently skipped.
 - Response: `{ "message": "Updated N song(s).", "updated_count": N }`.
@@ -239,9 +253,10 @@ Project-song notes:
     `owner_user_id`. Only honored when `include_charts=true`; silently
     ignored otherwise.
 - Copied metadata mirrors the source `project_song` (title, artist, energy,
-  genre, theme, instrumental, mashup, is_public, performed key, tuning,
-  capo, notes, needs_improvement). `learned` is preserved. Performance
-  counters (`performance_count`, `last_performed_at`) are **not** copied.
+  genre, theme, instrumental, original, mashup, is_public, performed key,
+  tuning, capo, notes, needs_improvement). `learned` is preserved.
+  Performance counters (`performance_count`, `last_performed_at`) are
+  **not** copied.
 - Response `201`:
 
 ```json

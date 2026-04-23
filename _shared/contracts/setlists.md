@@ -148,8 +148,9 @@ Validation:
 Semantics:
 - The backend loads the project repertoire **filtered to songs where
   `learned = true` and `is_public = true`**, with effective metadata
-  (energy, era, genre, theme, duration, instrumental, mashup, version_label,
-  last_performed_at, request_count, performance_count, total_tip_amount_cents)
+  (energy, era, genre, theme, duration, instrumental, original, mashup,
+  version_label, last_performed_at, request_count, performance_count,
+  total_tip_amount_cents)
   and sends it to the configured AI provider along with the per-set prompts.
 - The backend also sends the performer's historical performance patterns
   (song-to-song transitions, opener/closer affinities, energy/theme slot

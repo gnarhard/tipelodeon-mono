@@ -32,9 +32,12 @@ Platform URL fields:
 - Supports search/sort and metadata filters including `theme`.
 - Songs with `is_public=false` are excluded from the public repertoire (default mode).
 - When the project has `public_repertoire_set_id` set, the public repertoire shows only songs from that set, ignoring `is_public` flags and `version_label` filters.
-- Each repertoire item includes boolean `instrumental`.
+- Each repertoire item includes boolean `instrumental` and boolean `original`.
 - Audience UIs append ` (instrumental)` to the displayed title when
-  `instrumental=true`.
+  `instrumental=true` and ` (original)` when `original=true`.
+- The repertoire-item `original` flag is distinct from the
+  `is_original` field on `POST /requests` (which flags an audience request
+  for an original song).
 - `theme` is strict enum:
   `love`, `party`, `worship`, `story`, `st_patricks`, `christmas`, `halloween`, `patriotic`.
 - Invalid `theme` filter values return `422`.
