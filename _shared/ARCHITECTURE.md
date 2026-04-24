@@ -765,7 +765,7 @@ void main() async {
   // Initialize core services
   await _initializeServices();
 
-  runApp(const SongTipperApp());
+  runApp(const TipelodeonApp());
 }
 
 Future<void> _initializeServices() async {

@@ -9,7 +9,7 @@
 5. Add or update unit tests and feature or integration tests for every behavior you modify.
 6. Update the admin manual test checklist for any user-visible behavior change. Both files must stay in lockstep:
    - `web/app/Support/TestChecklist/ManualTestChecklist.php` (authoritative source for the in-app admin tracker)
-   - `SongTipper_Manual_Test_Checklist.md` (repo-root mirror)
+   - `Tipelodeon_Manual_Test_Checklist.md` (repo-root mirror)
    Any feature added, removed, renamed, or materially changed must be reflected here before the task is considered done.
 7. Run the full test suite and required validation commands for every repo you plan to submit to GitHub, not just the tests related to your change.
 8. If any test fails, even for a pre-existing or unrelated reason, fix it before submission or stop and report that GitHub submission is blocked.
