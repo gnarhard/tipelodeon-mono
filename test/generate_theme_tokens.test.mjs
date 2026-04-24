@@ -38,51 +38,57 @@ test('theme token generator emits only the pinned theme families and wave colors
   const webCssOutput = fs.readFileSync(webCssOutputPath, 'utf8');
   const webJsOutput = fs.readFileSync(webJsOutputPath, 'utf8');
 
+  // Pewter Sage palette — dark-mode accent is brighter sage,
+  // light-mode primary is a darker sage (#3F7A5A) for WCAG contrast.
   assert.match(
     dartOutput,
-    /static const Color apricot_NORMAL = Color\(0xFFFFB375\);/,
+    /static const Color apricot_NORMAL = Color\(0xFF7EC096\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color success_NORMAL = Color\(0xFF6F9072\);/,
+    /static const Color success_NORMAL = Color\(0xFF7ABA9A\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color info_NORMAL = Color\(0xFF5F7FA2\);/,
+    /static const Color info_NORMAL = Color\(0xFF7A9FC4\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color dark_SEPARATOR = Color\(0xFF4E435B\);/,
+    /static const Color dark_SEPARATOR = Color\(0xFF404752\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color light_PRIMARY_CONTAINER = Color\(0xFFFFCBA0\);/,
+    /static const Color light_PRIMARY_CONTAINER = Color\(0xFF9CC5AC\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color dark_SURFACE = Color\(0xFF302938\);/,
+    /static const Color light_PRIMARY = Color\(0xFF3F7A5A\);/,
   );
   assert.match(
     dartOutput,
-    /static const Color wave_RIBBON_BLIGHT_START = Color\(0xFFE9F1F6\);/,
+    /static const Color dark_SURFACE = Color\(0xFF1A1D22\);/,
+  );
+  assert.match(
+    dartOutput,
+    /static const Color wave_RIBBON_BLIGHT_START = Color\(0xFFEBEEF2\);/,
   );
   assert.doesNotMatch(
     dartOutput,
-    /Color\(0xFFC46D2C\)|Color\(0xFF10B981\)|Color\(0xFF92A1AF\)/,
+    /Color\(0xFFFFB375\)|Color\(0xFFFFCBA0\)|Color\(0xFF302938\)/,
   );
 
-  assert.match(webCssOutput, /--st-surface: #dcecf4;/);
-  assert.match(webCssOutput, /--st-surface-strong: #cddce3;/);
-  assert.match(webCssOutput, /--st-apricot: #ffb375;/);
-  assert.match(webCssOutput, /--st-text: #dcecf4;/);
-  assert.match(webCssOutput, /--st-line: #4e435b;/);
-  assert.match(webCssOutput, /--st-line-strong: #cddce3;/);
-  assert.match(webCssOutput, /--st-primary-container: #ffcba0;/);
-  assert.match(webCssOutput, /--st-success-container: #d9e6da;/);
-  assert.match(webCssOutput, /--st-on-success-container: #302938;/);
+  assert.match(webCssOutput, /--st-surface: #f1f2f5;/);
+  assert.match(webCssOutput, /--st-surface-strong: #e4e6eb;/);
+  assert.match(webCssOutput, /--st-apricot: #7ec096;/);
+  assert.match(webCssOutput, /--st-text: #1d2128;/);
+  assert.match(webCssOutput, /--st-line: #e4e6eb;/);
+  assert.match(webCssOutput, /--st-line-strong: #525966;/);
+  assert.match(webCssOutput, /--st-primary-container: #9cc5ac;/);
+  assert.match(webCssOutput, /--st-success-container: #c8e4d2;/);
+  assert.match(webCssOutput, /--st-on-success-container: #1d2128;/);
   assert.doesNotMatch(
     webCssOutput,
-    /#e88d4d|#c46d2c|#92a1af|#778093|#10b981/i,
+    /#ffb375|#ffcba0|#302938|#2d2633|#dcecf4|#cddce3/i,
   );
 
   assert.match(webJsOutput, /apricot/);
