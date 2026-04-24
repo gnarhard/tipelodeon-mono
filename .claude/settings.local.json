@@ -124,7 +124,15 @@
       "Bash(git -C app commit -m ' *)",
       "Bash(dart test *)",
       "Bash(awk '/^components:/{flag=1} flag && /^  schemas:/{flag=2} flag==2 && /^    [A-Z]/{print NR\": \"$0}' /Users/gerhard/Code/Sites/Valet/tipelodeon/_shared/api/openapi.yaml)",
-      "Bash(./vendor/bin/pest *)"
+      "Bash(./vendor/bin/pest *)",
+      "Bash(flutter build *)",
+      "Bash(flutter devices *)",
+      "Bash(flutter run *)",
+      "mcp__playwright__browser_tabs",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_click",
+      "mcp__chrome-devtools__get_console_message",
+      "mcp__chrome-devtools__evaluate_script",
     ],
     "read": {
       "deny": [
