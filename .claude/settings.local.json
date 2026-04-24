@@ -132,7 +132,7 @@
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_click",
       "mcp__chrome-devtools__get_console_message",
-      "mcp__chrome-devtools__evaluate_script",
+      "mcp__chrome-devtools__evaluate_script"
     ],
     "read": {
       "deny": [
