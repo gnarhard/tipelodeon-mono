@@ -420,7 +420,11 @@ the caller cannot access the project.
     "net_tip_amount_cents": 4500,
     "tip_bucket_total_amount_cents": 2000
   },
-  "counts": { "request_count": 12, "played_count": 14 },
+  "counts": {
+    "request_count": 12,
+    "requests_played_count": 9,
+    "unrequested_plays_count": 3
+  },
   "rankings": {
     "most_played": [],
     "most_requested": [],
@@ -438,9 +442,15 @@ the caller cannot access the project.
   `rankings.highest_earning`, `audience_loyalty`, and
   `payment_method_breakdown` are scoped to requests with
   `performance_session_id = {sessionId}`.
-- `counts.played_count` and `rankings.most_played` are scoped to
-  `song_performances` with `performance_session_id = {sessionId}` (so
-  free-play songs count even when not tied to requests).
+- `counts.requests_played_count` is the count of `song_performances`
+  rows with `source = setlist` for the session — songs the artist played
+  that came from a tipped/queued request.
+- `counts.unrequested_plays_count` is the count of `song_performances`
+  rows with `source = repertoire` for the session — songs the artist
+  played that weren't tied to any request.
+- `rankings.most_played` is scoped to `song_performances` with
+  `performance_session_id = {sessionId}` (so free-play songs count even
+  when not tied to requests).
 - `rewards_gifted` is bounded by `session.started_at` through
   `session.ended_at ?? now()` (UTC) AND restricted to audience profiles
   that placed at least one request in the session.

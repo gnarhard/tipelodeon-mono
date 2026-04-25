@@ -135,7 +135,8 @@ Semantics:
     `generated_at`
   - `money.gross_tip_amount_cents`, `money.fee_amount_cents`,
     `money.net_tip_amount_cents`
-  - `counts.request_count`, `counts.played_count`
+  - `counts.request_count`, `counts.requests_played_count`,
+    `counts.unrequested_plays_count`
   - nullable `highlights.most_requested` and `highlights.highest_earning`
   - `rankings.most_played`, `rankings.most_requested`,
     `rankings.highest_earning`
