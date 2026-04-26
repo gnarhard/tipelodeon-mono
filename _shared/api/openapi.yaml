@@ -2485,6 +2485,22 @@ components:
         fee_amount_cents: { type: integer }
         net_tip_amount_cents: { type: integer }
         tip_bucket_total_amount_cents: { type: integer, default: 0 }
+        digital_tip_only_gross_amount_cents:
+          type: integer
+          default: 0
+          description: |
+            Subset of `gross_tip_amount_cents` from Stripe-paid Tip Jar
+            Support events (audience tipped without selecting a song).
+            Only populated by the per-session response; defaults to 0
+            elsewhere. Sums with `digital_request_gross_amount_cents` to
+            equal `gross_tip_amount_cents`.
+        digital_request_gross_amount_cents:
+          type: integer
+          default: 0
+          description: |
+            Subset of `gross_tip_amount_cents` from Stripe-paid song
+            requests (including Original Request entries). Only populated
+            by the per-session response; defaults to 0 elsewhere.
     ProjectStatsCounts:
       type: object
       properties:
