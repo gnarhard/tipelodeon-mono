@@ -194,9 +194,9 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 |---|---|---|
 | `session_started` | Session was started | — |
 | `session_ended` | Session was stopped | — |
-| `song_queued` | Song was added to the queue (before played) | `project_song_id`, `title`, `artist`, `audience_profile_id`, `audience_name` |
+| `song_queued` | Song was added to the queue (before played) | `project_song_id`, `song_request_id`, `title`, `artist`, `audience_profile_id`, `audience_name` |
 | `song` | Song was performed — no matching audience request | `project_song_id`, `performance_session_id`, `title`, `artist`, `source`, `source_name`, `is_first_performance`, `was_requested` |
-| `request` | Song was performed and matched a played audience request | Same fields as `song` above, plus non-zero `tip_amount_cents`, `audience_profile_id`, `audience_name` |
+| `request` | Song was performed and matched a played audience request | Same fields as `song` above, plus non-zero `tip_amount_cents`, `song_request_id`, `audience_profile_id`, `audience_name` |
 | `song_skipped` | Song was skipped in the queue | `project_song_id`, `title`, `artist` |
 | `song_reordered` | Queue was reordered | — |
 | `tip_only` | Audience tip not attached to a song (Tip Jar Support) | non-zero `tip_amount_cents`, `audience_profile_id`, `audience_name` |
@@ -239,6 +239,8 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 **`reward_claimed` vs `reward_delivered`**: `reward_claimed` fires when the audience crosses the threshold (money side). `reward_delivered` fires when the performer taps "Mark as delivered" in the app (physical delivery confirmation). `reward_claimed` carries the `performance_session_id` of the request that crossed the threshold. `reward_delivered` is still matched to the session by project + time window (it has no `performance_session_id`), so it appears on any session whose time window contains the delivery. Legacy `reward_claimed` rows written before this field was populated also fall back to time-window matching.
 
 **`tip_bucket_total_id`**: Use this FK — not `id` (which is `performance_events.id`) — when calling `/tip-bucket-totals/{id}` endpoints. Null only on legacy rows that pre-date the link.
+
+**`song_request_id`**: The underlying `requests.id` for `request` and `song_queued` events. Use this FK — not the event's `id` — when calling `/queue/{requestId}` endpoints (e.g. `PATCH` to update the tip amount, `DELETE` to remove a manually queued request). Null when the event has no joined request row (e.g. a manually-logged song with no audience request).
 
 **`request_updated.previous_tip_amount_cents`**: The tip amount before the edit. Always present; 0 if the original was also 0.
 
