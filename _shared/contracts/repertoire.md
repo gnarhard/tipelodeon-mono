@@ -360,13 +360,22 @@ Response (`200`):
           "theme": "story",
           "original_musical_key": "Bb",
           "duration_in_seconds": 354
-        }
+        },
+        "is_duplicate": false,
+        "duplicate_of": null
       }
     ],
     "ai_calls_used": 3
   }
 }
 ```
+
+`is_duplicate` is `true` when a non-mashup `ProjectSong` with an empty
+`version_label` already exists in the project for this normalized
+title+artist; `duplicate_of` is then `"Title - Artist"` of the existing
+song. Clients should route these items to the duplicates section instead
+of the review queue. Mashups are not flagged here because they bypass
+repertoire dedup at confirm time.
 
 ### Phase 3: Confirm — `POST /repertoire/bulk-import/confirm`
 
