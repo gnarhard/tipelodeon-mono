@@ -2927,6 +2927,15 @@ components:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
         instrumental: { type: boolean }
+        original:
+          type: boolean
+          description: Performer wrote this song themselves; appends " (original)" to displayed titles.
+        mashup:
+          type: boolean
+          description: Song bypasses global dedup and gets a "Mashup" pill.
+        learned:
+          type: boolean
+          description: When false, the song is conceptually "to-learn".
         is_public: { type: boolean, default: true }
         energy_level: { type: string, nullable: true }
         era: { type: string, nullable: true }
@@ -2954,6 +2963,13 @@ components:
           type: string
           format: date-time
           nullable: true
+        source_project_song_id:
+          type: integer
+          nullable: true
+          description: Member's link back to the owner's canonical version.
+        is_owner_copy:
+          type: boolean
+          description: True when source_project_song_id is null.
     SingleRepertoireResponse:
       type: object
       properties:
@@ -2988,6 +3004,9 @@ components:
             - $ref: '#/components/schemas/SongTheme'
           nullable: true
         instrumental: { type: boolean, nullable: true }
+        original: { type: boolean, nullable: true }
+        mashup: { type: boolean, nullable: true }
+        learned: { type: boolean, nullable: true }
         is_public: { type: boolean, nullable: true }
         energy_level: { type: string, nullable: true }
         era: { type: string, nullable: true }
@@ -3001,6 +3020,55 @@ components:
           nullable: true
           maxLength: 3000
         duration_in_seconds: { type: integer, nullable: true }
+    BulkEnrichRequest:
+      type: object
+      required: [songs]
+      properties:
+        songs:
+          type: array
+          items:
+            type: object
+            required: [title, artist]
+            properties:
+              title: { type: string }
+              artist: { type: string }
+    BulkEnrichResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            ai_calls_used: { type: integer }
+            songs:
+              type: array
+              items:
+                type: object
+                properties:
+                  title: { type: string }
+                  artist: { type: string }
+                  source:
+                    type: string
+                    description: e.g. "songs_table", "cache", "ai".
+                  metadata:
+                    type: object
+                    nullable: true
+                    properties:
+                      energy_level: { type: string, nullable: true }
+                      era: { type: string, nullable: true }
+                      genre: { type: string, nullable: true }
+                      theme:
+                        allOf:
+                          - $ref: '#/components/schemas/SongTheme'
+                        nullable: true
+                      original_musical_key: { type: string, nullable: true }
+                      duration_in_seconds: { type: integer, nullable: true }
+                  is_duplicate:
+                    type: boolean
+                    description: True when a non-mashup primary-version ProjectSong with the same normalized title+artist already exists in the project.
+                  duplicate_of:
+                    type: string
+                    nullable: true
+                    description: '"Title - Artist" of the existing repertoire song, or null when is_duplicate is false.'
     SetCreateRequest:
       type: object
       properties:
