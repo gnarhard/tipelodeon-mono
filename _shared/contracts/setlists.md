@@ -49,7 +49,11 @@ Setlist routes:
   (including all sets and songs) in the same project. The duplicated setlist
   name is `"{original name} (Copy)"`. Returns the new setlist. Requires
   internet connection (no offline fallback).
-- `DELETE /setlists/{setlistId}` — permanent delete (prefer archive).
+- `DELETE /setlists/{setlistId}` — soft-delete an archived setlist.
+  Returns `422` with message `"Only archived setlists can be deleted."`
+  when the setlist has not been archived first. The row remains in the
+  database with `deleted_at` set and is hidden from every list/show
+  endpoint; there is no client-facing endpoint to restore it.
 
 Setlist resource fields:
 - `id`, `project_id`, `name`, `notes`, `folder`, `performed_at`,
