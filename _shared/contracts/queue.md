@@ -175,6 +175,15 @@ Manually add an item to the active queue as an authenticated performer/project m
 - `tip_amount_cents` values with cents are rounded up to the next whole-dollar
   amount before persistence and response serialization
 
+**Storage note (custom requests):**
+- `type=custom` requests do **not** create a `songs` row. The performer-supplied
+  `custom_title` and optional `custom_artist` are stored directly on the
+  `requests` row, and `song_id` points at a single shared sentinel song
+  (`title="Custom Request"`, `artist="Custom Request"`). The response shape is
+  unchanged: `song.title` and `song.artist` echo the request's `custom_title`
+  / `custom_artist` (falling back to the sentinel's labels when no
+  `custom_artist` was supplied).
+
 ### Success response (`201`)
 
 ```json
