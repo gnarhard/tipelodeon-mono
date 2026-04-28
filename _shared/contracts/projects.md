@@ -75,6 +75,8 @@ Core fields:
 - `public_repertoire_set_id` (nullable int, FK to `setlist_sets.id`; when set, the public project page shows only songs from this set instead of the full `is_public` repertoire; `nullOnDelete` auto-resets when the set is deleted)
 - `public_repertoire_set_name` (read-only, set name when `public_repertoire_set_id` is loaded)
 - `public_repertoire_setlist_name` (read-only, parent setlist name when `public_repertoire_set_id` is loaded)
+- `public_repertoire_setlist_id` (nullable int, FK to `setlists.id`; when set, the public project page shows the union of all songs across every set of this setlist instead of the full `is_public` repertoire; takes precedence over `public_repertoire_set_id`; mutually exclusive — setting either field clears the other; `nullOnDelete` auto-resets when the setlist is deleted)
+- `public_repertoire_full_setlist_name` (read-only, setlist name when `public_repertoire_setlist_id` is loaded)
 - `min_suggested_setlist_songs` (int, default 5, range 1..100; minimum number of songs an audience member must pick when suggesting a setlist via `/project/{slug}/suggest-setlist`)
 - `max_suggested_setlist_songs` (int, default 25, range 1..100; maximum number of songs; must be >= `min_suggested_setlist_songs`)
 - `chart_viewport_prefs` (deprecated, nullable object)
@@ -295,7 +297,8 @@ If the owning project is not on Pro, these endpoints return `403` with
 - `notify_on_request`
 - `show_persistent_queue_strip`
 - `acknowledge_invisible_requests` (ephemeral per-request flag; not persisted; see notification gate above)
-- `public_repertoire_set_id` (nullable int; set to override public song list, null to reset)
+- `public_repertoire_set_id` (nullable int; set to override public song list with one set, null to reset; setting a non-null value also clears `public_repertoire_setlist_id`)
+- `public_repertoire_setlist_id` (nullable int; set to override public song list with every song across every set of a setlist, null to reset; setting a non-null value also clears `public_repertoire_set_id`; takes precedence on read)
 - `min_suggested_setlist_songs` (int, 1..100)
 - `max_suggested_setlist_songs` (int, 1..100; must be >= min)
 - `remove_performer_profile_image`
