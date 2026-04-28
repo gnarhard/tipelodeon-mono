@@ -219,8 +219,8 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 |---|---|---|
 | `project_song_id` | integer | The project-song that was performed or queued |
 | `performance_session_id` | integer \| null | The session this performance belongs to |
-| `title` | string \| null | Project-specific song title |
-| `artist` | string \| null | Project-specific artist name |
+| `title` | string \| null | Performer-facing title. For `repertoire` requests this is the project-song title; for `custom` requests it is the performer-entered `custom_title` stored on the request row (the underlying `songs` row is the shared `Custom Request` sentinel and is never used for display); for `original` it is the `Original Request` sentinel. |
+| `artist` | string \| null | Performer-facing artist. For `custom` requests it is the request's `custom_artist` when supplied, otherwise the sentinel label `"Custom Request"`. |
 | `source` | `"repertoire"` \| `"setlist"` \| null | How the performance was logged |
 | `source_name` | string \| null | The setlist name when `source` is `"setlist"`, otherwise null |
 | `is_first_performance` | boolean | True when this is the earliest ever performance of this project-song |
