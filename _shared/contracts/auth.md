@@ -296,6 +296,57 @@ Allowed values for both fields:
 
 ---
 
+## Billing Status
+
+- **Method**: `GET`
+- **Path**: `/api/v1/me/billing`
+- **Auth**: Required (Bearer token)
+
+Returns the authenticated owner account's billing snapshot used by the
+mobile settings screen to render the activation-threshold progress.
+
+### Success response (`200`)
+
+```json
+{
+  "data": {
+    "billing_plan": "free",
+    "billing_status": "earning",
+    "cumulative_tip_cents": 12500,
+    "activation_threshold_cents": 20000,
+    "is_threshold_reached": false,
+    "grace_period_started_at": null,
+    "grace_period_days_remaining": null,
+    "is_top_earner": false,
+    "is_verified_earner": false
+  }
+}
+```
+
+`activation_threshold_cents` is read from `config('billing.activation_threshold_cents')` (defaults to `20000` = $200). `grace_period_days_remaining` is `null` outside of the post-threshold grace window.
+
+---
+
+## Delete Account
+
+- **Method**: `DELETE`
+- **Path**: `/api/v1/me/account`
+- **Auth**: Required (Bearer token)
+
+Permanently deletes the authenticated user. Cancels any active Stripe
+subscription via Cashier (`subscription('default')->cancelNow()`) before
+deletion, revokes all Sanctum tokens, and removes the user record.
+
+### Success response (`204`)
+
+Empty body. Subsequent requests using the old token return `401`.
+
+### Error response (`503`)
+
+Empty body. Returned when the Stripe subscription cancellation fails — the user record is preserved so the client can retry.
+
+---
+
 ## Update Password
 
 - **Method**: `PUT`
