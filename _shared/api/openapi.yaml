@@ -1048,6 +1048,16 @@ paths:
                   type: string
                   format: binary
                   description: Image file (JPEG, PNG, WebP, or HEIC; max 10 MB)
+                extract_only:
+                  type: boolean
+                  description: |
+                    When truthy, the server extracts and dedup-checks the
+                    songs but does not create any ProjectSong rows and
+                    skips the repertoire-limit check. Each non-duplicate
+                    result is returned with action `extracted` so the
+                    bulk-import client can route it through the standard
+                    review + enrichment pipeline (no entry point should
+                    bypass Review and land directly in Completed).
       responses:
         '200':
           description: Extraction and import completed
@@ -2841,9 +2851,23 @@ components:
               artist: { type: string }
               action:
                 type: string
-                enum: [imported, duplicate, limit_reached]
+                enum: [extracted, imported, duplicate, limit_reached]
+                description: |
+                  `extracted` only appears when the request set
+                  `extract_only=1`; the song was identified but not
+                  created server-side. `imported` only appears for the
+                  legacy mode where the server creates the ProjectSong.
               song_id: { type: integer, nullable: true }
               duplicate_of: { type: string, nullable: true }
+              metadata:
+                type: object
+                nullable: true
+                description: |
+                  AI-suggested metadata returned alongside `extracted`
+                  results so the bulk-import client can show it in the
+                  Review form before the user confirms. Empty object
+                  when the AI provided no metadata.
+                additionalProperties: true
     AppPlatform:
       type: string
       enum: [ios, android, macos, windows, linux]

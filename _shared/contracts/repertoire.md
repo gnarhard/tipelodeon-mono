@@ -477,6 +477,14 @@ Behavior:
   category `image_import`.
 - Request validation:
   - `image`: required, file, mimetypes `image/jpeg,image/png,image/webp,image/heic`, max 10MB.
+  - `extract_only`: optional boolean. When truthy the server extracts and
+    deduplicates the songs but does not create any `ProjectSong` rows; the
+    repertoire-limit check is also skipped (it's enforced at the eventual
+    confirm step). Each non-duplicate result is returned with action
+    `extracted` plus a `metadata` object so the bulk-import client can
+    route it through the standard enrichment + review pipeline. Required
+    by the bulk-import flow so no entry point bypasses Review and lands
+    directly in Completed.
 - Throttle: `throttle:chart-uploads`.
 
 Response (`200`):
@@ -490,11 +498,16 @@ Response (`200`):
   "limit_reached": 0,
   "songs": [
     { "title": "...", "artist": "...", "action": "imported", "song_id": 123 },
+    { "title": "...", "artist": "...", "action": "extracted", "song_id": 123, "metadata": { "energy_level": "high", "genre": "Rock" } },
     { "title": "...", "artist": "...", "action": "duplicate", "duplicate_of": "..." },
     { "title": "...", "artist": "...", "action": "limit_reached" }
   ]
 }
 ```
+
+`imported` results only appear when the request omits `extract_only`. The
+bulk-import client always sets `extract_only=1`, so its responses contain
+`extracted`, `duplicate`, and `limit_reached` actions only.
 
 ---
 
