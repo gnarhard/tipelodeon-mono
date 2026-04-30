@@ -12,6 +12,18 @@ The public repertoire page can be rendered as an embeddable iframe widget when t
 
 There is no other place where `embed=1` is honoured. Do not invent new embed entry points without updating this rule.
 
+## Optional `appearance` query parameter
+
+The embed view accepts an optional `appearance` query parameter that lets the host site override the auto color-scheme behaviour:
+
+- `appearance=light` — force the light embed palette regardless of the host's `prefers-color-scheme`.
+- `appearance=dark` — force the dark embed palette regardless of the host's `prefers-color-scheme`.
+- omitted, empty, or any other value — auto: dark styles apply via `@media (prefers-color-scheme: dark)`, the same default as before this parameter existed.
+
+The parameter is parsed in `web/resources/views/pages/repertoire.blade.php` (case-insensitive). It only affects the inline `<style>` block emitted for embed mode and adds an `st-embed-appearance-light` or `st-embed-appearance-dark` body class for downstream targeting. It does not influence Livewire state or the song-`theme` filter (which lives on the Livewire component as `#[Url] public string $theme`).
+
+Do not reuse the name `theme` for the colour scheme — it already binds to the audience-facing song-theme filter on the same URL.
+
 ## Hard constraint: no actionable buttons in embed mode
 
 When `$embed === true`, the rendered markup MUST NOT contain any of the following:
