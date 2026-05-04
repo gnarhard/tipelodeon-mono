@@ -44,6 +44,7 @@ Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
       "id": 42,
       "audience_profile_id": null,
       "performance_session_id": 7,
+      "session_sequence": 12,
       "song": {
         "id": 1,
         "title": "Fly Me to the Moon",
@@ -85,6 +86,12 @@ Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
 
 **Response includes `ETag` header.**
 
+- `session_sequence` is the 1-based ordinal of the request within its
+  `performance_session_id`. Every queue write — manual queue add, audience
+  paid request, audience free request, tip-only Stripe charge, original
+  request — increments this counter. Clients display the value as the
+  user-facing request number (typically zero-padded, e.g. `#0042`). It is
+  `null` only for legacy rows whose `performance_session_id` is `null`.
 - `meta.daily_record_event` is `null` unless the current local day sets a new
   project lifetime one-day gross-tip record.
 - `requester_name` is the tipper's real name sourced from the linked
@@ -191,6 +198,8 @@ Manually add an item to the active queue as an authenticated performer/project m
   "message": "Queue item added.",
   "request": {
     "id": 42,
+    "performance_session_id": 7,
+    "session_sequence": 13,
     "song": {
       "id": 1,
       "title": "Crowd Favorite Mashup",
@@ -274,6 +283,8 @@ Update the tip amount on a manual (performer-added) queue item. Only manual item
   "message": "Queue item updated.",
   "request": {
     "id": 42,
+    "performance_session_id": 7,
+    "session_sequence": 13,
     "song": {
       "id": 1,
       "title": "Crowd Favorite Mashup",
@@ -425,6 +436,8 @@ mismatch (missing or extra IDs) returns `422`.
   "data": [
     {
       "id": 3,
+      "performance_session_id": 7,
+      "session_sequence": 4,
       "song": { "id": 10, "title": "Bohemian Rhapsody", "artist": "Queen" },
       "tip_amount_cents": 500,
       "tip_amount_dollars": "5",
@@ -477,6 +490,8 @@ Mark a request as played.
   "message": "Request marked as played.",
   "request": {
     "id": 42,
+    "performance_session_id": 7,
+    "session_sequence": 12,
     "song": {
       "id": 1,
       "title": "Fly Me to the Moon",
