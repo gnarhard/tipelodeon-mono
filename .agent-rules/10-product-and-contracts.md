@@ -90,16 +90,29 @@ Then document the confirmed behavior in `_shared/`.
 
 ## Offline-first expectations
 
-- Cache read models locally when the app already has a storage pattern for it.
-- Queue writes where that behavior already exists or is clearly intended.
-- Never leave the UI blocked on network calls; show cached state and retry affordances.
+- Cache is sticky. Never clear caches automatically on logout, project
+  switch, billing change, or connectivity loss. The only path that wipes
+  caches is `AuthController.deleteAccount()`. The Settings
+  "Refresh all cached data" action re-warms in place.
+- On startup, warm caches for every project the user has access to so
+  switching feels instant. Warming uses background concurrency and
+  skip-if-exists for binary assets (chart images, audio MP3s).
+- Show cached state immediately on every screen; refresh in the
+  background. Transient network failures must not surface as errors when
+  cached data is available.
+- Provide pull-to-refresh and a desktop refresh AppBar action on every
+  screen that displays cached data.
+- Queue writes through the outbox; do not block UI on network calls.
+- Live polling features (queue, performance detail) must degrade silently
+  to cached state when offline; they must never error out or clear caches.
 
 Before introducing a new caching approach, inspect existing patterns in:
 
-- `mobile_app/lib/services`
-- `mobile_app/lib/repositories`
-- `mobile_app/lib/storage`
-- files matching `*cache*`, `*hive*`, or `*offline*`
+- `mobile_app/lib/core/cache/`
+- `mobile_app/lib/core/storage/`
+- `mobile_app/lib/features/**/data/*_repository_impl.dart`
+- the per-feature `warmCache(projectId)` and `Refreshable.refresh()`
+  conventions wired through `AppCacheWarmer`
 
 ## Cross-stack safety checks
 
