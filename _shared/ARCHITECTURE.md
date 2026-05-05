@@ -383,6 +383,7 @@ Global song catalog. Songs are deduplicated by normalized title+artist.
 - `genre` - e.g., "Jazz", "Rock", "Pop" (global default)
 - `original_musical_key` - e.g., "C", "F#m"
 - `duration_in_seconds` - Song length
+- `tempo_bpm` - Beats per minute (30–300, project-overridable on `project_songs.tempo_bpm`)
 - `created_at`, `updated_at`
 
 **Special Songs:**
@@ -1116,7 +1117,8 @@ Response:
       "era": "90s",
       "genre": "Rock",
       "original_musical_key": "F#m",
-      "duration_in_seconds": 259
+      "duration_in_seconds": 259,
+      "tempo_bpm": 86
     }
   }
 }

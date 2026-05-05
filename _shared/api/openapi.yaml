@@ -2973,6 +2973,8 @@ components:
         original_musical_key: { type: string, nullable: true }
         tuning: { type: string, nullable: true }
         capo: { type: integer, nullable: true }
+        tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
+        original_tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
         notes: { type: string, nullable: true }
         duration_in_seconds: { type: integer, nullable: true }
         needs_improvement: { type: boolean }
@@ -3039,6 +3041,7 @@ components:
         original_musical_key: { type: string, nullable: true }
         tuning: { type: string, nullable: true }
         capo: { type: integer, nullable: true }
+        tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
         notes:
           type: string
           nullable: true
@@ -3086,6 +3089,7 @@ components:
                         nullable: true
                       original_musical_key: { type: string, nullable: true }
                       duration_in_seconds: { type: integer, nullable: true }
+                      tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
                   is_duplicate:
                     type: boolean
                     description: True when a non-mashup primary-version ProjectSong with the same normalized title+artist already exists in the project.

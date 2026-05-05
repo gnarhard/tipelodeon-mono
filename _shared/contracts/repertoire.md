@@ -31,6 +31,19 @@
 - API responses include flat `title`/`artist` keys (project-specific) and a nested
   `song` object with canonical `title`/`artist`.
 
+## Tempo (BPM) metadata
+
+- `songs.tempo_bpm`: nullable canonical tempo (small int, 30–300).
+- `project_songs.tempo_bpm`: nullable project/version override.
+- Effective tempo: `project_songs.tempo_bpm ?? songs.tempo_bpm`.
+- Validation: integer `30 <= n <= 300`. Out-of-range values return `422`.
+- AI metadata extraction (chart identification + title/artist enrichment +
+  bulk import) returns `tempo_bpm` alongside `original_musical_key` and
+  `duration_in_seconds`. Sanitizer drops values outside the 30–300 range.
+- API responses include `tempo_bpm` (resolved) and `original_tempo_bpm`
+  (the canonical Song's value, for surfacing global vs override in
+  the UI).
+
 ---
 
 ## Repertoire
@@ -325,7 +338,8 @@ Response (`200`):
 Chart render-status (`GET /me/charts/{chartId}/render-status`) now includes
 `import_metadata` in the response. When `import_status` is `identified`,
 `import_metadata` contains the AI-identified title, artist, and enrichment
-data (energy_level, era, genre, theme, original_musical_key, duration_in_seconds).
+data (energy_level, era, genre, theme, original_musical_key,
+duration_in_seconds, tempo_bpm).
 
 ### Phase 2: Enrich — `POST /repertoire/bulk-enrich`
 
@@ -359,7 +373,8 @@ Response (`200`):
           "genre": "Rock",
           "theme": "story",
           "original_musical_key": "Bb",
-          "duration_in_seconds": 354
+          "duration_in_seconds": 354,
+          "tempo_bpm": 72
         },
         "is_duplicate": false,
         "duplicate_of": null
@@ -399,7 +414,8 @@ Request:
       "era": "1970s",
       "genre": "Rock",
       "original_musical_key": "Bb",
-      "duration_in_seconds": 354
+      "duration_in_seconds": 354,
+      "tempo_bpm": 72
     }
   ],
   "existing_songs_only": false
@@ -469,7 +485,7 @@ Behavior:
 - For each extracted song:
   - Uses `Song::findOrCreateByTitleAndArtist` for global dedup.
   - Saves AI-provided metadata (energy_level, era, genre, theme,
-    original_musical_key, duration_in_seconds) to newly created songs only.
+    original_musical_key, duration_in_seconds, tempo_bpm) to newly created songs only.
   - Creates `ProjectSong` via `firstOrCreate` — duplicates are skipped.
   - Checks repertoire limit; songs beyond the cap are reported as
     `limit_reached`.
