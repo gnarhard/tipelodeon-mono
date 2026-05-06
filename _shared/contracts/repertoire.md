@@ -527,6 +527,56 @@ bulk-import client always sets `extract_only=1`, so its responses contain
 
 ---
 
+## Import from Text
+
+- `POST /repertoire/import-from-text`
+- Accepts a free-form text blob containing one or more songs (e.g., a
+  pasted setlist, list of titles, or messy "Artist - Title" rows). The
+  server uses AI to parse the text into clean (title, artist) pairs,
+  handling varied separators (` - `, `-`, `:`, `by`), missing punctuation,
+  smart quotes, parenthetical version notes, blank lines, and obvious
+  artist typos.
+- For each parsed song:
+  - Uses `Song::findOrCreateByTitleAndArtist` for global dedup.
+  - Creates `ProjectSong` via `firstOrCreate` — duplicates are skipped.
+  - Checks repertoire limit; songs beyond the cap are reported as
+    `limit_reached`.
+- Tracks AI usage via `AccountUsageService::recordAiOperation()` with
+  category `text_import`.
+- Request validation:
+  - `text`: required, string, max 20000 characters.
+  - `extract_only`: optional boolean. Same semantics as
+    `/repertoire/import-from-image` — when truthy the server parses and
+    deduplicates without creating `ProjectSong` rows so the bulk-import
+    client can route results through review + enrichment. The
+    `extracted` action is used in this case (no per-song AI metadata is
+    returned; enrichment runs as a separate `bulk-enrich` step).
+- Throttle: `throttle:chart-uploads`.
+
+Response (`200`):
+
+```json
+{
+  "message": "Extracted 12 song(s). Imported 10. Skipped 2 duplicate(s).",
+  "extracted": 12,
+  "imported": 10,
+  "duplicates": 2,
+  "limit_reached": 0,
+  "songs": [
+    { "title": "...", "artist": "...", "action": "imported", "song_id": 123 },
+    { "title": "...", "artist": "...", "action": "extracted", "song_id": 123 },
+    { "title": "...", "artist": "...", "action": "duplicate", "duplicate_of": "..." },
+    { "title": "...", "artist": "...", "action": "limit_reached" }
+  ]
+}
+```
+
+Items returned without an artist (the model could not infer one) are
+silently skipped server-side rather than surfaced as failures, since the
+downstream review pipeline keys on a (title, artist) pair.
+
+---
+
 ## To-Learn songs
 
 As of v1.3, to-learn songs live in the regular repertoire as a

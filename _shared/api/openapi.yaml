@@ -1068,6 +1068,53 @@ paths:
         '422':
           description: Validation failed (invalid image type or missing file)
 
+  /me/projects/{projectId}/repertoire/import-from-text:
+    post:
+      tags: [Repertoire]
+      summary: Import songs from free-form pasted text using AI parsing
+      description: |
+        Accepts a text blob (e.g., a pasted setlist or "Artist - Title"
+        rows in any format) and uses AI to parse it into clean
+        (title, artist) pairs. Handles varied separators, missing
+        punctuation, smart quotes, parenthetical version notes, and
+        obvious artist typos. Extracted songs are added to the project
+        repertoire, skipping duplicates. Same extract_only semantics as
+        import-from-image — the bulk-import client always sets it so
+        results route through the review + enrichment pipeline.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text:
+                  type: string
+                  maxLength: 20000
+                  description: Free-form pasted text containing one or more songs.
+                extract_only:
+                  type: boolean
+                  description: |
+                    When truthy, the server parses and dedup-checks the
+                    songs but does not create any ProjectSong rows and
+                    skips the repertoire-limit check. Each non-duplicate
+                    result is returned with action `extracted` so the
+                    bulk-import client can route it through the standard
+                    review + enrichment pipeline.
+      responses:
+        '200':
+          description: Parse and import completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageImportResponse'
+        '422':
+          description: Validation failed (missing or oversized text)
+
   /me/projects/{projectId}/repertoire/bulk-update:
     post:
       tags: [Repertoire]
