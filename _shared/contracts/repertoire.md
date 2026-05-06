@@ -577,6 +577,40 @@ downstream review pipeline keys on a (title, artist) pair.
 
 ---
 
+## Parse Text (no DB writes)
+
+- `POST /repertoire/parse-text`
+- Companion to `import-from-text` for callers that want only AI parsing,
+  not import. The request body and AI parsing logic match
+  `import-from-text`, but the server creates **no Song or ProjectSong
+  rows**, performs no repertoire-limit gating, and does not deduplicate
+  against the project repertoire. Used by the setlist set builder's
+  paste flow, where parsed entries are matched against existing
+  repertoire client-side rather than imported as new songs.
+- Tracks AI usage via `AccountUsageService::recordAiOperation()` with
+  category `text_parse`.
+- Request validation:
+  - `text`: required, string, max 20000 characters.
+- Throttle: `throttle:chart-uploads`.
+
+Response (`200`):
+
+```json
+{
+  "songs": [
+    { "title": "Hotel California", "artist": "Eagles", "set_label": null },
+    { "title": "Night Moves", "artist": "Bob Seger", "set_label": null },
+    { "title": "Friends in Low Places", "artist": "Garth Brooks", "set_label": "Encore" }
+  ]
+}
+```
+
+Entries with an empty/whitespace-only title are dropped server-side. The
+artist field is `null` when the AI could not determine one — title-only
+matching against the repertoire is still possible.
+
+---
+
 ## To-Learn songs
 
 As of v1.3, to-learn songs live in the regular repertoire as a
