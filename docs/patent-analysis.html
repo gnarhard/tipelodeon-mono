@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tipelodeon vs. US 12,511,587 — Patent Analysis</title>
+<style>
+  @page { size: Letter; margin: 0.75in 0.85in; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 11pt;
+    line-height: 1.45;
+    margin: 0;
+  }
+  h1 {
+    font-size: 22pt;
+    margin: 0 0 4pt 0;
+    color: #111;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 14pt;
+    color: #1a1a1a;
+    margin: 28pt 0 8pt 0;
+    padding-bottom: 4pt;
+    border-bottom: 1.5pt solid #1a1a1a;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 12pt;
+    color: #2a2a2a;
+    margin: 18pt 0 6pt 0;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 11pt;
+    color: #2a2a2a;
+    margin: 12pt 0 4pt 0;
+    page-break-after: avoid;
+  }
+  p { margin: 6pt 0; }
+  ul, ol { margin: 6pt 0 6pt 0; padding-left: 22pt; }
+  li { margin: 3pt 0; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.5pt;
+    background: #f3f3f3;
+    padding: 1pt 4pt;
+    border-radius: 3pt;
+  }
+  blockquote {
+    margin: 8pt 0 8pt 0;
+    padding: 6pt 12pt;
+    border-left: 3pt solid #888;
+    background: #f8f8f8;
+    color: #333;
+    font-size: 10.5pt;
+  }
+  .lede {
+    font-size: 10pt;
+    color: #555;
+    margin: 0 0 8pt 0;
+  }
+  .meta {
+    font-size: 9.5pt;
+    color: #666;
+    margin: 2pt 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8pt 0 12pt 0;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 0.7pt solid #ccc;
+    padding: 5pt 8pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #efefef;
+    font-weight: 600;
+  }
+  .header-bar {
+    border-bottom: 2.5pt solid #111;
+    padding-bottom: 8pt;
+    margin-bottom: 18pt;
+  }
+  .callout {
+    background: #fff8e6;
+    border: 0.7pt solid #d8b86b;
+    padding: 8pt 12pt;
+    margin: 10pt 0;
+    border-radius: 3pt;
+    font-size: 10.5pt;
+  }
+  .callout-bad {
+    background: #fdecea;
+    border: 0.7pt solid #c75a55;
+  }
+  .callout-good {
+    background: #e7f4ea;
+    border: 0.7pt solid #5fa56b;
+  }
+  .footer-disclaimer {
+    margin-top: 28pt;
+    padding-top: 10pt;
+    border-top: 0.7pt solid #aaa;
+    font-size: 8.5pt;
+    color: #666;
+  }
+  .toc {
+    font-size: 10pt;
+    color: #444;
+    margin: 4pt 0 0 0;
+  }
+  .toc li { margin: 1pt 0; }
+  .pgbreak { page-break-before: always; }
+  .small { font-size: 9.5pt; color: #555; }
+  .label { display: inline-block; padding: 1pt 6pt; border-radius: 3pt; font-size: 8.5pt; font-weight: 600; }
+  .ok { background: #d6eedc; color: #1f5b30; }
+  .risk { background: #fce0dd; color: #82221d; }
+  .watch { background: #fdedc8; color: #6a4900; }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <h1>Tipelodeon vs. US&nbsp;12,511,587</h1>
+  <p class="lede">Freedom-to-operate analysis of Tipsee Music LLC's "Artist Live Performance Booking Management Platform" patent against Tipelodeon's planned architecture.</p>
+  <p class="meta">Prepared: May 7, 2026 &nbsp;·&nbsp; Patent: <strong>US 12,511,587 B2</strong> &nbsp;·&nbsp; App. No. 18/207,186 &nbsp;·&nbsp; Issued: Dec 30, 2025 &nbsp;·&nbsp; Expires: Sep 8, 2042 &nbsp;·&nbsp; Priority: Dec 16, 2021 &nbsp;·&nbsp; Inventor: Dallas Jackson &nbsp;·&nbsp; Assignee: Tipsee Music LLC</p>
+  <ol class="toc">
+    <li>How Tipelodeon works (and intends to work)</li>
+    <li>How the Tipsee patent is structured</li>
+    <li>Patent weaknesses (prosecution-history-grounded)</li>
+    <li>Tipelodeon's path around each independent claim</li>
+    <li>Watch-list and design rules</li>
+  </ol>
+</div>
+
+<h2>1. How Tipelodeon works</h2>
+
+<h3>Architecture, in plain terms</h3>
+<p>Tipelodeon is a performer-facing platform composed of a Laravel API and persistence layer (<code>web/</code>), a Flutter mobile and desktop app for performers (<code>app/</code>), and an audience-facing public web view per project. Performers manage repertoire, setlists, charts, performance sessions, and a tip-driven request queue.</p>
+<p>Audience members access a public project page via a slug-based URL, which can be reached either directly (typed/shared link) or by scanning a QR code that encodes the same URL. The QR code is a convenience surface for delivering the URL — it is not a venue-bound credential and does not gate functionality on physical presence at a venue. (See §5.1 for why this overlaps with — but is not constrained by — the patent's QR-code language.)</p>
+
+<h3>Money flow — the design that matters for non-infringement</h3>
+<table>
+  <tr><th style="width:32%">Step</th><th>Mechanism</th></tr>
+  <tr><td>Audience requests a song</td><td>Audience adds a tip amount to a song request via the public web view. Tipelodeon does <strong>not</strong> charge them at this moment.</td></tr>
+  <tr><td>Tip is queued onto a session "tab"</td><td>The tip amount accrues against the audience member's session tab on the performer's project. Multiple requests in one session aggregate into a single capturable amount.</td></tr>
+  <tr><td>Performer sees the queue</td><td>The performer's app shows the active queue ordered by tip (or by performer-set custom order). Marking a request as <em>played</em> is metadata only — it advances song stats and history. <strong>It does not move money.</strong></td></tr>
+  <tr><td>Session ends</td><td>At session end, Tipelodeon captures the aggregated tab via a <strong>single Stripe charge per audience member</strong>. This minimizes Stripe fixed-fee overhead and is unconditional on which songs were performed.</td></tr>
+  <tr><td>Funds settle to the performer</td><td>Stripe Connect destination charge: payment is created on Tipelodeon's platform account with the performer's connected account as the <em>destination</em>. The platform's 9% application fee is taken; the remainder transfers to the performer.</td></tr>
+  <tr><td>Customer absorbs Stripe processing fees</td><td>Stripe processing fees (e.g., 2.9% + 30¢) are passed to the customer as a line item, so the performer's net is the gross tip minus the 9% Tipelodeon fee only.</td></tr>
+</table>
+
+<div class="callout callout-good">
+<strong>Critical architectural property:</strong> Money flows on a fixed event (session end), not on a performance event. The "mark as played" action is metadata. There is <strong>no server-side conditional release</strong> of tips contingent on whether a specific requested song was actually performed.
+</div>
+
+<h3>Other product surfaces</h3>
+<ul>
+  <li><strong>Repertoire and setlists</strong> — performer toolkit (keys, capo, tuning, energy, mood, era, genre, tempo). No audience-facing money function.</li>
+  <li><strong>Charts</strong> — PDF storage, annotations, viewport prefs. Performer-only.</li>
+  <li><strong>Performance sessions</strong> — start/stop/complete tracking, smart reordering. Determines when the session-end charge fires.</li>
+  <li><strong>Locations</strong> — performer-named locations with optional GPS-based suggestion. Used for stats grouping. <em>Not</em> used to gate or restrict tip functionality.</li>
+  <li><strong>Stats &amp; analytics (forthcoming)</strong> — aggregate stats on performer tips, songs, and session metrics, available to performers and venues. Initially free; potentially monetized later as a separate feature.</li>
+  <li><strong>Original / cover song handling</strong> — repertoire flag <code>is_original</code> exists, but Tipelodeon does <strong>not</strong> remit royalties to PROs, original composers, or any third party. No money moves between performers based on cover relationships.</li>
+</ul>
+
+<h2 class="pgbreak">2. How the Tipsee patent is structured</h2>
+
+<h3>What is claimed (the four independent claims)</h3>
+<table>
+  <tr><th>Claim</th><th>Subject</th><th>Tipelodeon overlap</th></tr>
+  <tr>
+    <td><strong>1</strong></td>
+    <td>Tip-on-song-request platform: artist profile + tip account + live-performance playlist; audience adds tip on a request; server charges audience; <strong>server credits artist's tip account when the request is performed</strong>.</td>
+    <td><span class="label watch">close — design-around required</span></td>
+  </tr>
+  <tr>
+    <td><strong>2</strong></td>
+    <td>Same as Claim 1 plus royalty remittance to designated recipients (PROs, BMI/ASCAP, original artists).</td>
+    <td><span class="label ok">no — Tipelodeon does not remit royalties</span></td>
+  </tr>
+  <tr>
+    <td><strong>3</strong></td>
+    <td>Itinerary-based venue matching: server determines a route between artist's scheduled live-performance locations and identifies prospective added venues by route proximity; books additional shows.</td>
+    <td><span class="label ok">no — Tipelodeon has no tour routing</span></td>
+  </tr>
+  <tr>
+    <td><strong>4</strong></td>
+    <td>Cover-song royalty system: server debits performing artist's royalty account and credits original artist's royalty account when an original performance is performed by a different artist.</td>
+    <td><span class="label ok">no — Tipelodeon does not move money between performers</span></td>
+  </tr>
+</table>
+
+<h3>Dependent claims, summarized</h3>
+<ul>
+  <li><strong>Claim 5</strong> — consumer email record + notify-by-electronic-message.</li>
+  <li><strong>Claim 6</strong> — VIP access record with privilege management.</li>
+  <li><strong>Claims 7–8, 21–22</strong> — venue and artist rating records via messages/surveys.</li>
+  <li><strong>Claims 9–10</strong> — promotional blog records tied to artist profile.</li>
+  <li><strong>Claim 11</strong> — geofenced area around venue + targeted electronic message based on audience device location relative to the geofence.</li>
+  <li><strong>Claims 13–17</strong> — performance-rights / royalty logic, including audio-content listening, content-matching, and conditional remittance.</li>
+  <li><strong>Claims 18–20</strong> — venue profile, itinerary, route generation, e-commerce booking-fee handling.</li>
+  <li><strong>Claims 2–4</strong> — in-performance e-commerce (merchandise pricing) integrated with the live playlist.</li>
+</ul>
+
+<h3>Specification's marquee features</h3>
+<p>The patent's specification heavily features:</p>
+<ul>
+  <li>QR code displayed at the venue, scanned by audience devices to reach the playlist (Spec ¶[00122]).</li>
+  <li>Audio recognition / content matching to verify which songs were performed (Spec ¶[00209]–[0210]).</li>
+  <li>Server-verified performance fulfillment as a precondition for tip release (Spec ¶[00139], ¶[0150]).</li>
+  <li>Geofenced messaging based on audience device location relative to venue (Spec ¶[00103], [0105], [0107]).</li>
+  <li>Tour itinerary route generation and prospective-venue matching.</li>
+</ul>
+<p>Of these, only the <em>conditional crediting on performance</em> appears in independent Claim 1's body. The rest live in dependent claims and the specification.</p>
+
+<h2 class="pgbreak">3. Patent weaknesses</h2>
+<p>The file wrapper (USPTO application history for 18/207,186) reveals the patent is materially weaker than its plain claim text suggests. The substantive findings come from three documents.</p>
+
+<h3>3.1 — The examiner rejected all 22 claims (CTNF, Jun 24, 2025)</h3>
+<p>Examiner Olusegun Goyea (Art Unit 3627) issued a Non-Final Rejection finding:</p>
+
+<h4>§101 (Alice / abstract idea)</h4>
+<blockquote>
+"Claims 1–22 are rejected under 35 U.S.C. 101 because the claimed invention is directed to a judicial exception (i.e., abstract idea) without significantly more… [The limitations] encompass 'Certain Methods of Organizing Human Activity' (fundamental economic principles or practices)… The computing elements represent using a computer as a tool to perform the judicial exception as in MPEP 2106.05(f)."
+</blockquote>
+<p>The examiner's classification places this patent in the same category as <em>Alice Corp. v. CLS Bank</em>, <em>Bilski v. Kappos</em>, and <em>Smart Systems v. Chicago Transit</em> — all of which had their claims invalidated.</p>
+
+<h4>§102 (anticipation by Miller)</h4>
+<p>The examiner cited <strong>U.S. Patent App. Pub. No. 2020/0320442 (Miller et al.)</strong> as anticipating Claim 1. The examiner walked through every limitation of Claim 1 and pointed to Miller paragraphs disclosing each:</p>
+<table>
+  <tr><th>Claim 1 limitation</th><th>Miller paragraphs</th></tr>
+  <tr><td>Artist profile, playlist, tip account</td><td>¶ 0078, 0094–0096, 0118, 0142, 0168–0171, 0173</td></tr>
+  <tr><td>Generating playlist accessible to audience</td><td>¶ 0082–0087, 0148</td></tr>
+  <tr><td>Adding tip to performance request</td><td>¶ 0082–0086, 0142–0151</td></tr>
+  <tr><td>Charging audience</td><td>¶ 0082–0086, 0142–0151</td></tr>
+  <tr><td>Performing playlist at live performance</td><td>¶ 0082–0086, 0142–0151</td></tr>
+  <tr><td>Crediting tip when performed</td><td>¶ 0082–0086, 0142–0151</td></tr>
+  <tr><td>Revenue increase wherein clause</td><td>¶ 0082–0086, 0142–0151</td></tr>
+</table>
+<p>Claims 5, 12–15, and 17 (royalty remittance, audio recognition, original-performance variants) were also anticipated by Miller.</p>
+
+<h4>§103 (obviousness combinations)</h4>
+<ul>
+  <li>Claims 2–4, 6, 9–11, 16, 18, 19 — obvious over Miller in view of <strong>Nunes (US 2013/0346226)</strong>.</li>
+  <li>Claims 7, 8, 21, 22 — obvious over Miller in view of <strong>Stricklin (US 2012/0265813)</strong>.</li>
+  <li>Claim 20 — obvious over Miller, Nunes, and <strong>Laufer (US 9,747,285)</strong>.</li>
+</ul>
+
+<h3>3.2 — The applicant overcame the rejection by argument alone (REM, Jul 24, 2025)</h3>
+<p>Without significant amendment to Claim 1, the applicant convinced the examiner to allow the claims by making distinguishing arguments. Those arguments are now <strong>prosecution history estoppel</strong> — binding statements of what the patent does and does not cover.</p>
+
+<h4>What the applicant said to defeat §101</h4>
+<p>The applicant argued the claims are not abstract because they require:</p>
+<blockquote>
+"A live performance playlist made accessible to audience members through a venue-displayed QR code (Figure 11, Spec ¶[00122])… Server-side performance verification before any tip is credited or compensation executed (Spec ¶[00139])… Tip crediting only when performance is verified, not simply upon audience submission—adding a verifiable, conditional trigger for compensation."
+</blockquote>
+
+<h4>What the applicant said to defeat §102 (Miller)</h4>
+<p>The applicant told the USPTO Miller does not anticipate Claim 1 because Miller lacks three things, which the applicant therefore identified as required limitations of the claimed invention:</p>
+<blockquote>
+"<strong>Physical QR Code Scanning at a Venue:</strong> Miller's GUI-based request interface is not activated via QR code displayed in the live audience area, nor is it tied to audience device presence at a performance venue."<br><br>
+"<strong>Server-Verified Fulfillment Before Charging:</strong> Claim 1 recites that no tip is credited unless the server confirms the artist actually performed the requested content during the live event. In Miller, 'tip the artist' occurs through a client-side interface and is not contingent on fulfillment, let alone server confirmation."<br><br>
+"<strong>Performance Request and Tip Coupling:</strong> The claimed method links performance selection and tip authorization in real time through a network interface—again, absent from Miller."
+</blockquote>
+<p>And, summarizing the principal distinction:</p>
+<blockquote>
+"Miller fails to disclose or suggest <strong>any verification step confirming that a performance request was actually fulfilled before money is transferred.</strong> Miller's 'tip the artist' function is a voluntary donation interface accessed via an app's GUI—<strong>not initiated by a QR code at a physical event, and not contingent on performance fulfillment.</strong>"
+</blockquote>
+
+<div class="callout callout-good">
+The applicant explicitly identified the prior-art configuration that does <em>not</em> infringe: a platform that charges audience members for song requests <strong>without conditional crediting on performance fulfillment</strong>. That is the architecture Tipelodeon implements. The applicant also leaned on a "QR-code-at-venue" argument, but as discussed in §3.5 below, that distinction is technically thin and Tipelodeon does not need to rely on it.
+</div>
+
+<h3>3.3 — The §101 argument is logically thin</h3>
+<p>The applicant's §101 arguments leaned heavily on features that are <strong>not in Claim 1's body</strong>:</p>
+<ul>
+  <li>QR code at venue → only in the specification, not in Claim 1.</li>
+  <li>Audio recognition / content matching → in dependent Claims 15–16.</li>
+  <li>Server-side verification of performance → only weakly present in Claim 1 via "when … is performed".</li>
+</ul>
+<p>If a defendant ever puts Claim 1 in front of an Article III judge in a Section-101 motion, the argument writes itself: "the applicant's brief cites features not in this claim, and the limitations actually in this claim are nothing more than 'do tipping for songs on a computer' — exactly what <em>Alice</em> forbids."</p>
+
+<h3>3.4 — The QR-code argument is technically thin and not in Claim 1</h3>
+<p>The applicant's REM repeatedly invoked "QR Code displayed in the live audience area" as a distinguishing feature. Two observations make this a weak argument and an unreliable defense vector:</p>
+<ul>
+  <li><strong>"QR code" appears nowhere in Claim 1's body.</strong> It is in the specification (Fig. 11, ¶[00122]) and in some dependent contexts. Statements an applicant makes about features in the spec do not narrow an independent claim that does not recite those features. Under <em>Phillips v. AWH</em>, the claim language controls; spec features are imported only when the applicant has clearly disavowed broader scope. The applicant did not unambiguously do so here.</li>
+  <li><strong>A QR code is just a URL encoding.</strong> Technically, scanning a QR code resolves to opening a URL in the device browser — exactly the same operation as typing the URL or following a shared hyperlink. A court asked to construe Claim 1 narrowly to require "QR code at venue" would have to find both (a) clear-and-unmistakable disavowal during prosecution, and (b) that QR-code access is functionally distinct from URL access in some meaningful technical sense. Both findings are difficult.</li>
+</ul>
+<p>Because Tipelodeon's audience accesses the public project page via a slug-based URL (which can be delivered by QR code, shared link, NFC tap, or typed entry interchangeably), the platform <em>both</em> matches and does not match the applicant's QR-code description, depending on how a fact-finder construes "QR code … displayed in the live audience area." This ambiguity is not a defense Tipelodeon should rely on. The defense rests on the conditional-crediting limitation in §4 below, which is in Claim 1's body and which the applicant explicitly disavowed against Miller.</p>
+
+<h3>3.5 — Prior art the examiner did not need</h3>
+<p>The examiner had Miller, Nunes, Stricklin, and Laufer. Additional prior art predating Dec 16, 2021 that any serious invalidity search would surface:</p>
+<ul>
+  <li>Twitch song-request bots (StreamElements, Nightbot, SongList Plus) charging bits/donations to queue songs from streamers' approved lists — well before 2021.</li>
+  <li>TouchTunes / AMI commercial digital jukeboxes — pay to queue specific songs from a venue's curated list.</li>
+  <li>YouTube live super-chat dedications.</li>
+  <li>SongDonate, Tip Cow, Sidetip, Sidetrack, Tip-the-Band — various tip-for-song platforms in the 2010s.</li>
+  <li>Cash apps with QR-code tip jars used by buskers (Square, Venmo, Cash App).</li>
+  <li>Patreon song-request reward tiers.</li>
+</ul>
+
+<h2 class="pgbreak">4. Tipelodeon's path around each independent claim</h2>
+
+<h3>Claim 1 — the only meaningful exposure</h3>
+<p>Claim 1's literal text requires "<em>crediting at least a portion of the performance tip amount to the tip account of the artist… when one of the one or more performance requests on the live performance playlist is performed by the artist during the live performance.</em>"</p>
+<p>Under the applicant's own claim construction (binding on the patent owner via <em>Festo</em> and <em>Phillips</em>), this means: the credit is gated on the server confirming the song was performed, and the credit only occurs because the song was performed.</p>
+
+<p><strong>Tipelodeon's design avoids the limitation as construed:</strong></p>
+<ul>
+  <li>Tips are captured at <strong>session end</strong>, not at song performance.</li>
+  <li>The performer is credited with the entire session tab, regardless of which requested songs were actually played.</li>
+  <li>The "mark as played" action records performance metadata; it is <strong>not</strong> a payment trigger and does not change whether or how money moves.</li>
+  <li>Tipelodeon does not refund tips for unperformed songs as a function of the server. The performer can issue refunds manually if they choose, but server logic does not condition the credit on performance.</li>
+</ul>
+<p>This implementation tracks <strong>exactly</strong> the architecture the applicant told the USPTO falls outside Claim 1 (i.e., Miller's pre-existing configuration). The patent owner is estopped from asserting otherwise.</p>
+
+<div class="callout callout-good">
+<strong>Design rule (must hold permanently):</strong> The tip capture event MUST NOT be tied to a per-song performance event. Capture at session end, capture at request time, or capture at any other event — but never on a per-song "was this song performed" trigger.
+</div>
+
+<h3>Claim 2 — royalty remittance to designated recipients</h3>
+<p>Claim 2 adds: "remitting, on behalf of the venue, a royalty rate to one or more designated recipients for each of the performance requests performed by the artist during the live performance."</p>
+<p>Tipelodeon does <strong>not</strong> remit royalties. There is no integration with PROs (BMI, ASCAP, SESAC, GMR), no automated payments to original composers, no "designated recipient" routing of any portion of a tip. <span class="label ok">Not infringed.</span></p>
+
+<h3>Claim 3 — itinerary-based venue matching</h3>
+<p>Claim 3 requires: a venue profile with venue location; an artist itinerary; the server determining a route between live-performance locations; and the server identifying prospective added venues based on route proximity.</p>
+<p>Tipelodeon has named locations attached to performance sessions, plus a 15-meter crowd-sourced "nearby" suggestion at session-creation time. It does <strong>not</strong>:</p>
+<ul>
+  <li>Generate routes between scheduled performances.</li>
+  <li>Identify or recommend additional venues based on route proximity.</li>
+  <li>Mediate booking communications with venues.</li>
+  <li>Confirm acceptance of "request to perform live" between artists and prospective venues.</li>
+</ul>
+<p><span class="label ok">Not infringed.</span></p>
+
+<h3>Claim 4 — original-performance royalty system</h3>
+<p>Claim 4 requires: an "original performance record" with royalty rates per original work; debiting the performing artist's royalty account when an original performance not associated with that artist is performed; crediting the original artist's royalty account.</p>
+<p>Tipelodeon has an <code>is_original</code> flag on requests, but this is purely informational. Money does <strong>not</strong> move between performers based on cover relationships. There is no royalty account, no debit/credit ledger across artists, and no performer-to-performer payment routing. <span class="label ok">Not infringed.</span></p>
+
+<h3 class="pgbreak">Dependent claims — element-by-element non-infringement</h3>
+<table>
+  <tr><th>Claim</th><th>Limitation</th><th>Tipelodeon</th><th>Status</th></tr>
+  <tr><td>5</td><td>Consumer email record + electronic-message notification using stored contact list</td><td>Tipelodeon notifies the performer on requests via email; it does not maintain or use an audience-facing email list as a notification target.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>6</td><td>VIP access record with privilege management</td><td>No VIP system.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>7, 8, 21, 22</td><td>Venue rating, artist rating, message/survey-driven scoring</td><td>No rating system.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>9, 10</td><td>Promotional blog record on artist profile</td><td>No blog feature.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>11</td><td>Geofenced area + targeted electronic messages based on audience device location relative to geofence</td><td>Tipelodeon uses GPS for location <em>suggestion</em>, not for gating tip functionality or for targeting messages. Audience requests are not restricted by geofence.</td><td><span class="label watch">Watch — see §5</span></td></tr>
+  <tr><td>13, 14</td><td>Royalty remittance variants</td><td>No royalty system.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>15, 16</td><td>Listening to live performance + audio content matching to identify performed songs</td><td>No audio recognition. "Mark as played" is performer-tap input.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>17</td><td>Original performance type variants</td><td>No royalty handling for originals.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>18, 19, 20</td><td>Tour booking, route generation, e-commerce booking-fee handling</td><td>No tour booking features.</td><td><span class="label ok">Not infringed</span></td></tr>
+  <tr><td>2–4 (e-commerce — note these are dependent claim numbers in the §103 group)</td><td>In-performance e-commerce, merchandise dynamic pricing</td><td>No merchandise / e-commerce features in the live request flow.</td><td><span class="label ok">Not infringed</span></td></tr>
+</table>
+
+<h2>5. Watch-list and design rules</h2>
+
+<h3>5.1 — QR code as the access surface</h3>
+<p>Tipelodeon delivers the audience-facing public project page via a QR code that encodes the project's slug URL. Performers post or display the code at the venue.</p>
+<p>This overlaps with what the applicant described in the REM ("QR Code displayed in the live audience area"). The overlap does <strong>not</strong> create infringement risk because:</p>
+<ul>
+  <li>"QR code" is not a limitation of any independent claim. It appears in the specification and is referenced in argument, but not in Claim 1's body.</li>
+  <li>Under <em>Phillips v. AWH</em>, claim scope is governed by claim language, not by spec features.</li>
+  <li>A QR code is functionally a URL delivery mechanism. Treating it as a substantive technical limitation would invalidate the construction itself, since the QR-code-vs-URL distinction has no technical content.</li>
+  <li>Tipelodeon's defense against Claim 1 rests on the absence of conditional crediting — a limitation that <em>is</em> in Claim 1's body and that the applicant explicitly disavowed against Miller. That is the load-bearing argument; QR-code access does not need to be defended.</li>
+</ul>
+<p>The user-experience similarity between Tipelodeon's QR-code entry point and the patent's QR-code description is not, on its own, a vulnerability. It would only become one if a court found (a) clear and unmistakable disavowal of broader scope during prosecution, and (b) that QR-code-at-venue is technically distinct from any other URL access. Neither is a likely outcome, but the architecture should not be staked on the negative either.</p>
+
+<h3>5.2 — Stats and analytics for performers and venues</h3>
+<p>Tipelodeon's planned statistics product (tip aggregates, song frequency, session metrics for performers and venues) is <strong>not</strong> within any claim of US 12,511,587. The patent's "rating" claims (7–8, 21–22) require message- or survey-based qualitative scoring; aggregate quantitative analytics over actual transaction data is a different feature category and is not claimed.</p>
+<p>Design caution: should Tipelodeon ever introduce performer-side <em>booking marketplace</em> or <em>venue-discovery</em> features — i.e., recommending venues based on a performer's calendar or vice versa — re-evaluate against Claims 3, 18–20. As long as stats remain reporting-only and do not drive booking decisions automatically, no exposure.</p>
+
+<h3>5.3 — Geofencing and location features</h3>
+<p>Claim 11 covers geofenced electronic messaging triggered by audience device location relative to a venue boundary. Tipelodeon currently uses GPS for location <em>suggestion</em>, not gating. The boundary line:</p>
+<ul>
+  <li><span class="label ok">OK</span> — Use GPS to suggest "is this where you're playing tonight?" or to surface nearby projects.</li>
+  <li><span class="label ok">OK</span> — Show a stored project location in the audience UI for context.</li>
+  <li><span class="label risk">Avoid</span> — Send audience messages <em>conditional on</em> being inside a geofenced venue boundary.</li>
+  <li><span class="label risk">Avoid</span> — Restrict audience tipping or request submission based on physical location.</li>
+</ul>
+
+<h3>5.4 — Audio and song-identification features</h3>
+<p>Claims 15–16 cover audio listening with content-matching to identify which songs were performed. Tipelodeon's audio file feature (per-song MP3 storage for performer reference) is unrelated and safe.</p>
+<ul>
+  <li><span class="label ok">OK</span> — Performer uploads an MP3 reference for a song; performer plays it back in practice.</li>
+  <li><span class="label risk">Avoid</span> — Server listens to a live mic feed and auto-marks songs as played via fingerprint matching.</li>
+</ul>
+
+<h3>5.5 — Tour planning, venue matching, and booking</h3>
+<p>Claims 3 and 18–20 cover route-based venue discovery and booking-fee e-commerce. Tipelodeon should not move into:</p>
+<ul>
+  <li>Auto-suggesting additional venues to a performer based on their calendar route.</li>
+  <li>Brokering booking communications between performers and venues.</li>
+  <li>Charging or processing booking fees as part of a tour scheduling tool.</li>
+</ul>
+
+<h3>5.6 — Cover-song handling</h3>
+<p>Claims 2 and 4 cover royalty remittance flows. Tipelodeon's <code>is_original</code> flag is informational only. Should not become:</p>
+<ul>
+  <li>An automated PRO / BMI / ASCAP payment integration.</li>
+  <li>A performer-to-original-artist royalty ledger or payment routing.</li>
+</ul>
+
+<h3>5.7 — Trademark (separate from patent)</h3>
+<p>The patent risk is one issue; "Tipelodeon" vs. "Tipsee Music" likelihood-of-confusion is independent and unsolved by the design-around above. A USPTO trademark examiner may refuse "Tipelodeon" registration in International Class 41 (entertainment services) or 36 (financial / payment processing) on its own initiative. Independent counsel review is warranted before a public marketing launch under the current name.</p>
+
+<h2>Conclusion</h2>
+<p>Tipelodeon's planned architecture — destination charges, tip-tab aggregation, end-of-session capture, <strong>no per-song conditional crediting</strong>, no audio recognition, no tour routing, no royalty remittance — operates outside the literal scope of every independent claim of US&nbsp;12,511,587. The conditional-crediting limitation in Claim 1 is the load-bearing distinction: the applicant told the USPTO Miller does not anticipate Claim 1 specifically because Miller charges the audience without conditional release on performance fulfillment. Tipelodeon does the same. The patent owner is estopped from arguing otherwise.</p>
+<p>The QR-code overlap between Tipelodeon and the patent's spec language is real but not load-bearing — "QR code" is not a Claim 1 limitation, and treating QR-code access as substantively distinct from URL access has no technical foundation.</p>
+<p>The strongest invalidity arguments (§101 abstract-idea and §102 over Miller) are already present in the file wrapper from the examiner's own pen. The patent's narrowness is a function of the applicant's prosecution-history concessions, not its plain text.</p>
+<p>Provided Tipelodeon (a) keeps tip capture decoupled from per-song performance events, (b) does not introduce audio-content-matching as a performance verification step, (c) avoids tour-route venue matching, and (d) does not implement royalty remittance, the platform should not infringe any claim of this patent.</p>
+
+<div class="footer-disclaimer">
+<strong>Disclaimer.</strong> This document is a technical and business analysis of an issued US patent against a planned product architecture. It is not legal advice and is not a freedom-to-operate opinion. Patent infringement determinations require analysis by registered patent counsel, including review of the full claim text, specification, prosecution history, and the accused product's source code. Statements about prosecution-history estoppel reflect binding statements made in the applicant's Jul 24, 2025 Remarks (REM); the legal effect of those statements is ultimately a question of claim construction for a court. Quoted USPTO file-wrapper material is excerpted from the publicly available file wrapper of US application 18/207,186; quotes are reproduced verbatim from the OCR'd source documents.
+</div>
+
+</body>
+</html>
