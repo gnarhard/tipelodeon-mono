@@ -41,7 +41,7 @@ Requires a valid Sanctum bearer token. Not project-scoped.
 | `title` | string | Song title (from `songs.title`) |
 | `artist` | string | Artist name (from `songs.artist`) |
 | `request_count` | integer | Number of times the song was requested (status = `played`) across all performers in the country |
-| `total_tip_cents` | integer | Sum of `requests.stripe_net_amount_cents` across those requests |
+| `total_tip_cents` | integer | Sum of `requests.tip_amount_cents` across those requests (performer's gross tips received) |
 
 **Ordering**: Descending by `request_count`. Up to 5 results.
 
@@ -68,5 +68,5 @@ exposing data tied to a single performer.
   are excluded.
 - The response is an empty `data` array (not a `404`) when no songs meet the
   privacy threshold for the requested country.
-- `total_tip_cents` is the post-Stripe-fee net amount, matching the value used
-  in the stats earnings figures.
+- `total_tip_cents` is the gross tip amount received by performers (audience-paid
+  service charge is not counted; performers always receive the full tip).

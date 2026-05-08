@@ -134,7 +134,9 @@ Semantics:
     `period.local_end_date`, `window_start_utc`, `window_end_utc`,
     `generated_at`
   - `money.gross_tip_amount_cents`, `money.fee_amount_cents`,
-    `money.net_tip_amount_cents`
+    `money.net_tip_amount_cents` — performer always receives the full tip;
+    `fee_amount_cents` is always `0` and `net_tip_amount_cents` always equals
+    `gross_tip_amount_cents`. Both fields are retained for contract stability.
   - `counts.request_count`, `counts.requests_played_count`,
     `counts.unrequested_plays_count`
   - nullable `highlights.most_requested` and `highlights.highest_earning`
@@ -156,7 +158,9 @@ Semantics:
 - Song rankings only consider repertoire-linked songs in the current project.
 - Tip-only placeholders, original-request placeholders, and custom manual titles
   are excluded from the top-song cards.
-- Stripe-backed requests use persisted Stripe fee/net settlement values.
+- Performer earnings come from `requests.tip_amount_cents` directly: the
+  audience pays an extra service charge that funds the platform, and Stripe's
+  processing fee is paid out of that surcharge (not the performer's tip).
 - If same-day Stripe settlement data is still missing, backend may hydrate it
   from Stripe on demand; if it cannot be resolved, endpoint returns `502`.
 
@@ -174,9 +178,11 @@ Semantics:
   - `buckets` — chronologically ordered array of daily objects:
     - `year_month` — `YYYY-MM-DD` date string
     - `label` — human-readable label, e.g. `"Mar 5"`
-    - `net_cents` — Stripe net tip amount after fees
-    - `fee_cents` — Stripe platform fee amount
-    - `cash_cents` — tip bucket totals + manual queue tips (no fees)
+    - `net_cents` — sum of digital tip amounts received by the performer
+    - `fee_cents` — always `0`; performer pays no fees in the new model
+      (audience-paid service charge funds the platform). Retained for
+      contract stability.
+    - `cash_cents` — tip bucket totals + manual queue tips
 - Buckets aggregate `performance_events` scoped to
   `performance_session_id IS NOT NULL`, bucketed by the event's
   `occurred_at` translated into the requested timezone. Activity not

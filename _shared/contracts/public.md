@@ -66,12 +66,23 @@ Response fields:
 - `payment_intent_id` (nullable string)
 - `requires_payment` (bool)
 - `stripe_account_id` (nullable string, present when `requires_payment=true`)
+- `service_charge_cents` (nullable int, present when `requires_payment=true`)
+- `total_charge_cents` (nullable int, present when `requires_payment=true`)
 
 Paid request intent behavior:
 - PaymentIntents are created as Connect direct charges on the performer's
   connected account.
 - `stripe_account_id` is returned so web Stripe.js can initialize the
   connected-account payment context correctly.
+
+Service charge:
+- Audience members pay a platform service charge of `$0.50 + 5%` of the tip
+  on top of every paid request. `service_charge_cents` is the surcharge,
+  `total_charge_cents` is the actual amount charged to the customer's card
+  (`tip_amount_cents + service_charge_cents`).
+- The performer always receives the full `tip_amount_cents`. The platform
+  collects the service charge net of Stripe's processing fee (passed as
+  `application_fee_amount` on the Connect direct charge).
 
 Canonical persistence rule:
 - `requests.song_id` is always populated.

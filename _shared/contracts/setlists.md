@@ -420,8 +420,8 @@ the caller cannot access the project.
   "ended_at": "2026-04-01T23:00:00+00:00",
   "money": {
     "gross_tip_amount_cents": 5000,
-    "fee_amount_cents": 500,
-    "net_tip_amount_cents": 4500,
+    "fee_amount_cents": 0,
+    "net_tip_amount_cents": 5000,
     "tip_bucket_total_amount_cents": 2000
   },
   "counts": {
