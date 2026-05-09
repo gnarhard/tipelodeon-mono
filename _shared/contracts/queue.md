@@ -86,12 +86,15 @@ Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
 
 **Response includes `ETag` header.**
 
-- `session_sequence` is the 1-based ordinal of the request within its
-  `performance_session_id`. Every queue write — manual queue add, audience
-  paid request, audience free request, tip-only Stripe charge, original
-  request — increments this counter. Clients display the value as the
-  user-facing request number (typically zero-padded, e.g. `#0042`). It is
-  `null` only for legacy rows whose `performance_session_id` is `null`.
+- `session_sequence` is the 1-based ordinal of the song-request within its
+  `performance_session_id`. Manual queue adds, audience paid requests,
+  audience free requests, original requests, and custom requests all
+  increment this counter. Tip-only writes (`song.title="Tip Jar Support"` /
+  `song.artist="Audience"`) do **not** consume a sequence number — they ship
+  with `session_sequence = null` so the per-session request numbering counts
+  only real song requests. Clients display the value as the user-facing
+  request number (typically zero-padded, e.g. `#0042`). It is also `null`
+  for legacy rows whose `performance_session_id` is `null`.
 - `meta.daily_record_event` is `null` unless the current local day sets a new
   project lifetime one-day gross-tip record.
 - `requester_name` is the tipper's real name sourced from the linked
