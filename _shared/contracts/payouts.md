@@ -19,11 +19,10 @@
 - `GET /api/v1/me/projects/{projectId}/wallet/sessions`
 - `GET /api/v1/me/payouts`
 
-Pro plan gates:
-- `wallet`, `stats`, `stats/history`, `wallet/sessions`, and `payouts` require Pro.
-- Project-scoped wallet/stat endpoints also require project ownership.
-- When Pro is required and unavailable, API returns `403` with
-  `code=feature_requires_pro`.
+Access:
+- `wallet`, `stats`, `stats/history`, `wallet/sessions`, and `payouts` are
+  available to every authenticated owner. Project-scoped wallet/stat
+  endpoints also require project ownership.
 
 ---
 
@@ -105,7 +104,7 @@ Example success:
 ## Wallet summary endpoint
 
 `GET /api/v1/me/projects/{projectId}/wallet`:
-- Veteran-only owner endpoint (`403` for non-owners and Pro-owned projects).
+- Owner-only endpoint (`403` for non-owners).
 - Returns:
   - account-level Stripe balance (`available`, `pending`, USD totals),
   - project-level earnings aggregates from Tipelodeon request/session data,
@@ -121,7 +120,7 @@ Semantics:
 ## Project stats endpoint
 
 `GET /api/v1/me/projects/{projectId}/stats`:
-- Pro-only owner endpoint.
+- Owner-only endpoint.
 - Required query params:
   - `timezone` as an IANA identifier, for example `America/Denver`
   - `preset` as one of:
@@ -159,8 +158,11 @@ Semantics:
 - Tip-only placeholders, original-request placeholders, and custom manual titles
   are excluded from the top-song cards.
 - Performer earnings come from `requests.tip_amount_cents` directly: the
-  audience pays an extra service charge that funds the platform, and Stripe's
-  processing fee is paid out of that surcharge (not the performer's tip).
+  audience pays a flat $2 platform fee on top of every paid tip and that
+  fee covers Stripe processing where it can — performers always net the
+  full tip on small and mid-sized payments. On very large tips (where 2.9%
+  + 30¢ exceeds $2) the platform absorbs all of its $2 fee and Stripe's
+  remaining processing fee comes out of the performer's net.
 - If same-day Stripe settlement data is still missing, backend may hydrate it
   from Stripe on demand; if it cannot be resolved, endpoint returns `502`.
 
@@ -169,7 +171,7 @@ Semantics:
 ## Stats history endpoint
 
 `GET /api/v1/me/projects/{projectId}/stats/history`:
-- Pro-only, owner-only endpoint.
+- Owner-only endpoint.
 - Returns year-to-date daily earnings buckets for charting.
 - Only days with at least some income are included (zero-income days omitted).
 - Query params:
@@ -179,8 +181,8 @@ Semantics:
     - `year_month` — `YYYY-MM-DD` date string
     - `label` — human-readable label, e.g. `"Mar 5"`
     - `net_cents` — sum of digital tip amounts received by the performer
-    - `fee_cents` — always `0`; performer pays no fees in the new model
-      (audience-paid service charge funds the platform). Retained for
+    - `fee_cents` — always `0` for performer-facing reporting; the audience
+      pays the flat $2 platform fee on top of each tip. Retained for
       contract stability.
     - `cash_cents` — tip bucket totals + manual queue tips
 - Buckets aggregate `performance_events` scoped to
@@ -194,7 +196,7 @@ Semantics:
 ## Session earnings endpoint
 
 `GET /api/v1/me/projects/{projectId}/wallet/sessions`:
-- Pro-only owner endpoint.
+- Owner-only endpoint.
 - Paginated performance session aggregates:
   - `paid_request_count`
   - `total_tip_amount_cents`
@@ -205,7 +207,7 @@ Semantics:
 ## Payout history endpoint
 
 `GET /api/v1/me/payouts`:
-- Pro-only endpoint.
+- Authenticated endpoint.
 - Returns connected-account payout objects from Stripe.
 - Query params:
   - `limit` (1..100, default 20)

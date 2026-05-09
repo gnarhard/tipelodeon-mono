@@ -293,12 +293,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PayoutHistoryResponse'
-        '403':
-          description: Forbidden (payout history requires Pro)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
         '422':
           description: Invalid status/limit query
         '502':
@@ -366,7 +360,6 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/FeatureRequiresProError'
                   - $ref: '#/components/schemas/PayoutSetupIncompleteError'
                   - $ref: '#/components/schemas/NotificationChannelRequiredError'
                   - type: object
@@ -403,7 +396,6 @@ paths:
             application/json:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/FeatureRequiresProError'
                   - $ref: '#/components/schemas/PayoutSetupIncompleteError'
                   - $ref: '#/components/schemas/NotificationChannelRequiredError'
                   - type: object
@@ -503,12 +495,6 @@ paths:
                 $ref: '#/components/schemas/QueueCollectionResponse'
         '304':
           description: Not modified when the queue payload and record event are unchanged
-        '403':
-          description: Forbidden (queue access requires Pro-owned project access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
         '404':
           description: Not found (user does not have access to the project)
     post:
@@ -531,12 +517,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ManualQueueItemResponse'
-        '403':
-          description: Forbidden (queue access requires Pro-owned project access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
         '404':
           description: Not found (user does not have access to the project)
         '409':
@@ -572,12 +552,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RequestHistoryCollectionResponse'
-        '403':
-          description: Forbidden (history access requires Pro-owned project access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
         '404':
           description: Not found (user does not have access to the project)
 
@@ -600,11 +574,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectWalletResponse'
         '403':
-          description: Forbidden (wallet reporting requires Pro and owner access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
+          description: Forbidden (owner-only)
         '502':
           description: Stripe wallet data unavailable
 
@@ -631,11 +601,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ProjectStatsResponse'
         '403':
-          description: Forbidden (owner stats require Pro and owner access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
+          description: Forbidden (owner-only)
         '422':
           description: Validation failed (invalid timezone, preset, or custom range)
         '502':
@@ -767,11 +733,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionWalletCollectionResponse'
         '403':
-          description: Forbidden (wallet reporting requires Pro and owner access)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FeatureRequiresProError'
+          description: Forbidden (owner-only)
 
   /me/projects/{projectId}/repertoire:
     get:
@@ -798,8 +760,7 @@ paths:
       tags: [Repertoire]
       summary: Add repertoire song
       description: |
-        Pro-owned projects are hard-capped at 100 repertoire songs.
-        Veteran-owned projects do not have a repertoire-song cap.
+        Repertoire size is uncapped.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -931,7 +892,7 @@ paths:
       description: |
         Up to 20 chart PDFs or 20 metadata-only song rows per request.
         Each PDF max 2MB.
-        Pro-owned projects stop importing once the project reaches 100 repertoire songs.
+        Repertoire size is uncapped.
         Large chart batches may defer AI enrichment for review while still accepting the upload.
         When `files` is omitted, each `items[]` row must include `title` and `artist`.
       security: [{ bearerAuth: [] }]
@@ -976,8 +937,9 @@ paths:
       tags: [Repertoire]
       summary: Copy selected repertoire songs from another project
       description: |
-        Pro-owned projects are hard-capped at 100 repertoire songs.
-        If the copy would exceed the cap, the API returns `422` with `code=repertoire_limit_reached`.
+        Repertoire size is uncapped. The 422 `repertoire_limit_reached`
+        response is preserved for forward compatibility but is not currently
+        emitted.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -1032,7 +994,7 @@ paths:
         Accepts an image file (photo of a setlist, printed song list, handwritten
         notes, or screenshot) and uses AI to extract song titles and artists.
         Extracted songs are added to the project repertoire, skipping duplicates.
-        Pro-owned projects stop importing once the 100-song cap is reached.
+        Repertoire size is uncapped.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -1918,8 +1880,8 @@ paths:
       description: |
         Tip-only and original requests are mapped to placeholder songs internally.
         Persisted `requests.song_id` is never null.
-        Public requests are available only for Pro-owned projects whose
-        project entitlements expose `can_use_public_requests=true`.
+        Public requests are available on every project that has finished
+        payout setup.
       parameters:
         - $ref: '#/components/parameters/ProjectSlug'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2276,10 +2238,6 @@ components:
     ProjectEntitlements:
       type: object
       properties:
-        plan_code: { type: string, example: pro_monthly }
-        plan_tier:
-          type: string
-          enum: [free, pro, veteran]
         repertoire_song_limit:
           type: integer
           nullable: true
@@ -2290,7 +2248,6 @@ components:
         ai_interactive_per_minute: { type: integer, example: 10 }
         bulk_ai_window_limit: { type: integer, example: 500 }
         bulk_ai_window_hours: { type: integer, example: 6 }
-        can_use_public_requests: { type: boolean }
         can_access_queue: { type: boolean }
         can_access_history: { type: boolean }
         can_view_owner_stats: { type: boolean }
@@ -2413,13 +2370,6 @@ components:
             required_field:
               type: string
               enum: [acknowledge_invisible_requests]
-    FeatureRequiresProError:
-      type: object
-      properties:
-        code:
-          type: string
-          enum: [feature_requires_pro]
-        message: { type: string }
     RepertoireLimitError:
       type: object
       properties:

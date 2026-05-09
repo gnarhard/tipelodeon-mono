@@ -87,58 +87,29 @@ Payout readiness fields:
 - `payout_status_reason` (nullable machine code/string for UI messaging)
 
 Entitlements fields:
-- `entitlements.plan_code`
-- `entitlements.plan_tier` (`free|pro|veteran`)
-- `entitlements.repertoire_song_limit` (`20` for Free, `200` for Pro, `null` for Veteran)
-- `entitlements.project_limit` (`1` for Free, `3` for Pro, `null` for Veteran)
+- `entitlements.repertoire_song_limit` (currently `null` — uncapped)
+- `entitlements.project_limit` (currently `null` — uncapped)
 - `entitlements.single_chart_upload_limit_bytes` (`2097152`)
 - `entitlements.bulk_chart_upload_limit_bytes` (`2097152`)
 - `entitlements.bulk_chart_file_limit` (`20`)
-- `entitlements.ai_interactive_per_minute` (`10` Free/Pro, `30` Veteran)
-- `entitlements.bulk_ai_window_limit` (`500`)
-- `entitlements.bulk_ai_window_hours` (`6`)
-- `entitlements.can_use_public_requests` (Veteran-only)
-- `entitlements.can_access_queue` (Veteran-only)
-- `entitlements.can_access_history` (Veteran-only)
-- `entitlements.can_view_owner_stats` (Veteran-only)
-- `entitlements.can_view_wallet` (Veteran-only)
-- `entitlements.can_invite_members` (Veteran-only — band sync)
+- `entitlements.ai_interactive_per_minute` (`100`)
+- `entitlements.bulk_ai_window_limit` (`1000`)
+- `entitlements.bulk_ai_window_hours` (`1`)
+- `entitlements.can_access_queue`
+- `entitlements.can_access_history`
+- `entitlements.can_view_owner_stats`
+- `entitlements.can_view_wallet`
 
 Project creation limit:
-- When a user's owned project count reaches `entitlements.project_limit`, `POST /`
-  returns `422`:
-
-```json
-{
-  "code": "project_limit_reached",
-  "message": "Your plan allows up to 1 project(s). Upgrade for more.",
-  "project_limit": 1
-}
-```
-
-Downgrade behavior:
-- When downgrading from a higher tier, existing projects and songs are never
-  deleted. Users retain read-only access to all existing content.
-- New project creation and song addition are blocked when the user exceeds the
-  new tier's limits.
-- Tipping and requests are disabled immediately on all owned projects when
-  downgrading from Pro.
+- The current entitlements set `project_limit=null` (uncapped). The
+  `project_limit_reached` 422 response is preserved for forward compatibility
+  but is not currently emitted.
 
 ---
 
 ## Payout gate behavior for requests and tips
 
 When updating a project:
-- If the owner plan is Pro and the update would newly enable public requests
-  or tips, API returns `422`:
-
-```json
-{
-  "code": "feature_requires_pro",
-  "message": "Audience requests and tips require Pro."
-}
-```
-
 - If the resulting project state would have both `"is_accepting_requests": true`
   and `"is_accepting_tips": true` while owner payout setup is not complete, API
   returns `422`:
@@ -277,8 +248,7 @@ Stats response fields:
   - `link_clicks.website` (int) — clicks on the "Website" link
   - `link_clicks.follow` (int) — clicks on the "Follow" link
 
-If the owning project is not on Pro, these endpoints return `403` with
-`code=feature_requires_pro`.
+Endpoint access is owner-only — non-owners receive `403`.
 
 ---
 

@@ -5,11 +5,9 @@
 - All endpoints below require `Authorization: Bearer <token>`.
 - All endpoints are performer-scoped and project-scoped via `{project_id}`.
 - Route prefix: `/api/v1/me/projects/{project_id}`
-- Queue and history access require the owning project to expose
-  `entitlements.can_access_queue=true` / `entitlements.can_access_history=true`.
-- These entitlements are Veteran-only. On Veteran-owned projects, invited members keep
-  queue/history access even if their own account plan is Free or Pro.
-- On Free-owned or Pro-owned projects, queue and history endpoints return `403`.
+- Queue and history are accessible to every project member; the
+  `entitlements.can_access_queue` / `entitlements.can_access_history` flags
+  always resolve to `true` for members and `false` for non-members.
 
 ---
 
@@ -225,15 +223,6 @@ Manually add an item to the active queue as an authenticated performer/project m
 
 **User does not have access to project (`404`)**
 
-**Feature locked to Pro (`403`)**
-
-```json
-{
-  "code": "feature_requires_pro",
-  "message": "Queue access requires a Pro-owned project."
-}
-```
-
 **Validation failure (`422`):**
 - Invalid type, missing `custom_title`, invalid `song_id`, etc.
 
@@ -310,15 +299,6 @@ Update the tip amount on a manual (performer-added) queue item. Only manual item
 
 **User does not have access to project (`404`)**
 
-**Feature locked to Pro (`403`)**
-
-```json
-{
-  "code": "feature_requires_pro",
-  "message": "Queue access requires a Pro-owned project."
-}
-```
-
 **Not a manual queue item (`403`)**
 
 ```json
@@ -392,15 +372,6 @@ can be deleted by the project owner or members with queue access.
 
 **User does not have access to project (`404`)**
 
-**Feature locked to Pro (`403`)**
-
-```json
-{
-  "code": "feature_requires_pro",
-  "message": "Queue access requires a Pro-owned project."
-}
-```
-
 **Item already played (`422`)**
 
 ```json
@@ -459,15 +430,6 @@ mismatch (missing or extra IDs) returns `422`.
 ### Error responses
 
 **User does not have access to project (`404`)**
-
-**Feature locked to Pro (`403`)**
-
-```json
-{
-  "code": "feature_requires_pro",
-  "message": "Queue access requires a Pro-owned project."
-}
-```
 
 **ID mismatch (`422`)**
 
