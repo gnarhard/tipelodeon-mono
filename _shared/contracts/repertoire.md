@@ -48,16 +48,10 @@
 
 ## Repertoire
 
-Plan limits:
-- Free-owned projects are hard-capped at `20` repertoire songs.
-- Pro-owned projects are hard-capped at `200` repertoire songs.
-- Pro-owned projects do not have a repertoire-song cap.
-- Direct add and copy flows return `422` with `code=repertoire_limit_reached`
-  when the plan cap would be exceeded.
-- Bulk import stays `200 OK` and reports skipped items via `limit_reached`
-  counters and per-song `action=limit_reached`.
-- On downgrade, existing songs above the new limit remain accessible (read-only
-  grace) but no new songs can be added until the user is within limits.
+Repertoire size:
+- Repertoire is uncapped by default. The 422 `repertoire_limit_reached`
+  response and the bulk-import `limit_reached` counters are preserved for
+  forward compatibility but are not currently emitted.
 
 Member repertoire isolation:
 - Each project member has their own independent copy of songs within the project.

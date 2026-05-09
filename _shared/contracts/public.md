@@ -50,8 +50,8 @@ Platform URL fields:
 
 - `POST /requests`
 - Supports `Idempotency-Key`.
-- Public request creation is available only when the owning project exposes
-  `entitlements.can_use_public_requests=true` (Pro-owned projects).
+- Public request creation is available on every project that has finished
+  payout setup and accepts requests.
 
 Request body fields:
 - `song_id` (optional from client when `tip_only` / `is_original` flows are used)
@@ -76,13 +76,14 @@ Paid request intent behavior:
   connected-account payment context correctly.
 
 Service charge:
-- Audience members pay a platform service charge of `$0.50 + 5%` of the tip
-  on top of every paid request. `service_charge_cents` is the surcharge,
-  `total_charge_cents` is the actual amount charged to the customer's card
-  (`tip_amount_cents + service_charge_cents`).
+- Audience members pay a flat `$2.00` platform fee on top of every paid
+  request. `service_charge_cents` is always `200` for paid requests and
+  `total_charge_cents` is `tip_amount_cents + 200`.
 - The performer always receives the full `tip_amount_cents`. The platform
-  collects the service charge net of Stripe's processing fee (passed as
-  `application_fee_amount` on the Connect direct charge).
+  collects the platform fee net of Stripe's processing fee (passed as
+  `application_fee_amount` on the Connect direct charge), and absorbs the
+  Stripe processing fee shortfall on tips large enough that 2.9% + 30¢
+  exceeds $2.
 
 Canonical persistence rule:
 - `requests.song_id` is always populated.
@@ -114,15 +115,6 @@ Payout setup gate:
 - Payout setup is only required when project `is_accepting_tips=true`.
 - If project requests are disabled independently, API returns `422` with
   message only (no `code` field).
-- If the owner plan does not include public requests, API also returns `422`
-  with message only:
-
-```json
-{
-  "message": "This project is not currently accepting requests."
-}
-```
-
 - If project tips are disabled independently, positive-tip and tip-only
   submissions return `422` with message only (no `code` field).
 

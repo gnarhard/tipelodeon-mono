@@ -8,21 +8,13 @@ Route prefix: `/api/v1/auth`
 
 All auth write endpoints accept an optional `Idempotency-Key` header.
 
-## Performer Billing (earnings-based)
+## Performer Fees
 
-- New signups get all features immediately with no credit card required.
-- Billing is earnings-based — subscription activates only after the performer earns $200 cumulative in tips.
-- Available billing plans:
-  - `free` — all features, no card required, until $200 cumulative tips earned
-  - `pro_monthly` at `$19.99/month` — auto-activates at $200 cumulative threshold
-  - `pro_yearly` at `$199.99/year` — offered alongside monthly at activation
-  - `veteran_monthly` at `$49.99/month` — auto-upgrades when earning $2,500+/mo (`plan_tier: veteran`)
-- After $200 threshold: 14-day grace period to add payment. If no card after 14 days, audience requesting feature is gated until subscription activated.
-- Yearly plan nudge: after an additional $400 in tips beyond the billing threshold ($600 cumulative), send an email suggesting the yearly plan to save money.
-- Complimentary access can be granted in two forms:
-  - `free_year` expires after the configured complimentary period
-  - `lifetime` never expires
-- No billing setup wall at registration — performers go directly to the dashboard after email verification.
+Tipelodeon is free for performers — no plan tiers, subscriptions, or trials.
+Audience members pay a flat $2 platform fee on every digital tip; performers
+always net the full tip amount. Cash tips logged through the app carry no
+platform fee. New signups land directly on the dashboard after email
+verification.
 
 ---
 
@@ -65,8 +57,6 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
         "payout_account_status": "pending",
         "payout_status_reason": "requirements_due",
         "entitlements": {
-          "plan_code": "pro_monthly",
-          "plan_tier": "pro",
           "repertoire_song_limit": null,
           "single_chart_upload_limit_bytes": 2097152,
           "bulk_chart_upload_limit_bytes": 2097152,
@@ -74,7 +64,6 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
           "ai_interactive_per_minute": 30,
           "bulk_ai_window_limit": 500,
           "bulk_ai_window_hours": 6,
-          "can_use_public_requests": true,
           "can_access_queue": true,
           "can_access_history": true,
           "can_view_owner_stats": true,
@@ -249,7 +238,6 @@ Update the authenticated user's mobile-owned profile fields.
 - **Auth**: Required (Bearer token)
 
 Returns the authenticated owner account's current usage state, including:
-- current billing plan code/tier
 - storage usage and thresholds
 - AI usage and estimated cost
 - current review/block state
@@ -296,54 +284,18 @@ Allowed values for both fields:
 
 ---
 
-## Billing Status
-
-- **Method**: `GET`
-- **Path**: `/api/v1/me/billing`
-- **Auth**: Required (Bearer token)
-
-Returns the authenticated owner account's billing snapshot used by the
-mobile settings screen to render the activation-threshold progress.
-
-### Success response (`200`)
-
-```json
-{
-  "data": {
-    "billing_plan": "free",
-    "billing_status": "earning",
-    "cumulative_tip_cents": 12500,
-    "activation_threshold_cents": 20000,
-    "is_threshold_reached": false,
-    "grace_period_started_at": null,
-    "grace_period_days_remaining": null,
-    "is_top_earner": false,
-    "is_verified_earner": false
-  }
-}
-```
-
-`activation_threshold_cents` is read from `config('billing.activation_threshold_cents')` (defaults to `20000` = $200). `grace_period_days_remaining` is `null` outside of the post-threshold grace window.
-
----
-
 ## Delete Account
 
 - **Method**: `DELETE`
 - **Path**: `/api/v1/me/account`
 - **Auth**: Required (Bearer token)
 
-Permanently deletes the authenticated user. Cancels any active Stripe
-subscription via Cashier (`subscription('default')->cancelNow()`) before
-deletion, revokes all Sanctum tokens, and removes the user record.
+Permanently deletes the authenticated user, revokes all Sanctum tokens, and
+removes the user record.
 
 ### Success response (`204`)
 
 Empty body. Subsequent requests using the old token return `401`.
-
-### Error response (`503`)
-
-Empty body. Returned when the Stripe subscription cancellation fails — the user record is preserved so the client can retry.
 
 ---
 
