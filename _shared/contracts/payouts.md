@@ -1,10 +1,28 @@
-# Payouts API Contracts (v1.2)
+# Payouts API Contracts (v1.3)
 
 ## Scope and auth
 
 - Protected routes require `Authorization: Bearer <token>`.
 - Write endpoints support `Idempotency-Key`.
 - Route prefix: `/api/v1/me/payout-account`.
+
+## Stripe Connect return URL
+
+The Stripe Connect onboarding `return_url` is a public Tipelodeon page,
+`https://tipelodeon.com/payout-account/onboarding/return-to-app`. It renders a
+deep-link button that points at the `tipelodeon://payout-account/return`
+custom scheme so the app can resume the session. The corresponding
+`refresh_url` is `/payout-account/onboarding/refresh-app` with the
+`tipelodeon://payout-account/refresh` deep-link button.
+
+When the app is brought back to the foreground after the user finishes the
+Stripe-hosted onboarding flow, it calls
+`GET /api/v1/me/payout-account?refresh_from_stripe=1` to pull the latest
+account snapshot and update local payout state.
+
+Both URLs may be overridden via the `STRIPE_CONNECT_RETURN_URL` and
+`STRIPE_CONNECT_REFRESH_URL` environment variables; the public defaults
+described above apply when those are unset.
 
 ---
 
