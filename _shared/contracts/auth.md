@@ -13,8 +13,124 @@ All auth write endpoints accept an optional `Idempotency-Key` header.
 Tipelodeon is free for performers — no plan tiers, subscriptions, or trials.
 Audience members pay a flat $2 platform fee on every digital tip; performers
 always net the full tip amount. Cash tips logged through the app carry no
-platform fee. New signups land directly on the dashboard after email
-verification.
+platform fee. New signups land directly in the app after email verification —
+there is no web dashboard.
+
+---
+
+## Register
+
+- **Method**: `POST`
+- **Path**: `/register`
+
+Creates a new performer account. The server emails a 6-digit verification code
+to the supplied address; the caller must complete `Verify Email` before any
+authenticated endpoint becomes accessible. **No token is issued by this
+endpoint.**
+
+### Request body
+
+```json
+{
+  "name": "string (required, max 255)",
+  "email": "string (required, lowercase email, unique)",
+  "password": "string (required, confirmed, default complexity rules)",
+  "password_confirmation": "string (required, must match password)",
+  "instrument_type": "string (required, must be one of the supported instruments)",
+  "secondary_instrument_type": "string (optional)",
+  "device_name": "string (optional)"
+}
+```
+
+### Success response (`201`)
+
+```json
+{
+  "user_id": 42,
+  "email": "alpha@example.com",
+  "requires_verification": true
+}
+```
+
+### Error response (`422`)
+
+Standard Laravel validation errors (`message`, `errors`).
+
+### Throttle
+
+5 requests per minute per IP.
+
+**Notes:**
+- `instrument_type` is required during API registration.
+  `secondary_instrument_type` is always optional.
+- The platform also queues an `AdminNewUserSignupMail` to admin recipients.
+
+---
+
+## Verify Email
+
+- **Method**: `POST`
+- **Path**: `/verify-email`
+
+Submit the 6-digit code emailed during registration. On success the server
+marks the account verified and returns the same envelope as `Login`
+(`{token, accessBundle, user}`).
+
+### Request body
+
+```json
+{
+  "user_id": 42,
+  "code": "123456",
+  "device_name": "string (optional)"
+}
+```
+
+### Success response (`200`)
+
+Identical to the `Login` envelope.
+
+### Error response (`422`)
+
+```json
+{
+  "message": "The verification code is invalid or has expired."
+}
+```
+
+### Throttle
+
+10 requests per minute per IP.
+
+---
+
+## Resend Verification Code
+
+- **Method**: `POST`
+- **Path**: `/resend-verification-code`
+
+Rotate and re-issue the 6-digit code. The previously issued code is
+invalidated immediately.
+
+### Request body
+
+```json
+{
+  "user_id": 42
+}
+```
+
+### Success response (`200`)
+
+```json
+{
+  "message": "Verification code sent."
+}
+```
+
+### Throttle
+
+5 requests per hour per IP.
 
 ---
 
@@ -99,9 +215,12 @@ verification.
 ```
 
 **Notes:**
-- Mobile app signup remains website-based.
-- Newly created accounts must confirm email ownership before token login succeeds.
-- Web registration requires a primary instrument; secondary instrument is optional.
+- New accounts are created via the API `Register` endpoint above. The web
+  registration form has been removed.
+- Newly created accounts must confirm email ownership before token login
+  succeeds.
+- API registration requires a primary instrument; secondary instrument is
+  optional.
 
 ---
 
@@ -247,7 +366,7 @@ Returns the authenticated owner account's current usage state, including:
 Both `instrument_type` and `secondary_instrument_type` may be set to `null` to clear the selection.
 Each field is sent independently via `PATCH` — only included fields are updated.
 
-`instrument_type` is required during web registration. `secondary_instrument_type` is always optional.
+`instrument_type` is required during API registration. `secondary_instrument_type` is always optional.
 
 Allowed values for both fields:
 
