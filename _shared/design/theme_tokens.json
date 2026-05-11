@@ -1,6 +1,6 @@
 {
   "palettes": {
-    "apricot": {
+    "sage": {
       "normal": "#7ec096",
       "accent": "#a8d4ba"
     },
@@ -37,8 +37,8 @@
       "textMuted": "#525966",
       "line": "#e4e6eb",
       "lineStrong": "#525966",
-      "apricot": "#7ec096",
-      "apricotEmphasis": "#a8d4ba",
+      "sage": "#7ec096",
+      "sageEmphasis": "#a8d4ba",
       "accent": "#3f7a5a",
       "accentSoft": "#e4e6eb",
       "waveBandPrimary": "rgba(29, 33, 40, 0.07)",
@@ -67,8 +67,8 @@
       "textMuted": "#c5c9d2",
       "line": "#404752",
       "lineStrong": "#c5c9d2",
-      "apricot": "#7ec096",
-      "apricotEmphasis": "#a8d4ba",
+      "sage": "#7ec096",
+      "sageEmphasis": "#a8d4ba",
       "accent": "#a8d4ba",
       "accentSoft": "#23272e",
       "waveBandPrimary": "rgba(230, 232, 238, 0.08)",

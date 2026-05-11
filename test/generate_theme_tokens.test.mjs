@@ -42,7 +42,7 @@ test('theme token generator emits only the pinned theme families and wave colors
   // light-mode primary is a darker sage (#3F7A5A) for WCAG contrast.
   assert.match(
     dartOutput,
-    /static const Color apricot_NORMAL = Color\(0xFF7EC096\);/,
+    /static const Color sage_NORMAL = Color\(0xFF7EC096\);/,
   );
   assert.match(
     dartOutput,
@@ -79,7 +79,7 @@ test('theme token generator emits only the pinned theme families and wave colors
 
   assert.match(webCssOutput, /--st-surface: #f1f2f5;/);
   assert.match(webCssOutput, /--st-surface-strong: #e4e6eb;/);
-  assert.match(webCssOutput, /--st-apricot: #7ec096;/);
+  assert.match(webCssOutput, /--st-sage: #7ec096;/);
   assert.match(webCssOutput, /--st-text: #1d2128;/);
   assert.match(webCssOutput, /--st-line: #e4e6eb;/);
   assert.match(webCssOutput, /--st-line-strong: #525966;/);
@@ -91,7 +91,7 @@ test('theme token generator emits only the pinned theme families and wave colors
     /#ffb375|#ffcba0|#302938|#2d2633|#dcecf4|#cddce3/i,
   );
 
-  assert.match(webJsOutput, /apricot/);
+  assert.match(webJsOutput, /sage/);
   assert.match(webJsOutput, /light/);
   assert.match(webJsOutput, /dark/);
   assert.match(webJsOutput, /success/);
