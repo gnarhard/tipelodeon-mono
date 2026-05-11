@@ -351,10 +351,23 @@ Update the authenticated user's mobile-owned profile fields.
 
 ```json
 {
+  "name": "Mike Johnson",
+  "email": "mike@example.com",
   "instrument_type": "drums",
   "secondary_instrument_type": "keyboard"
 }
 ```
+
+All four fields are optional — only included fields are updated.
+
+- `name` and `email` must be non-empty when present; `email` must be lowercase
+  and unique across active (non-soft-deleted) users.
+- Submitting a new `email` clears `email_verified_at` and issues a fresh
+  verification code to the new address. The response reflects the updated
+  `email`, but the verification flag does not return until the new address
+  is confirmed.
+- Re-submitting the user's current `email` is a no-op and does not reset
+  verification.
 
 ---
 
