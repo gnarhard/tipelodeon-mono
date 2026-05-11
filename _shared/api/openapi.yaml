@@ -2677,6 +2677,25 @@ components:
           description: Count of tips grouped by payment method type for the reporting window.
           items:
             $ref: '#/components/schemas/PaymentMethodBreakdownEntry'
+    PerformanceSessionTopTipper:
+      type: object
+      description: |
+        A single audience profile's tip total for one performance session.
+        Used to render the "Whale Watchers" leaderboard on the performance
+        detail screen. Limited to audience profiles with non-zero tip totals.
+      properties:
+        audience_profile_id:
+          type: integer
+        display_name:
+          type: string
+          nullable: true
+          description: Audience profile display name; may be null when the audience member never set one.
+        request_count:
+          type: integer
+          description: Number of requests this audience profile made during the session (any payment method).
+        tip_total_cents:
+          type: integer
+          description: Sum of `tip_amount_cents` across the audience profile's requests in this session.
     PerformanceSessionStatsResponse:
       type: object
       description: |
@@ -2709,6 +2728,13 @@ components:
           description: Count of tips grouped by payment method type for this session.
           items:
             $ref: '#/components/schemas/PaymentMethodBreakdownEntry'
+        top_tippers:
+          type: array
+          description: |
+            Top audience tippers by tip total for this session, descending,
+            capped at 10. Only includes profiles with a non-zero tip total.
+          items:
+            $ref: '#/components/schemas/PerformanceSessionTopTipper'
     SongRequestStatus:
       type: string
       enum: [active, played]
