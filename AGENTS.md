@@ -5,6 +5,7 @@ This file is intentionally short. Load only the rule files relevant to the task.
 Always read first:
 
 - `.agent-rules/00-repos.md`
+- `.agent-rules/15-patent-constraints.md` — the request-triggered-credit invariant that keeps Tipelodeon outside US Patent 12,511,587. Re-read before any feature that could couple payment timing to performance state.
 
 Read as needed:
 
