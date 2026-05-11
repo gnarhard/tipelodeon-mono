@@ -23,6 +23,10 @@
 - Never exceed database table name length limits; avoid MySQL `1059 Identifier name` failures when planning migrations.
 - When composite indexes, unique constraints, or foreign keys could approach MySQL's 64-character identifier limit, always provide an explicit short name in the repo's abbreviated style such as `_idx`, `_uniq`, or `_fk`.
 - Do not push branches, open PRs, or update PRs while any test in a repo you intend to submit is failing. GitHub submission is blocked until the repo is error-free.
+- Never perform a full database refresh. The following commands and their equivalents are banned in every environment (local, CI, staging, production): `php artisan migrate:fresh`, `php artisan migrate:refresh`, `php artisan migrate:reset`, `php artisan db:wipe`, `DROP DATABASE`, `DROP SCHEMA`, and any script that drops, truncates, or recreates the schema wholesale. The only acceptable forward path is additive: write a new migration (`php artisan migrate`), or, if a prior migration is wrong, write a corrective migration that fixes the data and structure in place.
+  - **Why:** real data lives in every environment (manual QA state, seeded performance sessions like project 1 / session 40, embed-widget fixtures, audience-tipper history). A refresh silently destroys it and is not reversible.
+  - **How to apply:** if a migration appears stuck or the schema is in a bad state, stop and ask the user before doing anything destructive. Never reach for `migrate:fresh` as a shortcut, even on a local dev DB, without explicit user authorization for that specific run.
+- Test databases are the only exception, and only when the test framework owns the lifecycle (`RefreshDatabase` trait in PHPUnit, isolated SQLite/MySQL test schemas). Never point those traits at a development or shared database.
 
 ## Lint and static analysis
 
