@@ -118,6 +118,38 @@ Payout setup gate:
 - If project tips are disabled independently, positive-tip and tip-only
   submissions return `422` with message only (no `code` field).
 
+Cooldown and repeat-lock gates:
+- These checks fire only for song requests; tip-only submissions bypass them.
+- When `repeats_enabled=false` and the requested song already has a
+  `SongPerformance` row in the project's currently active session, the API
+  returns `422`:
+
+  ```json
+  {
+    "code": "song_already_performed_this_session",
+    "message": "This song has already been performed in the current set."
+  }
+  ```
+
+- When `cooldowns_enabled=true` and `now() < ProjectSong.last_performed_at +
+  cooldown_minutes`, the audience must tip at least
+  `cooldown_bust_amount_cents` to bypass the cooldown. If the tip is below
+  that floor the API returns `422`:
+
+  ```json
+  {
+    "code": "song_on_cooldown",
+    "message": "This song is on cooldown. Tip $50 or more to bust the cooldown.",
+    "cooldown_bust_amount_cents": 5000,
+    "cooldown_ends_at": "2026-05-10T22:30:00+00:00"
+  }
+  ```
+
+  The bust amount **replaces** `min_tip_cents` for that request; audience may
+  tip more. Payment fires at request time exactly like a normal request — the
+  cooldown is request-time pricing keyed off past performance state, never a
+  performance-conditioned payout. See `.agent-rules/15-patent-constraints.md`.
+
 Audience reward thresholds:
 - Projects can define multiple reward thresholds via `reward_thresholds`
   (see projects.md). Each threshold has a `threshold_cents`, `reward_type`,

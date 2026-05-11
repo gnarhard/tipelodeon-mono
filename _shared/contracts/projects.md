@@ -64,6 +64,10 @@ Core fields:
 - `performer_profile_image_url` (nullable)
 - `min_tip_cents` (rounded up to a whole-dollar cent value on write)
 - `queue_nudge_cents` (additional cents required to claim #1 queue position; rounded up to whole dollar on write; minimum 100; default 500)
+- `cooldowns_enabled` (boolean; default `true`; when `true`, songs go on cooldown for `cooldown_minutes` after each performance and audience must tip at least `cooldown_bust_amount_cents` to bypass)
+- `cooldown_minutes` (int 1..1440; default 60; how long a song stays on cooldown after being performed)
+- `cooldown_bust_amount_cents` (unsigned int; default 5000 = $50; minimum tip required to bypass an active cooldown — replaces `min_tip_cents` floor for the affected song; audience may tip more)
+- `repeats_enabled` (boolean; default `true`; when `false`, any song already played in the current active `PerformanceSession` is locked from re-request — public repertoire shows "Already performed" and the API returns `code: song_already_performed_this_session` 422)
 - `free_request_threshold_cents` (cumulative tip threshold for earning a free request; 0 = disabled; default 4000; rounded up to whole dollar on write; deprecated — use `reward_thresholds` instead)
 - `reward_thresholds[]` (array of reward threshold objects owned by this project; see below)
 - `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
@@ -259,6 +263,10 @@ Endpoint access is owner-only — non-owners receive `403`.
 - `performer_track_url`
 - `min_tip_cents` (backend rounds cent inputs up to the next whole dollar)
 - `queue_nudge_cents` (minimum 100; backend rounds up to whole dollar; default 500)
+- `cooldowns_enabled` (boolean; default true)
+- `cooldown_minutes` (int 1..1440; default 60)
+- `cooldown_bust_amount_cents` (unsigned int >= 0; default 5000)
+- `repeats_enabled` (boolean; default true)
 - `free_request_threshold_cents` (0 to disable; backend rounds up to whole dollar)
 - `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
 - `is_accepting_requests`
