@@ -2677,12 +2677,23 @@ components:
           description: Count of tips grouped by payment method type for the reporting window.
           items:
             $ref: '#/components/schemas/PaymentMethodBreakdownEntry'
-    PerformanceSessionTopTipper:
+        top_audience_tipper:
+          allOf:
+            - $ref: '#/components/schemas/AudienceTipperSummary'
+          nullable: true
+          description: |
+            The single audience profile with the highest summed
+            `tip_amount_cents` across the reporting window (timeline-scoped).
+            Null when no audience profile tipped during the window.
+    AudienceTipperSummary:
       type: object
       description: |
-        A single audience profile's tip total for one performance session.
-        Used to render the "Whale Watchers" leaderboard on the performance
-        detail screen. Limited to audience profiles with non-zero tip totals.
+        A single audience profile's request count and tip total within a
+        stats scope (a performance session or a project stats window).
+        Used for the session "Whale Watchers" leaderboard and the
+        `top_audience_tipper` single-stat field on both the per-session
+        and project stats responses. Limited to audience profiles with
+        non-zero tip totals.
       properties:
         audience_profile_id:
           type: integer
@@ -2692,10 +2703,10 @@ components:
           description: Audience profile display name; may be null when the audience member never set one.
         request_count:
           type: integer
-          description: Number of requests this audience profile made during the session (any payment method).
+          description: Number of requests this audience profile made within the scope (any payment method).
         tip_total_cents:
           type: integer
-          description: Sum of `tip_amount_cents` across the audience profile's requests in this session.
+          description: Sum of `tip_amount_cents` across the audience profile's requests within the scope.
     PerformanceSessionStatsResponse:
       type: object
       description: |
@@ -2734,7 +2745,16 @@ components:
             Top audience tippers by tip total for this session, descending,
             capped at 10. Only includes profiles with a non-zero tip total.
           items:
-            $ref: '#/components/schemas/PerformanceSessionTopTipper'
+            $ref: '#/components/schemas/AudienceTipperSummary'
+        top_audience_tipper:
+          allOf:
+            - $ref: '#/components/schemas/AudienceTipperSummary'
+          nullable: true
+          description: |
+            The single audience profile with the highest summed
+            `tip_amount_cents` during this session. Null when no audience
+            profile tipped (e.g. session has only manual cash or no tips).
+            Always equal to `top_tippers[0]` when present.
     SongRequestStatus:
       type: string
       enum: [active, played]

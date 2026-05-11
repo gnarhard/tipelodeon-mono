@@ -251,6 +251,12 @@ Stats response fields:
   selected period's UTC window (based on `clicked_at`):
   - `link_clicks.website` (int) — clicks on the "Website" link
   - `link_clicks.follow` (int) — clicks on the "Follow" link
+- `top_audience_tipper` is the single audience profile with the highest
+  summed `tip_amount_cents` across the window, or `null` when no audience
+  profile tipped. The object shape is `AudienceTipperSummary`
+  (`audience_profile_id`, `display_name`, `request_count`,
+  `tip_total_cents`). Excludes manual cash entries that have no
+  `audience_profile_id`.
 
 Endpoint access is owner-only — non-owners receive `403`.
 
