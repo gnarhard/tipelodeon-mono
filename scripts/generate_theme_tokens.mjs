@@ -47,6 +47,11 @@ const allowedThemeHexes = new Set([
   '#3d0a0c',
   '#7a9fc4',
   '#cedbe9',
+  // Warning palette — light (#8a6608, #fff7d6) and dark (#d4a73a, #1a1306).
+  '#8a6608',
+  '#fff7d6',
+  '#d4a73a',
+  '#1a1306',
 ]);
 const allowedWebWaveValues = new Set([
   // Ink-on-surface (light) and text-on-surface (dark) wave bands.
@@ -54,6 +59,13 @@ const allowedWebWaveValues = new Set([
   'rgba(29, 33, 40, 0.11)',
   'rgba(230, 232, 238, 0.08)',
   'rgba(230, 232, 238, 0.12)',
+]);
+const allowedWarningRgbaValues = new Set([
+  // Warning surface fill / border bands (light + dark).
+  'rgba(184,134,11,0.12)',
+  'rgba(184,134,11,0.35)',
+  'rgba(212,167,58,0.18)',
+  'rgba(212,167,58,0.40)',
 ]);
 const expectedWaveRibbonColors = {
   ribbonALightStart: '#d8dadf',
@@ -291,6 +303,15 @@ for (const [modeName, values] of Object.entries(tokens.web)) {
       continue;
     }
 
+    if (key === 'warningDim' || key === 'warningSoft') {
+      if (!allowedWarningRgbaValues.has(value)) {
+        throw new Error(
+          `Expected web.${modeName}.${key} to use an approved warning rgba band, received ${value}`,
+        );
+      }
+      continue;
+    }
+
     assertApprovedHex(`web.${modeName}`, key, value);
   }
 
@@ -307,6 +328,15 @@ for (const [modeName, values] of Object.entries(tokens.mobile)) {
   }
 
   for (const [key, value] of Object.entries(values)) {
+    if (key === 'warningDim' || key === 'warningSoft') {
+      if (!allowedWarningRgbaValues.has(value)) {
+        throw new Error(
+          `Expected mobile.${modeName}.${key} to use an approved warning rgba band, received ${value}`,
+        );
+      }
+      continue;
+    }
+
     assertApprovedHex(`mobile.${modeName}`, key, value);
   }
 
