@@ -70,7 +70,7 @@ Core fields:
 - `repeats_enabled` (boolean; default `true`; when `false`, any song already played in the current active `PerformanceSession` is locked from re-request — public repertoire shows "Already performed" and the API returns `code: song_already_performed_this_session` 422)
 - `free_request_threshold_cents` (cumulative tip threshold for earning a free request; 0 = disabled; default 4000; rounded up to whole dollar on write; deprecated — use `reward_thresholds` instead)
 - `reward_thresholds[]` (array of reward threshold objects owned by this project; see below)
-- `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
+- `audience_starting_tip_cents` (whole-dollar cent value; default 2000 = $20; the amount the audience snackbar opens with when a song's Request button is tapped)
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
@@ -268,7 +268,7 @@ Endpoint access is owner-only — non-owners receive `403`.
 - `cooldown_bust_amount_cents` (unsigned int >= 0; default 5000)
 - `repeats_enabled` (boolean; default true)
 - `free_request_threshold_cents` (0 to disable; backend rounds up to whole dollar)
-- `quick_tip_amounts_cents` (exactly 3 whole-dollar cent values in descending display order)
+- `audience_starting_tip_cents` (int, minimum 100; backend rounds up to whole dollar; default 2000)
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
