@@ -210,9 +210,17 @@ invalidated immediately.
 
 ```json
 {
-  "message": "Please verify your email address before signing in."
+  "message": "Please verify your email address before signing in.",
+  "user_id": 42,
+  "email": "alpha@example.com",
+  "requires_verification": true
 }
 ```
+
+`user_id` and `email` are echoed back so clients that lost the
+post-registration verification context (e.g. the user reopened the app
+before entering the OTP) can resume the verify-email flow without
+re-registering.
 
 **Notes:**
 - New accounts are created via the API `Register` endpoint above. The web
