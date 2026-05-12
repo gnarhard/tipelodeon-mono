@@ -18,7 +18,7 @@
   - `song_id`: int (required)
   - `project_id`: int (required)
 - **Upload limits**:
-  - single PDF max: `2MB`
+  - single PDF max: `10MB` (server compresses with Ghostscript `/ebook` if input is > 1 MB and savings >= 100 KB; original is kept otherwise)
   - route throttle: `5` requests per minute per authenticated user
 - **Semantics**: upsert by `(owner_user_id, project_id, song_id)`
   - First upload creates a new chart and returns `201`.

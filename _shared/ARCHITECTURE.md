@@ -987,7 +987,7 @@ All mobile app presentation surfaces must align content to
 **Purpose:** Store and annotate sheet music PDFs.
 
 **Capabilities:**
-- **Upload PDFs:** Up to 2MB per chart
+- **Upload PDFs:** Up to 10MB per chart (server compresses with Ghostscript `/ebook` when input > 1 MB and the result saves >= 100 KB)
 - **Automatic Rendering:** Background job converts PDF → PNG (light/dark themes)
 - **Annotations:** Draw on charts with strokes, colors, thickness, eraser
 - **Offline Annotations:** Stored locally with UUID-based versioning
@@ -1051,7 +1051,7 @@ All mobile app presentation surfaces must align content to
 - **Filename Parsing:** `Song Title - Artist -- key=C -- capo=2.pdf`
 - **Gemini Identification:** If filename is unclear, AI identifies song from chart image
 - **Batch Processing:** Mobile app sends up to 20 files per request
-- **Chunking:** Mobile app chunks selections into 20 files/request (2MB each)
+- **Chunking:** Mobile app chunks selections into 20 files/request (10MB each)
 - **Duplicate Detection:** Byte-identical PDFs skipped
 - **Progress Tracking:** UI shows imported/queued/failed counts
 
@@ -1285,11 +1285,11 @@ r2://tipelodeon/
 
 ### Upload Limits
 
-- **Single Chart:** 2MB PDF
+- **Single Chart:** 10MB PDF (server compresses to ~/ebook quality if input > 1MB)
 - **Bulk Import (mobile app per request):**
   - max 20 files
   - max ~7MB total multipart payload budget (byte-aware chunking)
-  - max 2MB per PDF
+  - max 10MB per PDF
   - This app-side cap avoids PHP's default `max_file_uploads=20` truncation behavior and reduces `post_max_size` / 413 failures.
 - **Profile Image:** 5MB (JPEG, PNG, WebP)
 

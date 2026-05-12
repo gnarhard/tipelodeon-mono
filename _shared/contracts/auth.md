@@ -174,8 +174,8 @@ invalidated immediately.
         "payout_status_reason": "requirements_due",
         "entitlements": {
           "repertoire_song_limit": null,
-          "single_chart_upload_limit_bytes": 2097152,
-          "bulk_chart_upload_limit_bytes": 2097152,
+          "single_chart_upload_limit_bytes": 10485760,
+          "bulk_chart_upload_limit_bytes": 10485760,
           "bulk_chart_file_limit": 20,
           "ai_interactive_per_minute": 30,
           "bulk_ai_window_limit": 500,

@@ -298,7 +298,7 @@ The bulk import is a three-phase process:
 
 - Limits:
   - max files per request: `20`
-  - max size per PDF: `2MB`
+  - max size per PDF: `10MB` (server compresses with Ghostscript `/ebook` if input is > 1 MB and savings >= 100 KB; original is kept otherwise)
 - Uploads PDF chart files and triggers AI identification.
 - Does **not** create Song or ProjectSong records.
 - Large chart batches may queue AI enrichment via the batch API. When the

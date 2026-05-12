@@ -891,7 +891,7 @@ paths:
       summary: Bulk-import repertoire from PDFs or CSV rows
       description: |
         Up to 20 chart PDFs or 20 metadata-only song rows per request.
-        Each PDF max 2MB.
+        Each PDF max 10MB. The server compresses with Ghostscript `/ebook` when the input exceeds 1 MB and the result saves at least 100 KB.
         Repertoire size is uncapped.
         Large chart batches may defer AI enrichment for review while still accepting the upload.
         When `files` is omitted, each `items[]` row must include `title` and `artist`.
@@ -1588,7 +1588,7 @@ paths:
       summary: Upload or replace a chart PDF for a song
       description: |
         Upserts by `(owner_user_id, project_id, song_id)`.
-        Single chart uploads accept PDFs up to 2MB.
+        Single chart uploads accept PDFs up to 10MB. The server compresses with Ghostscript `/ebook` when the input exceeds 1 MB and the result saves at least 100 KB.
         Upload endpoints are rate-limited to 5 requests per minute per authenticated user.
         First upload returns `201`.
         Re-uploading the same PDF returns `200` without changing the chart.
@@ -2242,8 +2242,8 @@ components:
           type: integer
           nullable: true
           description: Null means the current plan does not cap repertoire size.
-        single_chart_upload_limit_bytes: { type: integer, example: 2097152 }
-        bulk_chart_upload_limit_bytes: { type: integer, example: 2097152 }
+        single_chart_upload_limit_bytes: { type: integer, example: 10485760 }
+        bulk_chart_upload_limit_bytes: { type: integer, example: 10485760 }
         bulk_chart_file_limit: { type: integer, example: 20 }
         ai_interactive_per_minute: { type: integer, example: 10 }
         bulk_ai_window_limit: { type: integer, example: 500 }
