@@ -131,8 +131,9 @@ Cooldown and repeat-lock gates:
   }
   ```
 
-- When `cooldowns_enabled=true` and `now() < ProjectSong.last_performed_at +
-  cooldown_minutes`, the audience must tip at least
+- When `cooldowns_enabled=true` and the song has a `SongPerformance` row in
+  the project's currently active `PerformanceSession` whose `performed_at +
+  cooldown_minutes > now()`, the audience must tip at least
   `cooldown_bust_amount_cents` to bypass the cooldown. If the tip is below
   that floor the API returns `422`:
 
@@ -144,6 +145,15 @@ Cooldown and repeat-lock gates:
     "cooldown_ends_at": "2026-05-10T22:30:00+00:00"
   }
   ```
+
+  Cooldowns are session-scoped: only performances in the currently active
+  `PerformanceSession` count. When a new session is started (performer or
+  `audience_auto`), all songs are off cooldown regardless of when they were
+  played in any prior session. If no session is active at request time the
+  audience-initiated flow auto-starts an `audience_auto` session, which is
+  empty by definition, so no song can be on cooldown in it.
+  `cooldown_ends_at` is the `performed_at + cooldown_minutes` of the
+  most recent `SongPerformance` row for the song in the active session.
 
   The bust amount **replaces** `min_tip_cents` for that request; audience may
   tip more. Payment fires at request time exactly like a normal request — the
