@@ -161,8 +161,8 @@ Audience reward thresholds:
   `celebration`, `emoji_events`, `album`, `checkroom`, `headphones`. Mobile
   and web audience UIs render the same curated set.
 - Every newly created project automatically receives a default repeating
-  `free_request` threshold at $40 (`threshold_cents=4000`,
-  `reward_label="Free Song Request"`, `reward_icon="music_note"`). Owners
+  `free_request` threshold at $40 (`threshold_cents=3000`,
+  `reward_label="Free Song"`, `reward_icon="music_note"`). Owners
   can edit or delete it.
 - Each paid tip increments the audience member's `cumulative_tip_cents` on
   their `audience_profile`. This value only grows; it never resets.
@@ -172,7 +172,7 @@ Audience reward thresholds:
   claims_made`.
 - **Non-repeating thresholds**: earned once when cumulative >= threshold.
 - **`free_request` type**: auto-claimable. The request page shows progress
-  ("You're $X away from: Free Song Request!") and a claim button when earned.
+  ("You're $X away from: Free Song!") and a claim button when earned.
   Free requests are submitted with `payment_provider=awarded` and
   `tip_amount_cents=0`, bypassing tip and minimum-tip requirements.
   Tip-only submissions cannot use a free request credit.

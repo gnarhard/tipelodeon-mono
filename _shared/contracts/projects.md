@@ -68,7 +68,7 @@ Core fields:
 - `cooldown_minutes` (int 1..1440; default 60; how long a song stays on cooldown after being performed)
 - `cooldown_bust_amount_cents` (unsigned int; default 5000 = $50; minimum tip required to bypass an active cooldown — replaces `min_tip_cents` floor for the affected song; audience may tip more)
 - `repeats_enabled` (boolean; default `true`; when `false`, any song already played in the current active `PerformanceSession` is locked from re-request — public repertoire shows "Already performed" and the API returns `code: song_already_performed_this_session` 422)
-- `free_request_threshold_cents` (cumulative tip threshold for earning a free request; 0 = disabled; default 4000; rounded up to whole dollar on write; deprecated — use `reward_thresholds` instead)
+- `free_request_threshold_cents` (cumulative tip threshold for earning a free request; 0 = disabled; default 3000; rounded up to whole dollar on write; deprecated — use `reward_thresholds` instead)
 - `reward_thresholds[]` (array of reward threshold objects owned by this project; see below)
 - `audience_starting_tip_cents` (whole-dollar cent value; default 2000 = $20; the amount the audience snackbar opens with when a song's Request button is tapped)
 - `is_accepting_requests`
@@ -313,8 +313,8 @@ Clients should migrate to these endpoints and stop writing project-level viewpor
 ### Default threshold on project creation
 
 - Every newly created project automatically receives a single repeating
-  `free_request` threshold at $40 (`threshold_cents=4000`,
-  `reward_label="Free Song Request"`, `reward_icon="music_note"`,
+  `free_request` threshold at $40 (`threshold_cents=3000`,
+  `reward_label="Free Song"`, `reward_icon="music_note"`,
   `is_repeating=true`, `sort_order=0`).
 - This behaviour is server-side; clients do not need to create it.
 - Owners may edit or delete the default threshold at any time.

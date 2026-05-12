@@ -230,7 +230,7 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 
 | Field | Type | Description |
 |---|---|---|
-| `reward_label` | string | Performer-defined label (e.g. "Free Song Request") |
+| `reward_label` | string | Performer-defined label (e.g. "Free Song") |
 | `reward_icon` | string \| null | Curated icon code (e.g. `music_note`, `star`, `album`) |
 | `reward_type` | string | One of `free_request`, `free_cd`, `custom` |
 | `threshold_cents` | integer | Cumulative-tip threshold in cents at which the reward unlocks |
