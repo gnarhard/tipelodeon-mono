@@ -1,4 +1,4 @@
-# Repertoire API Contracts (v1.5)
+# Repertoire API Contracts (v1.6)
 
 ## Scope and auth
 
@@ -338,10 +338,20 @@ duration_in_seconds, tempo_bpm).
 ### Phase 2: Enrich — `POST /repertoire/bulk-enrich`
 
 - Fetches enriched metadata for a batch of songs by title+artist.
-- Uses `SongMetadataLookupService`: checks songs table, cache, then AI.
-- Respects interactive AI quota limits.
+- **Asynchronous (queue + poll).** Submit creates a `BulkEnrichJob` with
+  one `BulkEnrichItem` per song, fans out one queue job per item, and
+  returns `202` with the job snapshot. Clients poll
+  `GET /repertoire/bulk-enrich-jobs/{jobId}` until `status` is
+  `completed`. Per-item rows pick up `SongMetadataLookupService` results
+  (songs table → cache → configured AI provider) and tolerate transient
+  Gemini quota backpressure inside the queue.
+- Respects interactive AI quota limits at submit time. If the monthly
+  AI cap is reached, returns `429` with `code: ai_limit_exceeded` and
+  does not create the job.
+- Supports `Idempotency-Key` — repeat submissions with the same key
+  return the existing job snapshot with status `200`.
 
-Request:
+Submit request:
 
 ```json
 {
@@ -351,16 +361,81 @@ Request:
 }
 ```
 
-Response (`200`):
+Submit response (`202`, or `200` on an idempotent replay):
 
 ```json
 {
   "data": {
-    "songs": [
+    "job_id": 42,
+    "project_id": 7,
+    "status": "pending",
+    "total_items": 1,
+    "completed_items": 0,
+    "failed_items": 0,
+    "ai_calls_used": 0,
+    "started_at": null,
+    "finished_at": null,
+    "created_at": "2026-05-12T00:30:00+00:00",
+    "items": [
       {
+        "position": 0,
         "title": "Bohemian Rhapsody",
         "artist": "Queen",
-        "source": "songs_table",
+        "status": "pending",
+        "source": null,
+        "metadata": null,
+        "is_duplicate": false,
+        "duplicate_of": null,
+        "error": null
+      }
+    ]
+  }
+}
+```
+
+### Phase 2 (poll): `GET /repertoire/bulk-enrich-jobs/{jobId}`
+
+- Returns the current job snapshot.
+- Job-level `status` transitions `pending → running → completed`.
+- Item-level `status` transitions `pending → processing → completed` or
+  `pending → processing → failed`. Items that hit transient Gemini
+  quota backpressure flip back to `pending` while the queue waits out
+  the backoff window, then resume.
+- `is_duplicate` is `true` when a non-mashup `ProjectSong` with an
+  empty `version_label` already exists in the project for this
+  normalized title+artist; `duplicate_of` is then
+  `"Title - Artist"` of the existing song. Clients should route these
+  items to the duplicates section instead of the review queue.
+  Mashups bypass repertoire dedup at confirm time and so are never
+  flagged here.
+- `ai_calls_used` counts items whose result came from an AI provider
+  (i.e. not `songs_table`, `cache`, or `none`). Each AI call is
+  recorded against `AccountUsageService::recordAiOperation` with
+  category `bulk_enrich` and an idempotent operation key, so item
+  retries do not double-bill the account.
+
+Poll response (`200`):
+
+```json
+{
+  "data": {
+    "job_id": 42,
+    "project_id": 7,
+    "status": "completed",
+    "total_items": 1,
+    "completed_items": 1,
+    "failed_items": 0,
+    "ai_calls_used": 1,
+    "started_at": "2026-05-12T00:30:05+00:00",
+    "finished_at": "2026-05-12T00:30:18+00:00",
+    "created_at": "2026-05-12T00:30:00+00:00",
+    "items": [
+      {
+        "position": 0,
+        "title": "Bohemian Rhapsody",
+        "artist": "Queen",
+        "status": "completed",
+        "source": "ensemble",
         "metadata": {
           "energy_level": "high",
           "era": "1970s",
@@ -371,20 +446,13 @@ Response (`200`):
           "tempo_bpm": 72
         },
         "is_duplicate": false,
-        "duplicate_of": null
+        "duplicate_of": null,
+        "error": null
       }
-    ],
-    "ai_calls_used": 3
+    ]
   }
 }
 ```
-
-`is_duplicate` is `true` when a non-mashup `ProjectSong` with an empty
-`version_label` already exists in the project for this normalized
-title+artist; `duplicate_of` is then `"Title - Artist"` of the existing
-song. Clients should route these items to the duplicates section instead
-of the review queue. Mashups are not flagged here because they bypass
-repertoire dedup at confirm time.
 
 ### Phase 3: Confirm — `POST /repertoire/bulk-import/confirm`
 
