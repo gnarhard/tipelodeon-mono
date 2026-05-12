@@ -53,7 +53,7 @@
 ## Audience features
 
 - Public audience profiles, leaderboards, and achievement notifications were retired on March 6, 2026.
-- Audience identity remains internal-only through the `songtipper_audience_token` cookie for linking repeat requests in the same browser.
+- Audience identity remains internal-only through the `tipelodeon_audience_token` cookie for linking repeat requests in the same browser.
 - See `_shared/audience-achievements.md` for the retired audience-gamification note.
 
 ## Request creation

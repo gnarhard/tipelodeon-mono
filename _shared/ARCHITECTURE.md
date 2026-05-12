@@ -70,7 +70,7 @@ Tipelodeon/                         # Workspace root (tipelodeon-mono)
 │   ├── api-contract-rules.md        # API design principles
 │   └── audience-achievements.md     # Retired audience gamification notes
 │
-├── web/                             # Laravel backend (songtipper_web repo)
+├── web/                             # Laravel backend (tipelodeon-web repo)
 │   ├── app/
 │   │   ├── Models/                  # Eloquent models
 │   │   ├── Http/Controllers/Api/    # API controllers
@@ -85,7 +85,7 @@ Tipelodeon/                         # Workspace root (tipelodeon-mono)
 │   │   └── web.php                  # Web routes (audience pages)
 │   └── config/                      # Laravel configuration
 │
-└── mobile_app/                      # Flutter app (songtipper_mobile_app repo)
+└── mobile_app/                      # Flutter app (tipelodeon-app repo)
     ├── lib/
     │   ├── main.dart                # App entry point
     │   ├── core/                    # Core infrastructure
@@ -112,8 +112,8 @@ Tipelodeon/                         # Workspace root (tipelodeon-mono)
 ### Repository Remotes
 
 - **Monorepo:** `git@github.com:gnarhard/tipelodeon-mono.git`
-- **Web:** `git@github.com:gnarhard/songtipper_web.git`
-- **Mobile App:** `git@github.com:gnarhard/songtipper_mobile_app.git`
+- **Web:** `git@github.com:gnarhard/tipelodeon-web.git`
+- **Mobile App:** `git@github.com:gnarhard/tipelodeon-app.git`
 
 ### Git Worktree Workflow
 

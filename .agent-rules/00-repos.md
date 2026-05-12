@@ -11,8 +11,8 @@ Always start from the main branch before doing any work.
 ## Repository remotes
 
 - Monorepo: `git@github.com:gnarhard/tipelodeon-mono.git`
-- Web: `git@github.com:gnarhard/songtipper_web.git`
-- Mobile App: `git@github.com:gnarhard/songtipper_mobile_app.git`
+- Web: `git@github.com:gnarhard/tipelodeon-web.git`
+- Mobile App: `git@github.com:gnarhard/tipelodeon-app.git`
 
 When finished, create a PR for each repo you modified without waiting to be asked, but only after every test suite in each submitted repo is passing with zero errors, including unrelated failures. Resolve any merge conflicts in those PRs using your best judgment, and share every PR link with the developer. If the PR is closed, merged, and the branch is deleted, create a new PR.
 

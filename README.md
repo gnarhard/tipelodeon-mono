@@ -19,8 +19,8 @@ Tipelodeon is split into multiple repositories:
 ## Repository remotes
 
 - Monorepo: `git@github.com:gnarhard/tipelodeon-mono.git`
-- Web: `git@github.com:gnarhard/songtipper_web.git`
-- Mobile App: `git@github.com:gnarhard/songtipper_mobile_app.git`
+- Web: `git@github.com:gnarhard/tipelodeon-web.git`
+- Mobile App: `git@github.com:gnarhard/tipelodeon-app.git`
 
 ## Prerequisites
 
@@ -42,8 +42,8 @@ Tipelodeon is split into multiple repositories:
 git clone git@github.com:gnarhard/tipelodeon-mono.git
 cd tipelodeon-mono
 
-git clone git@github.com:gnarhard/songtipper_web.git web
-git clone git@github.com:gnarhard/songtipper_mobile_app.git mobile_app
+git clone git@github.com:gnarhard/tipelodeon-web.git web
+git clone git@github.com:gnarhard/tipelodeon-app.git mobile_app
 ```
 
 ### Web setup (`web/`)

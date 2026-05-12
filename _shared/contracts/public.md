@@ -3,7 +3,7 @@
 ## Scope
 
 - No bearer auth.
-- Audience identity is cookie-backed (`songtipper_audience_token`).
+- Audience identity is cookie-backed (`tipelodeon_audience_token`).
 - Audience route prefix: `/api/v1/public/projects/{project_slug}`.
 - App bootstrap route exception: `GET /api/v1/app/version-policy?platform={platform}`.
 
