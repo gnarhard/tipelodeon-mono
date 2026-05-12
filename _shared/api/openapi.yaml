@@ -2690,7 +2690,7 @@ components:
       description: |
         A single audience profile's request count and tip total within a
         stats scope (a performance session or a project stats window).
-        Used for the session "Whale Watchers" leaderboard and the
+        Used for the session "Whale Watch" leaderboard and the
         `top_audience_tipper` single-stat field on both the per-session
         and project stats responses. Limited to audience profiles with
         non-zero tip totals.
