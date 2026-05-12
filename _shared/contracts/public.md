@@ -161,7 +161,7 @@ Audience reward thresholds:
   `celebration`, `emoji_events`, `album`, `checkroom`, `headphones`. Mobile
   and web audience UIs render the same curated set.
 - Every newly created project automatically receives a default repeating
-  `free_request` threshold at $40 (`threshold_cents=3000`,
+  `free_request` threshold at $30 (`threshold_cents=3000`,
   `reward_label="Free Song"`, `reward_icon="music_note"`). Owners
   can edit or delete it.
 - Each paid tip increments the audience member's `cumulative_tip_cents` on

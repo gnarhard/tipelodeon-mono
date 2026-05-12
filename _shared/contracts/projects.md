@@ -313,7 +313,7 @@ Clients should migrate to these endpoints and stop writing project-level viewpor
 ### Default threshold on project creation
 
 - Every newly created project automatically receives a single repeating
-  `free_request` threshold at $40 (`threshold_cents=3000`,
+  `free_request` threshold at $30 (`threshold_cents=3000`,
   `reward_label="Free Song"`, `reward_icon="music_note"`,
   `is_repeating=true`, `sort_order=0`).
 - This behaviour is server-side; clients do not need to create it.
