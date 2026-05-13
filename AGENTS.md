@@ -5,7 +5,13 @@ This file is intentionally short. Load only the rule files relevant to the task.
 Always read first:
 
 - `.agent-rules/00-repos.md`
-- `.agent-rules/15-patent-constraints.md` — the request-triggered-credit invariant that keeps Tipelodeon outside US Patent 12,511,587. Re-read before any feature that could couple payment timing to performance state.
+- `.agent-rules/15-patent-constraints.md` — three invariants that keep
+  Tipelodeon outside the patent landscape scanned in 2026-05: (1) credit
+  performer at request time, never on performance; (2) no jukebox
+  framing — no autonomous playback, no audio storage; (3) rewards are
+  loyalty milestones, not credit balances. Re-read before any feature
+  that touches tipping, payouts, the `performed` flag, the reward
+  mechanic, or anything that could be framed as a jukebox.
 
 Read as needed:
 
