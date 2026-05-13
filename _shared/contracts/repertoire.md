@@ -339,7 +339,7 @@ duration_in_seconds, tempo_bpm).
 
 - Fetches enriched metadata for a batch of songs by title+artist.
 - **Asynchronous (queue + poll).** Submit creates a `BulkEnrichJob` with
-  one `BulkEnrichItem` per song, fans out one queue job per item, and
+  one `BulkEnrichItem` per song, audience members out one queue job per item, and
   returns `202` with the job snapshot. Clients poll
   `GET /repertoire/bulk-enrich-jobs/{jobId}` until `status` is
   `completed`. Per-item rows pick up `SongMetadataLookupService` results

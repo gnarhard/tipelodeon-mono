@@ -180,7 +180,7 @@ them today:
   performance queue or session.
 - Per-page chart viewport with element-of-interest tracking
   (Microsoft US 10,191,890 — different from our static zoom/offset).
-- Concert / event discovery for fans based on listening history
+- Concert / event discovery for audience members based on listening history
   (Spotify US 10,475,108 family).
 - Audio-signal analysis to extract tempo / key / danceability
   (Spotify US 10,089,578, US 9,852,721, US 7,689,422).
