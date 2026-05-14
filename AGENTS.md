@@ -37,6 +37,12 @@ Notes:
 - Keep `web`, `app`, and `_shared` in sync for any API or contract change.
 - For mobile work, repo-local architecture rules override generic Flutter
   advice. Do not rely on generic framework guidance alone.
+- The Flutter app (`app/`) ships on iOS, Android, macOS, Windows, and Linux
+  only. The Flutter **web** target has been removed — do not recreate
+  `app/web/`, do not run `flutter build web` / `flutter run -d chrome`, and
+  do not use a browser to test the mobile app. The top-level `web/`
+  directory is the separate Laravel audience-facing site, not the Flutter
+  web build. See `app/.agent-rules/flutter.md` → "Supported platforms".
 - Do not add backwards-compatible shims unless explicitly requested.
 - Open a PR for every repo you modify before handoff, even if the user did not explicitly ask for PR creation.
 - If any PR you open has merge conflicts, resolve them using your best judgment before handoff.
