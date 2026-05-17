@@ -258,7 +258,7 @@ new class extends Component {
             $rows[] = [
                 'key' => 'request-original',
                 'title' => 'Artist Original',
-                'description' => 'Hear an original song from the performer.',
+                'description' => 'Hear one the artist wrote.',
                 'artist' => '',
                 'genre' => '',
                 'era' => '',

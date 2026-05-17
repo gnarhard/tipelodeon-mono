@@ -127,7 +127,7 @@ it('renders pinned action rows before the repertoire on the default page', funct
             'Valerie',
         ], false)
         ->assertSee('Support the performer without adding a song to the queue.')
-        ->assertSee('Hear an original song from the performer.')
+        ->assertSee('Hear one the artist wrote.')
         ->assertSee(route('request.page', [
             'projectSlug' => $project->slug,
             'song' => Song::tipJarSupportSong()->id,
