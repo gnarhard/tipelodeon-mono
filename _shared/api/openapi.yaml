@@ -272,6 +272,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/PayoutAccountLinkResponse'
 
+  /me/payout-account/dismiss:
+    post:
+      tags: [Payouts]
+      summary: Persistently dismiss the payout-setup prompt
+      description: |
+        Marks `users.payout_setup_dismissed_at` so the signup-flow gate and
+        any persistent banner stop nudging the user to set up payouts.
+        Idempotent — repeated calls succeed without updating the timestamp.
+        The dismissal is automatically cleared the next time the user
+        requests an onboarding link, since opening the flow is treated as
+        opting back in.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Dismissal persisted; current payout account returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayoutAccountResponse'
+
   /me/payouts:
     get:
       tags: [Payouts]
@@ -2225,6 +2247,13 @@ components:
           additionalProperties: true
           description: Deprecated project-scoped viewport blob.
         payout_setup_complete: { type: boolean }
+        payout_setup_dismissed:
+          type: boolean
+          description: |
+            Mirrors `payout_account.setup_dismissed` for the project's
+            owner. Members see this as `false`. Clients should suppress
+            the signup-flow gate and any payout banner while this is
+            `true`.
         payout_account_status:
           type: string
           enum: [not_started, pending, enabled, restricted]
@@ -2320,6 +2349,14 @@ components:
           type: string
           enum: [not_started, pending, enabled, restricted]
         setup_complete: { type: boolean }
+        setup_dismissed:
+          type: boolean
+          description: |
+            Whether the user has persistently dismissed the payout-setup
+            prompt via `POST /me/payout-account/dismiss`. The signup gate
+            and any payout-setup banner should suppress themselves while
+            this is `true`. Opening an onboarding link automatically clears
+            the dismissal.
         status_reason: { type: string, nullable: true }
         stripe_account_id: { type: string, nullable: true }
         charges_enabled: { type: boolean }

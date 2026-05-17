@@ -31,6 +31,7 @@ described above apply when those are unset.
 - `GET /api/v1/me/payout-account`
 - `POST /api/v1/me/payout-account/onboarding-link`
 - `POST /api/v1/me/payout-account/dashboard-link`
+- `POST /api/v1/me/payout-account/dismiss`
 - `GET /api/v1/me/projects/{projectId}/wallet`
 - `GET /api/v1/me/projects/{projectId}/stats`
 - `GET /api/v1/me/projects/{projectId}/stats/history`
@@ -49,6 +50,7 @@ Access:
 `payout_account` payload:
 - `status` (`not_started|pending|enabled|restricted`)
 - `setup_complete` (boolean)
+- `setup_dismissed` (boolean — mirrors `users.payout_setup_dismissed_at != null`)
 - `status_reason` (nullable string machine code / Stripe reason)
 - `stripe_account_id` (nullable string)
 - `charges_enabled` (boolean)
@@ -62,6 +64,15 @@ Status semantics:
 - Completion is derived from Stripe account status
   (`requirements`, `charges_enabled`, `payouts_enabled`), synchronized from
   Stripe API and `account.updated` webhooks.
+- `setup_dismissed=true` means the user clicked "don't show again." The
+  signup-flow gate and any persistent payout banner should suppress
+  themselves while this is true. The flag is **independent** of
+  `setup_complete` — a user can dismiss without ever completing setup.
+- Opening any onboarding link automatically clears the dismissal: calling
+  `POST /onboarding-link` is treated as opting back in to nudges.
+- Dismissal is per-user, not per-project. `ProjectResource.payout_setup_dismissed`
+  reflects the project owner's dismissal state for owner viewers; members
+  always see `false`.
 
 ---
 
@@ -70,6 +81,8 @@ Status semantics:
 `POST /onboarding-link`:
 - Ensures an Express connected account exists for the current user.
 - Returns single-use onboarding `url` and latest `payout_account` snapshot.
+- Clears any prior `setup_dismissed=true` flag: opening the flow is
+  treated as opting back in to nudges.
 
 Example success:
 
@@ -79,6 +92,7 @@ Example success:
   "payout_account": {
     "status": "pending",
     "setup_complete": false,
+    "setup_dismissed": false,
     "status_reason": "requirements_due",
     "stripe_account_id": "acct_123",
     "charges_enabled": false,
@@ -99,6 +113,9 @@ Example success:
 - `link_type` behavior:
   - `dashboard`: payout status is fully enabled and URL is Stripe Express dashboard login.
   - `onboarding`: payout status is not enabled and URL is onboarding flow.
+- When `link_type=onboarding`, the dismissal flag is cleared (same as
+  `/onboarding-link`). When `link_type=dashboard`, dismissal is unchanged
+  because the user already finished setup.
 
 ```json
 {
@@ -107,11 +124,39 @@ Example success:
   "payout_account": {
     "status": "pending",
     "setup_complete": false,
+    "setup_dismissed": false,
     "status_reason": "requirements_due",
     "stripe_account_id": "acct_123",
     "charges_enabled": false,
     "payouts_enabled": false,
     "requirements_currently_due": ["external_account"],
+    "requirements_past_due": []
+  }
+}
+```
+
+---
+
+## Dismiss endpoint
+
+`POST /dismiss`:
+- Persists `users.payout_setup_dismissed_at = now()`.
+- Idempotent — re-dismissing does not update the timestamp.
+- Returns the current `payout_account` snapshot (with
+  `setup_dismissed=true`).
+- Cleared automatically when the user later opens an onboarding link.
+
+```json
+{
+  "payout_account": {
+    "status": "not_started",
+    "setup_complete": false,
+    "setup_dismissed": true,
+    "status_reason": "not_started",
+    "stripe_account_id": null,
+    "charges_enabled": false,
+    "payouts_enabled": false,
+    "requirements_currently_due": [],
     "requirements_past_due": []
   }
 }
