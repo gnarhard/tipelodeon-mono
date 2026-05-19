@@ -24,6 +24,22 @@ Platform URL fields:
 - `store_url` is used only for mobile platforms (`ios`, `android`) and should be null for desktop policies.
 - `archive_url` is used only for desktop platforms (`macos`, `windows`, `linux`) and should be null for mobile policies.
 
+Release pipeline updates:
+- `PATCH /api/v1/app/version-policy/{platform}` is an internal endpoint
+  used by `app/scripts/release.sh` after each successful upload stage.
+- Auth: `Authorization: Bearer <RELEASE_POLICY_TOKEN>`. The endpoint
+  returns `401` when the env var is unset on the target environment, so
+  non-production deployments stay locked down by default.
+- Body is a partial update: any of `latest_version`,
+  `latest_build_number`, `store_url`, `archive_url`, `is_enabled`.
+  Omitted fields keep their prior values. Mobile platforms reject
+  `archive_url`; desktop platforms reject `store_url`.
+- When no row exists yet for the platform, both `latest_version` and
+  `latest_build_number` are required and the row is created with
+  `is_enabled=false` unless explicitly set. Operators flip `is_enabled`
+  manually from the admin panel once the new build is live in the
+  store / on the download host.
+
 ---
 
 ## Public repertoire

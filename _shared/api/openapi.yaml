@@ -1915,6 +1915,73 @@ paths:
         '404':
           description: No enabled release policy exists for the requested platform
 
+  /app/version-policy/{platform}:
+    patch:
+      tags: [App]
+      summary: Update the app release policy for a platform
+      description: |
+        Internal endpoint used by the release pipeline to push the latest
+        version and build number for a given platform after a successful
+        upload (TestFlight, GitHub Release, etc.). Partial update — only
+        the provided fields are written; the remaining columns keep their
+        prior values.
+
+        When the row does not yet exist for the platform, both
+        `latest_version` and `latest_build_number` are required and the
+        new row is created with `is_enabled=false` unless explicitly set.
+
+        `store_url` is rejected for desktop platforms; `archive_url` is
+        rejected for mobile platforms.
+      security: [{ releaseToken: [] }]
+      parameters:
+        - in: path
+          name: platform
+          required: true
+          schema:
+            $ref: '#/components/schemas/AppPlatform'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                latest_version:
+                  type: string
+                  description: Semantic version in `x.y.z` format.
+                latest_build_number:
+                  type: integer
+                  minimum: 0
+                store_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Allowed for mobile platforms only.
+                archive_url:
+                  type: string
+                  format: uri
+                  nullable: true
+                  description: Allowed for desktop platforms only.
+                is_enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: Updated release policy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AppVersionPolicy'
+        '401':
+          description: Missing or invalid release token
+        '404':
+          description: Unsupported platform
+        '422':
+          description: Validation failed
+
   /public/projects/{projectSlug}/repertoire:
     get:
       tags: [Audience]
@@ -1974,6 +2041,15 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    releaseToken:
+      type: http
+      scheme: bearer
+      description: |
+        Shared-secret bearer token used by the release pipeline
+        (`app/scripts/release.sh`) to update per-platform
+        `AppReleasePolicy` rows on production. Value is matched against
+        `config('release.policy_token')` server-side; the endpoint is
+        closed when that value is unset.
 
   parameters:
     IdempotencyKey:
