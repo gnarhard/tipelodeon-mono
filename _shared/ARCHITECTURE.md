@@ -407,7 +407,7 @@ Project-specific repertoire entry. Allows per-project overrides of song metadata
 - `era` - Inherited or overridden
 - `genre` - Project override (nullable, falls back to Song)
 - `performed_musical_key` - Key the performer plays it in
-- `tuning` - Guitar tuning (e.g., "Drop D", "Standard")
+- `tuning` - Guitar tuning (e.g., "Drop D", "EADGBE"); defaults to "EADGBE"
 - `capo` - Capo position (0-12)
 - `needs_improvement` - Flag for practice tracking
 - `performance_count` - Number of times performed
