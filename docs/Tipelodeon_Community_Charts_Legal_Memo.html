@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tipelodeon — User-Uploaded Chord Charts: Legal Risk Memo</title>
+<style>
+  @page { size: Letter; margin: 0.75in 0.85in; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    font-size: 11pt;
+    line-height: 1.45;
+    margin: 0;
+  }
+  h1 {
+    font-size: 22pt;
+    margin: 0 0 4pt 0;
+    color: #111;
+    letter-spacing: -0.01em;
+  }
+  h2 {
+    font-size: 14pt;
+    color: #1a1a1a;
+    margin: 28pt 0 8pt 0;
+    padding-bottom: 4pt;
+    border-bottom: 1.5pt solid #1a1a1a;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 12pt;
+    color: #2a2a2a;
+    margin: 18pt 0 6pt 0;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 11pt;
+    color: #2a2a2a;
+    margin: 12pt 0 4pt 0;
+    page-break-after: avoid;
+  }
+  p { margin: 6pt 0; }
+  ul, ol { margin: 6pt 0 6pt 0; padding-left: 22pt; }
+  li { margin: 3pt 0; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 9.5pt;
+    background: #f3f3f3;
+    padding: 1pt 4pt;
+    border-radius: 3pt;
+  }
+  blockquote {
+    margin: 8pt 0 8pt 0;
+    padding: 6pt 12pt;
+    border-left: 3pt solid #888;
+    background: #f8f8f8;
+    color: #333;
+    font-size: 10.5pt;
+  }
+  .lede {
+    font-size: 10pt;
+    color: #555;
+    margin: 0 0 8pt 0;
+  }
+  .meta {
+    font-size: 9.5pt;
+    color: #666;
+    margin: 2pt 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 8pt 0 12pt 0;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 0.7pt solid #ccc;
+    padding: 5pt 8pt;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #efefef;
+    font-weight: 600;
+  }
+  .header-bar {
+    border-bottom: 2.5pt solid #111;
+    padding-bottom: 8pt;
+    margin-bottom: 18pt;
+  }
+  .callout {
+    background: #fff8e6;
+    border: 0.7pt solid #d8b86b;
+    padding: 8pt 12pt;
+    margin: 10pt 0;
+    border-radius: 3pt;
+    font-size: 10.5pt;
+  }
+  .callout-bad {
+    background: #fdecea;
+    border: 0.7pt solid #c75a55;
+  }
+  .callout-good {
+    background: #e7f4ea;
+    border: 0.7pt solid #5fa56b;
+  }
+  .footer-disclaimer {
+    margin-top: 28pt;
+    padding-top: 10pt;
+    border-top: 0.7pt solid #aaa;
+    font-size: 8.5pt;
+    color: #666;
+  }
+  .toc {
+    font-size: 10pt;
+    color: #444;
+    margin: 4pt 0 0 0;
+  }
+  .toc li { margin: 1pt 0; }
+  .pgbreak { page-break-before: always; }
+  .small { font-size: 9.5pt; color: #555; }
+  .label { display: inline-block; padding: 1pt 6pt; border-radius: 3pt; font-size: 8.5pt; font-weight: 600; }
+  .ok { background: #d6eedc; color: #1f5b30; }
+  .risk { background: #fce0dd; color: #82221d; }
+  .watch { background: #fdedc8; color: #6a4900; }
+  .sources { font-size: 9.5pt; color: #444; }
+  .sources li { margin: 2pt 0; }
+</style>
+</head>
+<body>
+
+<div class="header-bar">
+  <h1>User-Uploaded Chord Charts &mdash; Legal Risk Memo</h1>
+  <p class="lede">A working brief on whether Tipelodeon can be sued for redistributing user-uploaded chord charts (e.g.,&nbsp;Ultimate&nbsp;Guitar exports) through a "Community Charts" program, even with user-accepted Terms of Service.</p>
+  <p class="meta">Prepared: May&nbsp;19,&nbsp;2026 &nbsp;·&nbsp; Audience: Tipelodeon co-founders &nbsp;·&nbsp; Status: Internal working draft &mdash; not legal advice</p>
+  <ol class="toc">
+    <li>Bottom line</li>
+    <li>Why Terms of Service do not protect us</li>
+    <li>DMCA safe harbor &mdash; what it gives us and what it doesn't</li>
+    <li>Why "Community Charts Program" framing raises the risk</li>
+    <li>Tipelodeon-specific aggravating factors</li>
+    <li>What Ultimate Guitar actually did (and what it costs them)</li>
+    <li>Recommended next steps</li>
+  </ol>
+</div>
+
+<h2>1. Bottom line</h2>
+
+<div class="callout callout-bad">
+<strong>Yes, we can be sued &mdash; even if every uploading user agreed to our Terms of Service.</strong>
+A user's click-through cannot transfer rights the user never held. The copyright owner of the underlying musical composition (publisher / songwriter) was not a party to our TOS and is not bound by it. They can sue us directly for hosting and redistributing their work.
+</div>
+
+<p>The risk is not theoretical. The National Music Publishers' Association (NMPA) and Music Publishers' Association (MPA) have a documented multi-decade track record of going after exactly this pattern &mdash; user-uploaded chord/lyric/tab sites &mdash; and won or settled most of those actions. Ultimate Guitar itself is only operating today because it ultimately negotiated paid licenses with publishers; it did not "win" the underlying question.</p>
+
+<h3>What this memo is and isn't</h3>
+<p>This is an internal working brief. It is <em>not</em> a legal opinion. We need an entertainment/IP attorney to convert this into one before any commercial launch that includes redistributing user-uploaded charts.</p>
+
+<h2>2. Why Terms of Service do not protect us</h2>
+
+<p>A Terms of Service agreement is a contract <strong>between us and the user</strong>. It can:</p>
+<ul>
+  <li>Get the user to <strong>represent and warrant</strong> they own or have licensed the content they upload.</li>
+  <li>Require the user to <strong>indemnify</strong> us for damages we suffer because of their upload.</li>
+  <li>Grant us a <strong>license</strong> from the user to host, display, and redistribute their upload.</li>
+</ul>
+
+<p>None of those bind the actual rights holder. If a user uploads a chart for a Taylor Swift song and clicks "I have the rights," she is lying or mistaken &mdash; she does not have the rights, the publisher does. The publisher can still sue:</p>
+
+<ul>
+  <li><strong>The user</strong>, for direct infringement (uploading); and</li>
+  <li><strong>Us</strong>, for direct infringement (hosting and redistributing copies) and/or <strong>secondary infringement</strong> (inducing, contributing to, or having vicarious liability for user infringement).</li>
+</ul>
+
+<p>The indemnification clause means we can, in theory, recover from the user. In practice, the user is a hobbyist musician with no money, and the lawsuit and damages land on us first. <strong>The TOS is a shield against our user; it is not a shield against a publisher.</strong></p>
+
+<div class="callout">
+<strong>Plain-English version:</strong> "I promise this is mine" from someone who doesn't own it doesn't make it ours. The copyright owner gets to enforce against whoever they can reach &mdash; and we are easier to find and richer than the uploader.
+</div>
+
+<h2>3. DMCA safe harbor &mdash; what it gives us and what it doesn't</h2>
+
+<p>The Digital Millennium Copyright Act (17 U.S.C. &sect;&nbsp;512) creates a "safe harbor" that, if we qualify, shields us from <em>monetary damages</em> for user-uploaded infringing content. To qualify under &sect;&nbsp;512(c) (the storage-of-material-at-direction-of-user provision), we must:</p>
+
+<ol>
+  <li><strong>Designate a DMCA agent</strong> with the U.S. Copyright Office (online filing, nominal fee).</li>
+  <li>Maintain a working <strong>notice-and-takedown</strong> process.</li>
+  <li>Have a published, enforced <strong>repeat-infringer termination policy</strong>.</li>
+  <li>Have no <strong>actual knowledge</strong> of specific infringing material and no awareness of facts or circumstances from which infringement is "apparent" ("red flag" knowledge).</li>
+  <li>Not receive a <strong>financial benefit directly attributable to</strong> infringing activity that we have the <strong>right and ability to control</strong>.</li>
+</ol>
+
+<h3>What safe harbor does not do</h3>
+
+<table>
+  <tr><th>Misconception</th><th>Reality</th></tr>
+  <tr>
+    <td>"Safe harbor blocks the lawsuit."</td>
+    <td>It does not. A publisher can still sue. Safe harbor is a defense raised <em>during</em> the lawsuit. We still pay litigation costs.</td>
+  </tr>
+  <tr>
+    <td>"Safe harbor protects us from injunctions."</td>
+    <td>No. Courts can still order specific content removed or, in extreme cases, order service modifications.</td>
+  </tr>
+  <tr>
+    <td>"Safe harbor applies to everything on the platform."</td>
+    <td>Only to material stored at the direction of a user. The moment we <em>curate</em>, <em>edit</em>, or <em>republish</em> as a platform act, that material may fall outside &sect;&nbsp;512(c).</td>
+  </tr>
+  <tr>
+    <td>"If we don't know it's infringing, we're fine."</td>
+    <td>Courts apply "red flag" knowledge. A chord chart titled "Wonderwall &mdash; Oasis" on a tipping platform is obviously a copyrighted composition. Willful blindness is not a defense.</td>
+  </tr>
+  <tr>
+    <td>"Safe harbor covers commercial sites."</td>
+    <td>It can, but the "direct financial benefit + right and ability to control" test gets harder the more central infringing content is to revenue.</td>
+  </tr>
+</table>
+
+<h2>4. Why "Community Charts Program" framing raises the risk</h2>
+
+<p>Safe harbor under &sect;&nbsp;512(c) protects <strong>passive storage</strong> of user material. The more we look like a <em>publisher</em> rather than a <em>host</em>, the weaker the defense.</p>
+
+<p>The word "Program" is the part that worries us. It suggests:</p>
+
+<ul>
+  <li><strong>Editorial selection</strong> &mdash; we picked these charts to share more broadly.</li>
+  <li><strong>Redistribution as a platform act</strong> &mdash; we are not merely letting User&nbsp;A's upload be visible; we are <em>giving it to</em> User&nbsp;B.</li>
+  <li><strong>Promotion</strong> &mdash; "Community Charts" is a marketed feature, which can be cited as evidence we encouraged the activity.</li>
+</ul>
+
+<p>Compare two product framings:</p>
+
+<table>
+  <tr><th>Framing</th><th>Safe-harbor posture</th></tr>
+  <tr>
+    <td>User uploads a chart, marks it private. Other users can <em>request access</em> from the uploader; the uploader chooses whether to share.</td>
+    <td>Closer to passive storage with user-to-user sharing. Safe harbor defense is plausible. We never make the redistribution decision.</td>
+  </tr>
+  <tr>
+    <td>Tipelodeon's "Community Charts Program" surfaces user-uploaded charts in a discoverable library that any performer can pull from.</td>
+    <td>We are now the redistribution agent. The "Program" name itself becomes evidence in any complaint. Safe harbor argument is materially weaker.</td>
+  </tr>
+</table>
+
+<p>Relevant case-law direction: in <em>Capitol Records v. Vimeo</em> and the long <em>Viacom v. YouTube</em> line, courts have held that editorial activity, active inducement, or "red flag" awareness can disqualify a service from &sect;&nbsp;512(c). Curated "Programs" featuring user uploads sit closer to the inducement end of the spectrum than passive hosting.</p>
+
+<h2 class="pgbreak">5. Tipelodeon-specific aggravating factors</h2>
+
+<p>Some product characteristics make our exposure worse than a neutral UGC platform:</p>
+
+<h3>Commercial benefit tied to the content</h3>
+<p>Tipelodeon is a <strong>paid</strong> service (we take an application fee on tips). Performers use charts to play sets that drive the tips we earn from. A plaintiff will argue we receive a <strong>direct financial benefit</strong> from infringing material we have the right and ability to control &mdash; the second prong that defeats safe harbor.</p>
+
+<h3>Public performance exposure (separate issue)</h3>
+<p>A performer using a chart to play a cover song to a tipping audience is engaged in a <strong>public performance</strong> of the underlying composition. That is a <em>separate</em> right from the reproduction/display right we'd implicate by hosting the chart. Public-performance licensing (ASCAP/BMI/SESAC) is normally handled by the <em>venue</em>, but if we are seen as facilitating or organizing performances, we could be drawn in. This is a related risk worth flagging to counsel even though it isn't strictly a "chart hosting" issue.</p>
+
+<h3>"Program" framing in marketing</h3>
+<p>As covered in &sect;&nbsp;4. The product name itself is plaintiff-friendly evidence.</p>
+
+<h3>Charts as a core feature, not incidental</h3>
+<p>The further charts are from incidental UGC and the closer they are to a marketed value proposition, the worse the optics in court. If "we have a big library of community charts" is part of the pitch, we are publishers in everything but name.</p>
+
+<h2>6. What Ultimate Guitar actually did (and what it costs them)</h2>
+
+<p>It is tempting to point at Ultimate Guitar and say "they get away with it." They do not &mdash; they <em>pay for it</em>. The public record:</p>
+
+<ul>
+  <li><strong>2005:</strong> The Music Publishers' Association (MPA) began legal action against tablature sites including Ultimate Guitar and MXTabs, leading to the shutdown of many smaller sites.</li>
+  <li><strong>April 10, 2010:</strong> Ultimate Guitar signed a licensing agreement with the <strong>Harry Fox Agency</strong> (HFA, then the NMPA's mechanical-licensing affiliate). The deal covers lyrics display, title search, and tablature display with download and print rights, and is opt-in for HFA's then-approximately 44,000 represented publishers.</li>
+  <li>Ultimate Guitar has also signed direct deals with major publishers including Sony/ATV, EMI, Peermusic, Alfred, Hal Leonard, Faber, and Music Sales. Songwriters receive compensation for the display of charts.</li>
+</ul>
+
+<div class="callout">
+<strong>Implication for Tipelodeon:</strong> The path Ultimate Guitar took is the path that works &mdash; <em>license the catalogs, pay royalties, then host the content</em>. The pre-2010 approach (host without licenses) is the one that ended in legal action against them and the shutdown of their competitors.
+</div>
+
+<h3>What does that licensing actually look like for us?</h3>
+<p>For a service of our size, realistic options include:</p>
+<ul>
+  <li><strong>Harry Fox Agency / SESAC mechanical license</strong> for reproduction and distribution rights on covered compositions.</li>
+  <li><strong>Direct deals</strong> with major publishers (Sony Music Publishing, Universal Music Publishing, Warner Chappell, Kobalt) &mdash; the table-stakes set is small enough to be negotiable.</li>
+  <li><strong>Aggregator services</strong> (LyricFind, Musixmatch, or similar) that pre-negotiate publisher catalogs and resell access. Faster to set up; more expensive per use.</li>
+</ul>
+
+<p>None of these are free. All of them are cheaper than a contested copyright suit, which routinely runs seven figures in defense costs alone before damages.</p>
+
+<h2>7. Recommended next steps</h2>
+
+<table>
+  <tr><th style="width:6%">#</th><th>Action</th><th style="width:20%">Owner / timing</th></tr>
+  <tr>
+    <td>1</td>
+    <td><strong>Retain an entertainment / IP attorney</strong> for a paid consult before launch of any community-chart redistribution feature. A focused 1&ndash;2 hour review converts this memo into actual advice and identifies our specific exposure under our specific product design. Cost: hundreds, not thousands.</td>
+    <td>Before any public launch that includes redistribution</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><strong>Designate a DMCA agent</strong> with the U.S. Copyright Office (online, ~$6 filing). Publish DMCA contact info and a working takedown form in the app and on the marketing site. Do this regardless of which product direction we choose &mdash; it is cheap insurance.</td>
+    <td>This sprint</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td><strong>Write and enforce a repeat-infringer policy</strong> (account termination after N substantiated takedown notices). Required for safe harbor.</td>
+    <td>This sprint</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td><strong>Reconsider product framing.</strong> Specifically: do not market a curated "Community Charts Program." Prefer user-to-user sharing under the uploader's control, or a clearly delineated "your own uploads only" model until licensing is in place.</td>
+    <td>Product decision before public marketing</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td><strong>Scope a licensing path.</strong> Get quotes from HFA, Musixmatch, and LyricFind. Compare unit economics against expected chart usage. This becomes a real cost line if redistribution is core to the product.</td>
+    <td>Before redistribution feature ships</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td><strong>Audit our existing TOS and EULAs.</strong> Make sure uploader reps and warranties, our content license, and indemnification clauses are tight. (Necessary but not sufficient &mdash; see &sect;&nbsp;2.)</td>
+    <td>Same legal-counsel engagement as #1</td>
+  </tr>
+</table>
+
+<h2>8. What we should not do</h2>
+
+<ul>
+  <li><strong>Do not assume the TOS is a complete defense.</strong> It is partial protection at best (see &sect;&nbsp;2).</li>
+  <li><strong>Do not assume "small platform, no one will sue us"</strong>. The NMPA has historically gone after small sites precisely because they are easy wins and set deterrent precedent.</li>
+  <li><strong>Do not mix product framings.</strong> Calling something a "Program" while relying on safe-harbor passive-host arguments invites exactly the contradiction a plaintiff will exploit.</li>
+  <li><strong>Do not delay the DMCA agent designation</strong>. There is no scenario in which we are worse off for having filed it.</li>
+</ul>
+
+<div class="callout callout-good">
+<strong>What "safe enough to launch" looks like:</strong> DMCA agent designated, takedown process working, repeat-infringer policy in place, no curated redistribution program, and a licensing roadmap in motion before charts become a marketed value proposition. That posture survives most likely plaintiff scenarios without requiring perfect prevention.
+</div>
+
+<h2>Sources</h2>
+<ul class="sources">
+  <li>17 U.S.C. &sect;&nbsp;512 (DMCA safe harbor) &mdash; <a href="https://www.law.cornell.edu/uscode/text/17/512">law.cornell.edu/uscode/text/17/512</a></li>
+  <li>U.S. Copyright Office DMCA designated agent directory &mdash; <a href="https://www.copyright.gov/dmca-directory/">copyright.gov/dmca-directory</a></li>
+  <li>Ultimate Guitar &mdash; Wikipedia (history, MPA actions, HFA licensing): <a href="https://en.wikipedia.org/wiki/Ultimate_Guitar">en.wikipedia.org/wiki/Ultimate_Guitar</a></li>
+  <li>"The Harry Fox Agency, Inc. and Ultimate Guitar Enter Licensing Arrangement for Lyrics and Tablature" (April&nbsp;10,&nbsp;2010 press release) &mdash; <a href="http://www.marketwired.com/press-release/harry-fox-agency-inc-ultimate-guitar-enter-licensing-arrangement-lyrics-tablature-1166952.htm">marketwired.com</a></li>
+  <li>National Music Publishers' Association &mdash; Wikipedia: <a href="https://en.wikipedia.org/wiki/National_Music_Publishers'_Association">en.wikipedia.org/wiki/National_Music_Publishers'_Association</a></li>
+  <li><em>Viacom International, Inc. v. YouTube, Inc.</em>, 676 F.3d 19 (2d Cir.&nbsp;2012) &mdash; standard reference for DMCA &sect;&nbsp;512(c) "red flag" knowledge analysis.</li>
+  <li><em>Capitol Records, LLC v. Vimeo, LLC</em>, 826 F.3d 78 (2d Cir.&nbsp;2016) &mdash; safe-harbor analysis where operator interacts with user content.</li>
+</ul>
+
+<div class="footer-disclaimer">
+<strong>Disclaimer.</strong> This document is an internal working brief prepared by a non-attorney for discussion among Tipelodeon co-founders. It is not legal advice and does not establish an attorney-client relationship. Statutes, case law, and industry licensing practices change; legal positions described here reflect a general reading of publicly available materials as of May&nbsp;19,&nbsp;2026 and should be independently verified by qualified counsel before any business decision is made in reliance on them. Where this memo describes Ultimate Guitar's licensing history or specific publisher arrangements, those statements are summarized from the cited public sources; Tipelodeon has no independent knowledge of the terms of those agreements.
+</div>
+
+</body>
+</html>
