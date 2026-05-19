@@ -74,8 +74,8 @@ Core fields:
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
-- `notify_on_request` (default true; when true, owner receives email on new requests/tips)
-- `show_persistent_queue_strip`
+- `notify_on_request` (per-viewer; sourced from `project_member_preferences` for the requesting user; defaults to `true` for the owner and `false` for new members; updated via `PUT /{projectId}/preferences`, not via project update)
+- `show_persistent_queue_strip` (per-viewer; sourced from `project_member_preferences` for the requesting user; defaults to `true` for everyone; updated via `PUT /{projectId}/preferences`, not via project update)
 - `public_repertoire_set_id` (nullable int, FK to `setlist_sets.id`; when set, the public project page shows only songs from this set instead of the full `is_public` repertoire; `nullOnDelete` auto-resets when the set is deleted)
 - `public_repertoire_set_name` (read-only, set name when `public_repertoire_set_id` is loaded)
 - `public_repertoire_setlist_name` (read-only, parent setlist name when `public_repertoire_set_id` is loaded)
@@ -138,66 +138,85 @@ When updating a project:
 
 ---
 
-## Notification gate (invisible requests)
+## Member preferences (per-viewer)
 
-When a project is accepting requests with no active notification channel, the
-owner has no passive way to notice incoming requests — neither email nor the
-persistent queue strip is visible. Disabling both can be intentional (a sideman
-at another leader's gig, a soloist with requests temporarily paused), so this
-is a confirmation gate rather than a hard block.
+`notify_on_request` and `show_persistent_queue_strip` are scoped per user
+per project. Each project member (owner and members) has their own values
+backed by `project_member_preferences (project_id, user_id, ...)`.
 
-### Rule
+### Endpoint
 
-If the **resulting** project state would have all three of:
+`PUT /api/v1/me/projects/{projectId}/preferences`
 
-- `is_accepting_requests = true`
-- `notify_on_request = false`
-- `show_persistent_queue_strip = false`
+Authorization: any user with access to the project (owner or member).
 
-…and the payload does not include `acknowledge_invisible_requests = true`, the
-API returns `422`:
+Request body (all optional, only set fields you want to change):
+
+```json
+{
+  "notify_on_request": false,
+  "show_persistent_queue_strip": true,
+  "acknowledge_invisible_requests": false
+}
+```
+
+Response `200`:
+
+```json
+{
+  "message": "Preferences updated.",
+  "preferences": {
+    "notify_on_request": false,
+    "show_persistent_queue_strip": true
+  }
+}
+```
+
+### Defaults
+
+- Owner default: `notify_on_request=true`, `show_persistent_queue_strip=true`.
+- Member default on first membership: `notify_on_request=false`,
+  `show_persistent_queue_strip=true`. Members opt in to email explicitly.
+- The owner's row is backfilled on first preference write or on project read
+  via `preferenceFor()`.
+
+### Notification gate (invisible requests)
+
+When the editing user would have both `notify_on_request=false` and
+`show_persistent_queue_strip=false` while the project is accepting requests,
+the editing user has no passive way to notice incoming requests. This is a
+confirmation gate, not a hard block — sidemen who don't need notifications
+should be able to silence themselves.
+
+If the resulting preference state for the editing user would have both
+`notify_on_request=false` and `show_persistent_queue_strip=false` while
+`project.is_accepting_requests=true`, and the payload toggles at least one
+of those two fields toward off, and `acknowledge_invisible_requests` is not
+`true`, the API returns `422`:
 
 ```json
 {
   "code": "notification_channel_required",
-  "message": "You are about to disable all request notifications. Confirm to proceed.",
+  "message": "You are about to disable all of your request notifications. Confirm to proceed.",
   "details": { "required_field": "acknowledge_invisible_requests" }
 }
 ```
 
-On retry with `acknowledge_invisible_requests: true`, the update succeeds. The
-flag is ephemeral per-request and is never persisted.
+On retry with `acknowledge_invisible_requests: true`, the update succeeds.
+The flag is ephemeral per-request and is never persisted.
 
-### Transition semantics (required)
+### Project-update gate (re-enabling requests)
 
-The gate fires only on transitions *into* the dangerous state. Evaluation:
-
-1. Compute the resulting state by merging the incoming payload over existing
-   project values (this matters for `PATCH`).
-2. If the resulting state is not `requests=on, email=off, strip=off`, pass.
-3. If the resulting state is the dangerous one, check whether the *incoming
-   payload* flips at least one of `is_accepting_requests`,
-   `notify_on_request`, or `show_persistent_queue_strip` toward that state
-   (i.e. `is_accepting_requests` to `true`, or either notification field to
-   `false`). If no relevant field is toggled, pass — the performer is already
-   in the state and is editing something unrelated (e.g. `name`).
-4. Otherwise, require `acknowledge_invisible_requests=true` or return 422.
-
-This prevents repeat-confirmation regressions when performers already in the
-state save unrelated settings.
-
-### Scope
-
-The gate applies to `PUT /{projectId}` and `PATCH /{projectId}`. Create
-(`POST /`) is not gated — new projects inherit safe defaults
-(`notify_on_request=true`, `show_persistent_queue_strip=true`), and the
-creation payload does not accept these fields as overrides.
+`PATCH /projects/{projectId}` no longer accepts `notify_on_request` or
+`show_persistent_queue_strip`. It still gates `is_accepting_requests` flipping
+from `false` to `true`: if the editor's own preferences are both off, the same
+`notification_channel_required` 422 fires, asking the editor to acknowledge.
 
 ### Client expectations
 
 - On `422` with `code=notification_channel_required`, surface a confirmation
-  dialog explaining the consequence (incoming requests will be invisible
-  unless the performer manually opens the queue screen) and retry the original
+  dialog explaining the consequence (incoming requests will be invisible to
+  you unless you manually open the queue screen) and retry the original
   payload with `acknowledge_invisible_requests: true`.
 - Do not persist the flag locally or re-send it on unrelated subsequent
   updates — the backend re-evaluates transition semantics each request.
@@ -278,8 +297,6 @@ Endpoint access is owner-only — non-owners receive `403`.
 - `is_accepting_requests`
 - `is_accepting_tips`
 - `is_accepting_original_requests`
-- `notify_on_request`
-- `show_persistent_queue_strip`
 - `acknowledge_invisible_requests` (ephemeral per-request flag; not persisted; see notification gate above)
 - `public_repertoire_set_id` (nullable int; set to override public song list with one set, null to reset; setting a non-null value also clears `public_repertoire_setlist_id`)
 - `public_repertoire_setlist_id` (nullable int; set to override public song list with every song across every set of a setlist, null to reset; setting a non-null value also clears `public_repertoire_set_id`; takes precedence on read)

@@ -495,6 +495,42 @@ paths:
         '422':
           description: Validation failed
 
+  /me/projects/{projectId}/preferences:
+    put:
+      tags: [Projects]
+      summary: Update the current user's on-stage preferences for a project
+      description: |
+        Updates `notify_on_request` and/or `show_persistent_queue_strip` for
+        the signed-in user on this project. Owner and members may both call.
+        See `_shared/contracts/projects.md` → "Member preferences".
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectMemberPreferenceUpdateRequest'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectMemberPreferenceResponse'
+        '403':
+          description: Forbidden (user has no access to the project)
+        '422':
+          description: |
+            Validation failed, or notification gate fired
+            (`code=notification_channel_required`)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/NotificationChannelRequiredError'
+
   /me/projects/{projectId}/queue:
     get:
       tags: [Queue]
@@ -2238,9 +2274,17 @@ components:
         notify_on_request:
           type: boolean
           description: |
-            When true, the project owner receives email on new requests and tips.
-            Defaults to true.
-        show_persistent_queue_strip: { type: boolean }
+            Viewer-scoped. The signed-in user's preference, sourced from
+            `project_member_preferences`. Defaults to `true` for the owner
+            and `false` for new members. Updated via
+            `PUT /me/projects/{projectId}/preferences`, not via the project
+            update endpoint.
+        show_persistent_queue_strip:
+          type: boolean
+          description: |
+            Viewer-scoped. The signed-in user's preference, sourced from
+            `project_member_preferences`. Defaults to `true` for everyone.
+            Updated via `PUT /me/projects/{projectId}/preferences`.
         chart_viewport_prefs:
           type: object
           nullable: true
@@ -2322,16 +2366,15 @@ components:
         is_accepting_requests: { type: boolean }
         is_accepting_tips: { type: boolean }
         is_accepting_original_requests: { type: boolean }
-        notify_on_request: { type: boolean }
-        show_persistent_queue_strip: { type: boolean }
         acknowledge_invisible_requests:
           type: boolean
           description: |
             Ephemeral per-request flag. Required to be `true` when the payload
-            would transition the project into a state where
-            `is_accepting_requests=true` while both `notify_on_request=false`
-            and `show_persistent_queue_strip=false`. Not persisted. See the
-            notification gate in `_shared/contracts/projects.md`.
+            flips `is_accepting_requests` from `false` to `true` while the
+            editing user's own `notify_on_request` and
+            `show_persistent_queue_strip` preferences are both `false`. Not
+            persisted. See the notification gate in
+            `_shared/contracts/projects.md`.
         remove_performer_profile_image: { type: boolean }
         chart_viewport_prefs:
           type: object
@@ -2342,6 +2385,27 @@ components:
               zoom_scale: { type: number }
               offset_dx: { type: number }
               offset_dy: { type: number }
+    ProjectMemberPreferenceUpdateRequest:
+      type: object
+      properties:
+        notify_on_request: { type: boolean }
+        show_persistent_queue_strip: { type: boolean }
+        acknowledge_invisible_requests:
+          type: boolean
+          description: |
+            Required to be `true` when the resulting preference state for the
+            editing user would leave both `notify_on_request=false` and
+            `show_persistent_queue_strip=false` while the project is accepting
+            requests. Not persisted.
+    ProjectMemberPreferenceResponse:
+      type: object
+      properties:
+        message: { type: string }
+        preferences:
+          type: object
+          properties:
+            notify_on_request: { type: boolean }
+            show_persistent_queue_strip: { type: boolean }
     PayoutAccount:
       type: object
       properties:
@@ -2391,11 +2455,15 @@ components:
     NotificationChannelRequiredError:
       type: object
       description: |
-        Returned when a project update would transition the project into
-        `is_accepting_requests=true` while both `notify_on_request=false` and
-        `show_persistent_queue_strip=false`, and the payload does not include
-        `acknowledge_invisible_requests=true`. Client should prompt the
-        performer to confirm the consequences, then retry with the flag set.
+        Returned when:
+        - `PATCH /projects/{id}` flips `is_accepting_requests` from `false` to
+          `true` while the editing user's own `notify_on_request` and
+          `show_persistent_queue_strip` preferences are both `false`; or
+        - `PUT /projects/{id}/preferences` would leave the editing user with
+          both `notify_on_request=false` and `show_persistent_queue_strip=false`
+          while the project is accepting requests.
+        Client should prompt the user to confirm the consequences, then retry
+        the payload with `acknowledge_invisible_requests=true`.
       properties:
         code:
           type: string

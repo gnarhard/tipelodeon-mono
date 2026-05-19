@@ -198,6 +198,13 @@ invalidated immediately.
 }
 ```
 
+> `notify_on_request` and `show_persistent_queue_strip` in each
+> `accessBundle.projects[]` entry are viewer-scoped: the values returned
+> are the signed-in user's preferences from `project_member_preferences`,
+> not project-wide values. Updating them goes through
+> `PUT /me/projects/{projectId}/preferences`, not the project endpoint —
+> see `contracts/projects.md` → "Member preferences (per-viewer)".
+
 ### Error response (`401`)
 
 ```json

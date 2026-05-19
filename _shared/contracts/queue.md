@@ -5,7 +5,12 @@
 - All endpoints below require `Authorization: Bearer <token>`.
 - All endpoints are performer-scoped and project-scoped via `{project_id}`.
 - Route prefix: `/api/v1/me/projects/{project_id}`
-- Queue and history are accessible to every project member; the
+- Queue read and history are accessible to every project member. Queue
+  mutations (`POST /queue`, `PATCH /queue/{id}`, `DELETE /queue/{id}`,
+  `PUT /queue/reorder`, `POST /me/requests/{id}/played`,
+  `POST /me/reward-claims/{id}/delivered`) are owner-only; members receive
+  `403`. The persistent queue strip is read-only for members in clients;
+  the
   `entitlements.can_access_queue` / `entitlements.can_access_history` flags
   always resolve to `true` for members and `false` for non-members.
 
@@ -142,7 +147,7 @@ When the performer manually ends a session via `POST /performances/stop`, every 
 - **Method**: `POST`
 - **Path**: `/queue`
 
-Manually add an item to the active queue as an authenticated performer/project member.
+Manually add an item to the active queue as the project owner. Members receive `403`.
 
 ### Request body (custom song)
 
@@ -359,8 +364,7 @@ Returned when the owning project does not expose
 - **Path**: `/queue/{requestId}`
 
 Permanently remove an active request from the queue. Unlike marking as played,
-deleted requests do not appear in history. Both manual and non-manual requests
-can be deleted by the project owner or members with queue access.
+deleted requests do not appear in history. Owner-only — members receive `403`.
 
 ### Success response (`200`)
 
