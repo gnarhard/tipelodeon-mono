@@ -194,3 +194,62 @@ Each song is only reviewed once. After review, `last_integrity_review_at` is set
 The batch runs daily at 3:00 AM MT via the scheduler. Results are polled every 5 minutes by the `PollBatchResults` job and written to the `song_integrity_issues` table. Issues surface in `songs:check-integrity` under the `ai_flagged_issues` check and can be auto-fixed with `--fix`.
 
 
+## Marketing screenshots
+
+Captures App Store screenshots for iPhone 6.9", iPhone 6.5", iPad 13", and macOS, frames them with device bezels, and uploads to App Store Connect — all from one command. Source data is the session-40 demo dataset, rendered by `flutter drive` against in-memory fakes (no backend, no real account needed).
+
+### One-time setup
+
+Requires Ruby ≥ 3.0 and Xcode with the iPhone 16 Pro Max / iPhone 15 Plus / iPad Pro 13" (M4) simulators installed.
+
+```bash
+bundle install
+xcrun simctl list devices | grep -E "iPhone 16 Pro Max|iPhone 15 Plus|iPad Pro 13"
+```
+
+For uploads, generate an [App Store Connect API key](https://appstoreconnect.apple.com/access/integrations/api) (`Developer` access is enough), save the `.p8`, and export three env vars:
+
+```bash
+export APP_STORE_CONNECT_API_KEY_KEY_ID="<10-char key id>"
+export APP_STORE_CONNECT_API_KEY_ISSUER_ID="<uuid>"
+export APP_STORE_CONNECT_API_KEY_KEY_FILEPATH="$HOME/.appstoreconnect/AuthKey_<id>.p8"
+```
+
+### Commands
+
+```bash
+# Capture only — writes PNGs to fastlane/screenshots/en-US/<device>/
+bundle exec fastlane ios screenshots
+bundle exec fastlane mac screenshots
+
+# Frame the captured PNGs with device bezels + captions (Framefile.json)
+bundle exec fastlane ios frame
+bundle exec fastlane mac frame
+
+# Upload framed PNGs to App Store Connect (no binary, no metadata)
+bundle exec fastlane ios upload          # dry-run by default
+DELIVER_FORCE=true DELIVER_OVERWRITE_SCREENSHOTS=true \
+  bundle exec fastlane ios upload        # actually replace existing PNGs
+
+# All three in one pass
+bundle exec fastlane ios ship
+bundle exec fastlane mac ship
+```
+
+### What gets captured
+
+Five hero screens, in this order, with filenames `01_perform.png` … `05_repertoire.png`:
+
+| # | Screen | Source |
+|---|---|---|
+| 1 | Perform tab | `PerformScreen` |
+| 2 | Session detail (session 40) | `PerformanceDetailScreen` |
+| 3 | Project stats | `ProjectStatsScreen` |
+| 4 | Setlists | `SetlistsListScreen` |
+| 5 | Repertoire | `RepertoireListScreen` |
+
+The render harness lives at `integration_test/screenshots/screenshot_harness.dart`. Seed data + caption strings are checked in; the captured/framed PNGs are gitignored.
+
+### CI
+
+The `.github/workflows/screenshots.yml` workflow runs on `workflow_dispatch` only. Trigger it from the Actions tab with `platform: ios` or `mac` and `upload: false` to produce a downloadable artifact for review, or `upload: true` to push to ASC. Uses the `APP_STORE_CONNECT_API_KEY_KEY_ID`, `APP_STORE_CONNECT_API_KEY_ISSUER_ID`, and `APP_STORE_CONNECT_API_KEY_BASE64` repo secrets.
