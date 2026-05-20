@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.2)
+# Charts API Contracts (v1.3)
 
 ## Scope and auth
 
@@ -122,13 +122,30 @@ Annotations are **project-song specific** via the chart that carries them:
 {
   "local_version_id": "uuid",
   "created_at": "2026-02-15T18:00:00Z",
-  "strokes": []
+  "strokes": [],
+  "texts": [
+    {
+      "id": "text-uuid",
+      "text": "Capo 3",
+      "position": { "x": 0.5, "y": 0.1 },
+      "color_value": 4294198070,
+      "font_size": 0.04
+    }
+  ]
 }
 ```
 
 Notes:
 - Each save replaces the previously saved annotation for that `(user, chart, page)`.
 - `local_version_id` remains client-provided so retries stay idempotent.
+- `texts` is optional on the request; servers and clients treat a missing or
+  empty array as "no text annotations". `GET .../annotations/latest`
+  always returns a `texts` array (`[]` for legacy rows).
+- `texts[].position` uses normalized chart-page coordinates in `[0, 1]`,
+  matching the convention used by `strokes[].points`. `texts[].font_size`
+  is also stored as a fraction of canvas height in `[0.005, 0.5]`.
+- `texts[].id` is a stable client-generated identifier so the client can
+  target a specific label across moves, edits, and undo entries.
 
 ---
 
