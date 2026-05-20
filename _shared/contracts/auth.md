@@ -193,7 +193,8 @@ invalidated immediately.
     "name": "Mike Johnson",
     "email": "mike@example.com",
     "instrument_type": "vocals",
-    "secondary_instrument_type": "piano"
+    "secondary_instrument_type": "piano",
+    "ai_lyric_disclaimer_acknowledged": false
   }
 }
 ```
@@ -343,7 +344,8 @@ Return the authenticated user's profile.
     "name": "Mike Johnson",
     "email": "mike@example.com",
     "instrument_type": "vocals",
-    "secondary_instrument_type": "piano"
+    "secondary_instrument_type": "piano",
+    "ai_lyric_disclaimer_acknowledged": false
   }
 }
 ```
@@ -361,11 +363,12 @@ Update the authenticated user's mobile-owned profile fields.
   "name": "Mike Johnson",
   "email": "mike@example.com",
   "instrument_type": "drums",
-  "secondary_instrument_type": "keyboard"
+  "secondary_instrument_type": "keyboard",
+  "ai_lyric_disclaimer_acknowledged": true
 }
 ```
 
-All four fields are optional — only included fields are updated.
+All fields are optional — only included fields are updated.
 
 - `name` and `email` must be non-empty when present; `email` must be lowercase
   and unique across active (non-soft-deleted) users.
@@ -375,6 +378,12 @@ All four fields are optional — only included fields are updated.
   is confirmed.
 - Re-submitting the user's current `email` is a no-op and does not reset
   verification.
+- `ai_lyric_disclaimer_acknowledged` is a per-user, cross-device flag. The
+  Flutter app shows the "AI lyrics may be inaccurate" disclaimer as a
+  confirm-before-generate dialog whenever this flag is `false`. Sending
+  `true` records the acknowledgement (server-side timestamp); sending
+  `false` clears it so the dialog returns. The "Reset tutorials" action in
+  account settings sends `false`.
 
 ---
 
