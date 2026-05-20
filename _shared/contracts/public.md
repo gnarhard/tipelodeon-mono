@@ -156,8 +156,8 @@ Cooldown and repeat-lock gates:
   ```json
   {
     "code": "song_on_cooldown",
-    "message": "This song is on cooldown. Tip $50 or more to bust the cooldown.",
-    "cooldown_bust_amount_cents": 5000,
+    "message": "This song is on cooldown. Tip $30 or more to bust the cooldown.",
+    "cooldown_bust_amount_cents": 3000,
     "cooldown_ends_at": "2026-05-10T22:30:00+00:00"
   }
   ```
