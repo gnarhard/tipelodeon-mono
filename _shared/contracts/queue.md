@@ -138,7 +138,17 @@ If the performer later starts a real session (setlist or free-play) while an `au
 
 Audience-auto sessions that see no child writes for 30 minutes are ended by the `performances:end-idle-audience` scheduled command (`ended_reason = "inactivity"`).
 
-When the performer manually ends a session via `POST /performances/stop`, every request row tied to that session whose `status` is `"active"` transitions to `"cancelled"` in the same transaction. Cancelled requests no longer appear in `GET /queue` and do not return if the session is later resumed via `POST /performances/{id}/resume`. Tip-only writes (`song.title="Tip Jar Support"`) are cancelled the same way — once the performer finishes, the queue strip starts the next session empty. Payment is not refunded; cancellation is a queue-state transition only, consistent with the credit-at-request-time rule in `.agent-rules/15-patent-constraints.md`. The `performances:end-idle-audience` cron path (`ended_reason = "inactivity"`) does **not** cancel queue items so an idle `audience_auto` session's paid requests survive until a real session adopts or processes them.
+When a performance session ends, every still-`"active"` request tied to that session transitions to `"unresolved"` in the same transaction. This applies to all three end paths:
+
+- `POST /performances/stop` (manual stop)
+- `PerformanceSessionService::applyAutoEndRules()` (6h max-duration / 4h-inactivity timer)
+- `performances:end-idle-audience` artisan command (audience-auto sessions with no child writes for N minutes)
+
+Unresolved requests do not appear in `GET /queue` (which filters on `status = "active"`). Tip-only writes (`song.title="Tip Jar Support"`) are paused the same way — once the performer finishes, the queue strip starts the next session empty. Payment is not refunded; the transition is a queue-state change only, consistent with the credit-at-request-time rule in `.agent-rules/15-patent-constraints.md`.
+
+If the same session is later reopened via `POST /performances/{id}/resume`, every request on that session with `status = "unresolved"` transitions back to `"active"` in the same transaction. The strip refills with those items in their original positions (`session_sequence`, `score_cents`, and `tip_amount_cents` are preserved).
+
+Explicitly-`"cancelled"` requests (e.g., a performer or audience member removed a request mid-show) are **not** affected by the session-end transition and never reappear on resume — only `unresolved` requests are restored.
 
 ---
 

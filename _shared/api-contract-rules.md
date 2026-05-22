@@ -40,10 +40,14 @@ low | medium | high
 
 ### RequestStatus
 ```
-active | played
+active | played | unresolved
 ```
 
-(Internally may use `pending` but public API only exposes `active` and `played`)
+- `active`: visible in `GET /queue`
+- `played`: terminal performed state
+- `unresolved`: paused on session end; restored to `active` on resume
+
+(Internally may use `pending` but public API only exposes the values above. The on-disk `cancelled` value is reserved for performer/audience-initiated removals and is filtered out everywhere.)
 
 ### PerformanceSource
 ```

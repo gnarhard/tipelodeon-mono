@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.3
-  version: 1.3.0
+  title: Tipelodeon API v1.4
+  version: 1.4.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -13,6 +13,11 @@ info:
     - Retryable writes support `Idempotency-Key`.
     - `requests.song_id` is always persisted (tip-only/original map to placeholder songs).
     - Chart viewport preferences are per `(user, chart, page)`.
+
+    Changelog:
+    - v1.4: `SongRequestStatus` adds `unresolved`. Stopping or auto-ending
+      a performance session marks still-active requests as `unresolved`
+      (was `cancelled`); resuming the session restores them to `active`.
 servers:
   - url: /api/v1
 
@@ -2938,7 +2943,13 @@ components:
             Always equal to `top_tippers[0]` when present.
     SongRequestStatus:
       type: string
-      enum: [active, played]
+      enum: [active, played, unresolved]
+      description: |
+        `unresolved` is the paused-on-session-end state. A request that was
+        `active` when its performance session stopped (manual stop or any
+        auto-end path) transitions to `unresolved`. Resuming the same
+        session restores it to `active`. Explicitly-`cancelled` requests
+        are not affected by resume and never become `unresolved`.
     QueueRequest:
       type: object
       properties:
