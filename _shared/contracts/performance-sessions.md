@@ -51,3 +51,11 @@ Performer-initiated write endpoints return `409 Conflict` with body `{"error": "
 - `POST /api/v1/me/repertoire/{projectSong}/performances`
 
 Clients must prompt the performer to start a session and retry. Audience endpoints never return this error — they auto-start sessions instead.
+
+## Resume restores unresolved queue items
+
+When a session ends (manual stop, `applyAutoEndRules`, or the `performances:end-idle-audience` command), every request on that session whose `status` is `"active"` transitions to `"unresolved"` in the same transaction. The `GET /queue` filter ignores `unresolved`, so the queue strip clears immediately.
+
+`POST /api/v1/me/projects/{project}/performances/{session}/resume` reactivates the session row and, in the same transaction, transitions every `unresolved` request on that session back to `"active"`. The strip refills with the same items in their original order (`session_sequence`, `score_cents`, and `tip_amount_cents` are preserved).
+
+Requests with `status = "cancelled"` — explicit performer or audience removals during the show — are not touched by either transition. They do not become `unresolved` on session end and do not reappear on resume. This keeps `queue.md`'s session-linking guarantees and the lifecycle in `ARCHITECTURE.md` in sync.

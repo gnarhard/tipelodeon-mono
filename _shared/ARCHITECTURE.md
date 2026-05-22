@@ -490,7 +490,7 @@ Audience song request with optional tip.
 - `tip_amount_cents` - Tip in cents (can be 0)
 - `score_cents` - Used for queue ordering (currently same as tip)
 - `note` - Optional message from requester
-- `status` - Enum: `pending`, `active`, `played`
+- `status` - Enum: `pending`, `active`, `played`, `unresolved`, `cancelled`
 - `requested_from_ip` - IP address for fraud detection
 - `payment_provider` - "stripe"
 - `payment_intent_id` - Stripe Payment Intent ID
@@ -503,6 +503,8 @@ Audience song request with optional tip.
 1. **Pending:** Created, payment not yet confirmed
 2. **Active:** Payment confirmed, in queue
 3. **Played:** Marked as completed by performer
+4. **Unresolved:** Paused because its performance session ended (manual stop or auto-end). Restored to `active` when the same session is resumed; otherwise terminal. Filtered out of `GET /queue`.
+5. **Cancelled:** Explicitly removed by the performer or audience mid-show. Not affected by session end/resume.
 
 **Relationships:**
 - **Belongs to** Project
