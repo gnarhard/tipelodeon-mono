@@ -148,33 +148,64 @@ blocks — re-run the `sed` and re-test.
 
 ### PHP-FPM (Forge → Server → PHP → 8.5)
 
-In the Forge UI, **Server → PHP → Edit FPM Configuration**:
+Forge has **two PHP config screens that look similar** — make sure
+you're editing the right one for each setting:
+
+| Forge screen | What it edits | What you set there |
+|---|---|---|
+| **Edit FPM Configuration** | The FPM pool config (`pm.*`) | child process count + lifecycle |
+| **Edit FPM PHP Configuration** | The per-request `php.ini` for web | `memory_limit`, `upload_max_filesize`, etc. |
+| **Edit CLI PHP Configuration** | The same `php.ini` but for `artisan` / queue workers | same settings as FPM PHP — edit both |
+
+**FPM pool config** (`Edit FPM Configuration`):
 
 ```ini
 pm = dynamic
-pm.max_children = 4
+pm.max_children = 3
 pm.start_servers = 2
 pm.min_spare_servers = 1
-pm.max_spare_servers = 3
+pm.max_spare_servers = 2
 pm.max_requests = 500
 ```
 
-**Server → PHP → Edit FPM PHP Configuration** and **Edit CLI PHP
-Configuration** (both — the CLI one drives `artisan` + queue workers):
+> **With Isolated Sites + multiple sites sharing one box**, each site
+> has its OWN pool config at **Site → Files → Edit PHP-FPM
+> Configuration**. Set `pm.max_children=3` on each site so combined
+> PHP-FPM stays under ~720 MB.
+
+**FPM PHP Configuration AND CLI PHP Configuration** (edit both — the
+CLI ini drives `artisan` + queue workers):
 
 ```ini
 memory_limit = 256M
+max_memory_limit = 256M       ; Forge-custom ceiling — match memory_limit
 post_max_size = 100M
 upload_max_filesize = 50M
 max_execution_time = 300
 max_input_time = 300
-date.timezone = America/Denver
+date.timezone = UTC           ; or your preferred TZ
 ```
 
 Forge restarts PHP-FPM automatically after each save.
 
-**Why `max_children = 4`:** each process eats ~80–120 MB. Four + workers
-+ MySQL + Redis fits on 2 GB with headroom for swap.
+**Why `pm.max_children = 3`:** each PHP-FPM process eats ~80–120 MB
+resident. With two sites on a 2 GB box, capping each pool at 3 keeps
+combined PHP-FPM footprint under ~720 MB worst case — leaves room for
+MySQL (256 MB), Redis (256 MB), workers (~400 MB), and OS.
+
+### OpCache (Forge enables it by default)
+
+OpCache is configured separately from the main `php.ini` via
+`/etc/php/8.5/fpm/conf.d/10-opcache.ini`. Verify defaults are sane:
+
+```bash
+php8.5 -i | grep -E 'opcache.enable|memory_consumption|max_accelerated_files'
+```
+
+Expect `opcache.enable => On`, `memory_consumption => 128`,
+`max_accelerated_files => 10000`. Leave these alone unless you have
+specific evidence they need tuning — the deploy script's PHP-FPM
+reload clears OpCache automatically after each deploy.
 
 ### Redis
 
