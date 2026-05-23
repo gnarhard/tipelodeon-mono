@@ -100,14 +100,47 @@ sudo apt-get install -y poppler-utils
 pdftotext -v 2>&1 | head -1   # → pdftotext version 22.x.x
 ```
 
-Ubuntu's `imagemagick-6` ships with a policy that blocks PDF reading,
-which breaks chart renders. Patch it:
+Some Ubuntu images ship an ImageMagick policy that blocks PDF reading,
+which breaks chart renders. Forge's current image is permissive, but
+older images and some hosts aren't — check whether the restriction is
+present and patch only if it is:
+
+```bash
+grep -i pdf /etc/ImageMagick-6/policy.xml
+```
+
+- **No output** OR **`rights="read|write"`** → permissive. Skip the rest.
+- **`rights="none"`** with PDF → patch it:
 
 ```bash
 sudo sed -i 's|<policy domain="coder" rights="none" pattern="PDF" />|<policy domain="coder" rights="read\|write" pattern="PDF" />|' /etc/ImageMagick-6/policy.xml
-
-convert -list policy | grep PDF   # → rights: Read Write
 ```
+
+The authoritative end-to-end check is via PHP-imagick — Forge servers
+typically don't have the `convert` CLI installed even when the PHP
+extension is. Run from the site directory:
+
+```bash
+php8.5 -r '
+$pdf = "/tmp/test.pdf";
+file_put_contents($pdf, "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000099 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n148\n%%EOF\n");
+try {
+    $im = new Imagick();
+    $im->setResolution(150, 150);
+    $im->readImage($pdf);
+    $im->setImageFormat("png");
+    $im->writeImage("/tmp/test.png");
+    echo "OK: ", $im->getImageWidth(), "x", $im->getImageHeight(), "\n";
+    $im->clear();
+} catch (Throwable $e) {
+    echo "FAILED: ", $e->getMessage(), "\n";
+}
+'
+```
+
+Expect `OK: <width>x<height>`. Any `attempt to perform an operation
+not allowed by the security policy 'PDF'` means the policy still
+blocks — re-run the `sed` and re-test.
 
 ---
 
