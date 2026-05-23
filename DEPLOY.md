@@ -39,22 +39,47 @@ What Forge does NOT install — we add manually in Step 3.
 
 ## 2. Swap (2 GB)
 
-Forge doesn't provision swap by default. SSH in and add it — without
-this an Imagick spike during a chart render will OOM-kill a worker.
+Forge usually doesn't provision swap. Without it, an Imagick spike
+during a chart render will OOM-kill a worker.
+
+**First check whether the server already has swap:**
 
 ```bash
 ssh forge@<server-ip>
+swapon --show
+free -h | grep Swap
+```
+
+- **`Swap: 2.0Gi`** (or larger): skip the rest of this step.
+- **Empty output** or **smaller than 2 GB**: create / resize:
+
+```bash
+# Resize path: tear down the existing swapfile first.
+sudo swapoff /swapfile 2>/dev/null || true
+sudo rm -f /swapfile
 
 sudo fallocate -l 2G /swapfile
 sudo chmod 600 /swapfile
 sudo mkswap /swapfile
 sudo swapon /swapfile
-echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# /etc/fstab line — only add if it isn't already there.
+grep -q '^/swapfile ' /etc/fstab || \
+  echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# Swappiness — only add if not already set.
 sudo sysctl vm.swappiness=10
-echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
+grep -q '^vm.swappiness=' /etc/sysctl.conf || \
+  echo 'vm.swappiness=10' | sudo tee -a /etc/sysctl.conf
 ```
 
 **Verify:** `free -h` shows `Swap: 2.0Gi`.
+
+**Common errors:**
+
+- `fallocate failed: Text file busy` / `mkswap: /swapfile is mounted` /
+  `swapon: Device or resource busy` — swap already exists. Run the
+  check at the top of this section; if you see 2 GB you're done.
 
 ---
 
