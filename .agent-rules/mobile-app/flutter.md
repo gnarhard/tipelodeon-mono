@@ -124,6 +124,13 @@ mobile platforms.
   methods whenever possible to reduce rebuilds.
 * **Build Method Performance:** Avoid performing expensive operations, like
   network calls or complex computations, directly within `build()` methods.
+* **Loading Indicators:** Always use `EqualizerLoader` from
+  `lib/core/presentation/equalizer_loader.dart` for in-progress / pending UI.
+  Never reach for `CircularProgressIndicator` or `LinearProgressIndicator` — the
+  equalizer bars are the project-wide loading affordance and keep the audio
+  identity consistent. Use `EqualizerLoaderGate` when overlaying on a child
+  widget. Determinate progress (e.g. file upload percent) is the one exception
+  where a `LinearProgressIndicator(value: …)` is acceptable.
 
 ## API Design Principles
 When building reusable APIs, such as a library, follow these principles.
