@@ -6,13 +6,18 @@ boilerplate (Nginx, PHP-FPM, MySQL, Redis, certbot, supervisord);
 this guide covers the Tipelodeon-specific bits and the spots where
 Forge's defaults need tuning for our import pipeline.
 
-Forge conventions used below:
+Forge conventions used below — **assuming Isolated Sites + Zero-downtime
+deploys are enabled** (Forge's modern default):
 
-- Sites live at `/home/forge/<domain>/`
-- Files own by `forge:forge`
+- Each site has its own UNIX user (e.g. `tipelodeon-k7m2x9q4`), not `forge`
+- Site root: `/home/<isolated-user>/<domain>/`
+- The live release lives at `/home/<isolated-user>/<domain>/current/`
+  — a symlink that Forge swaps after a successful deploy
 - Nginx, PHP-FPM, MySQL, Redis are managed via Forge's UI
 
-Replace `tipelodeon.com` with your actual domain.
+Replace `tipelodeon.com` with your actual domain and
+`<isolated-user>` with the username Forge generated for your site
+(visible at **Site → Meta**, or via `ps aux` on a running worker).
 
 ---
 
@@ -23,12 +28,12 @@ Replace `tipelodeon.com` with your actual domain.
    - Type: **App Server**
    - Region: closest to your audience
    - Size: **2 GB / 2 vCPU** (or larger)
-   - PHP version: **8.4**
+   - PHP version: **8.5** (or the latest Forge offers)
    - Database: **MySQL 8**
 3. After provisioning (≈5 min), Forge gives you the sudo password and
    server SSH key. Save both.
 
-Forge installs by default: Nginx, PHP-FPM 8.4 with most common extensions
+Forge installs by default: Nginx, PHP-FPM 8.5 with most common extensions
 (`imagick`, `redis`, `mysql`, `curl`, `mbstring`, `xml`, `zip`, `bcmath`,
 `gd`, `intl`), Composer, Node.js, ImageMagick, Ghostscript, Git, UFW,
 fail2ban, supervisord.
@@ -45,7 +50,8 @@ during a chart render will OOM-kill a worker.
 **First check whether the server already has swap:**
 
 ```bash
-ssh forge@<server-ip>
+ssh forge@<server-ip>   # the `forge` SSH user is always available, even
+                        # when sites are isolated
 swapon --show
 free -h | grep Swap
 ```
@@ -107,7 +113,7 @@ convert -list policy | grep PDF   # → rights: Read Write
 
 ## 4. Tune PHP, Redis, MySQL
 
-### PHP-FPM (Forge → Server → PHP → 8.4)
+### PHP-FPM (Forge → Server → PHP → 8.5)
 
 In the Forge UI, **Server → PHP → Edit FPM Configuration**:
 
@@ -206,7 +212,7 @@ Forge → **Server → Sites → New Site**:
 - Aliases: `www.tipelodeon.com`
 - Project type: **General PHP / Laravel**
 - Web directory: `/public`
-- PHP version: 8.4
+- PHP version: 8.5
 - Create database: leave unchecked (we already made it)
 
 After creation, click into the site:
@@ -304,6 +310,11 @@ fi
 ( flock -w 10 9 || exit 1
     echo 'Restarting FPM…'; sudo -S service $FORGE_PHP_FPM reload ) 9>/tmp/fpmlock
 sudo -S supervisorctl restart tipelodeon-ai:* tipelodeon-renders:* tipelodeon-schedule:* > /dev/null 2>&1 || true
+
+# Forge daemons get auto-generated supervisord names like `daemon-12345`.
+# If `tipelodeon-ai:*` etc. don't match, run `sudo supervisorctl status`
+# once and use the real names — or set the daemon's "Process Name" to the
+# values above in the Forge UI.
 ```
 
 **First deploy:** click **Site → Deploy Now**. Forge runs the script,
@@ -351,16 +362,18 @@ Save — Forge reloads Nginx automatically.
 Forge manages workers via supervisord under the hood — the UI is at
 **Server → Daemons**.
 
-**Add three daemons:**
+**Add three daemons.** Substitute `<isolated-user>` with your site's
+UNIX user (find it under **Site → Meta**, or from any running process
+via `ps aux | grep artisan`).
 
-### Daemon 1: `tipelodeon-ai` (×2 instances — set Forge's `--numprocs=2` via running twice OR using the "Processes" field)
+### Daemon 1: `tipelodeon-ai`
 
 - **Command:**
   ```
-  php /home/forge/tipelodeon.com/artisan queue:work redis --queue=imports,enrichments,default --sleep=1 --tries=1 --timeout=300 --memory=256 --max-jobs=500 --max-time=3600
+  php8.5 /home/<isolated-user>/tipelodeon.com/current/artisan queue:work redis --queue=imports,enrichments,default --sleep=1 --tries=1 --timeout=300 --memory=256 --max-jobs=500 --max-time=3600
   ```
-- **User:** `forge`
-- **Directory:** `/home/forge/tipelodeon.com`
+- **User:** `<isolated-user>`
+- **Directory:** `/home/<isolated-user>/tipelodeon.com/current`
 - **Processes:** `2`
 - **Start on Boot:** ✓
 - **Stop Wait Seconds:** `310`
@@ -369,10 +382,10 @@ Forge manages workers via supervisord under the hood — the UI is at
 
 - **Command:**
   ```
-  php /home/forge/tipelodeon.com/artisan queue:work redis --queue=renders --sleep=1 --tries=1 --timeout=900 --memory=384 --max-jobs=200 --max-time=3600
+  php8.5 /home/<isolated-user>/tipelodeon.com/current/artisan queue:work redis --queue=renders --sleep=1 --tries=1 --timeout=900 --memory=384 --max-jobs=200 --max-time=3600
   ```
-- **User:** `forge`
-- **Directory:** `/home/forge/tipelodeon.com`
+- **User:** `<isolated-user>`
+- **Directory:** `/home/<isolated-user>/tipelodeon.com/current`
 - **Processes:** `1`
 - **Start on Boot:** ✓
 - **Stop Wait Seconds:** `910`
@@ -381,12 +394,19 @@ Forge manages workers via supervisord under the hood — the UI is at
 
 - **Command:**
   ```
-  php /home/forge/tipelodeon.com/artisan schedule:work
+  php8.5 /home/<isolated-user>/tipelodeon.com/current/artisan schedule:work
   ```
-- **User:** `forge`
-- **Directory:** `/home/forge/tipelodeon.com`
+- **User:** `<isolated-user>`
+- **Directory:** `/home/<isolated-user>/tipelodeon.com/current`
 - **Processes:** `1`
 - **Start on Boot:** ✓
+
+> **Why `current/` and `php8.5`?** Forge zero-downtime deploys ship each
+> release into `/home/<isolated-user>/<domain>/releases/<timestamp>/`
+> and swap the `current/` symlink atomically. Daemons MUST target
+> `current/` so they pick up new code after deploy. `php8.5` is the
+> exact PHP CLI binary Forge installs — `php` alone may not be on
+> `$PATH` for daemon processes.
 
 Click each daemon → **Start**. Status should flip to **Running**.
 
@@ -432,7 +452,7 @@ pdftotext -v 2>&1 | head -1
 Tail live logs during a real import (Forge → Site → Logs, or via SSH):
 
 ```bash
-tail -f /home/forge/tipelodeon.com/storage/logs/laravel.log
+tail -f /home/<isolated-user>/tipelodeon.com/current/storage/logs/laravel.log
 # Worker stdout is written into supervisor logs:
 sudo tail -f /var/log/supervisor/tipelodeon-ai*.log
 sudo tail -f /var/log/supervisor/tipelodeon-renders*.log
@@ -455,7 +475,7 @@ Watch for these structured events — they're your perf signal:
 
 Forge enables logrotate by default for Nginx + system logs. For our
 worker logs (under `/var/log/supervisor`) the supervisord defaults are
-fine. The Laravel log at `/home/forge/tipelodeon.com/storage/logs/laravel.log`
+fine. The Laravel log at `/home/<isolated-user>/tipelodeon.com/current/storage/logs/laravel.log`
 uses Laravel's built-in `daily` channel — set in `.env`:
 
 ```ini
@@ -484,7 +504,7 @@ In `config/logging.php` make sure the stack includes `daily`:
 After deploy, kick a small import and tail:
 
 ```bash
-tail -f /home/forge/tipelodeon.com/storage/logs/laravel-*.log \
+tail -f /home/<isolated-user>/tipelodeon.com/current/storage/logs/laravel-*.log \
   | grep -E 'EnsembleSongService|metadata_lookup|pipeline.timing'
 ```
 
@@ -527,16 +547,21 @@ Every push to `main` triggers Forge's deploy script (Step 5). Manually:
 - **Site → Deploy Now** — runs the script
 - **Server → Daemons → Restart All** — picks up new code in workers
 
-Or from SSH:
+Or from SSH (manually, bypassing Forge's deploy script):
 
 ```bash
-cd /home/forge/tipelodeon.com
+cd /home/<isolated-user>/tipelodeon.com/current
 git pull && composer install --no-dev --optimize-autoloader
-php artisan migrate --force
-php artisan config:cache && php artisan route:cache \
-  && php artisan view:cache && php artisan event:cache
+php8.5 artisan migrate --force
+php8.5 artisan config:cache && php8.5 artisan route:cache \
+  && php8.5 artisan view:cache && php8.5 artisan event:cache
 sudo supervisorctl restart tipelodeon-ai:* tipelodeon-renders:* tipelodeon-schedule:*
 ```
+
+> **Heads up about `current/`:** if you `git pull` inside `current/`,
+> the next Forge deploy will swap the symlink to a fresh release and
+> your manual commits disappear from the live path. SSH-side changes
+> should only be temporary — push to GitHub and let Forge deploy.
 
 ---
 
