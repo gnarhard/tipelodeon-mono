@@ -95,10 +95,12 @@ flutter run
 
 ## Production deployment
 
-See [DEPLOY.md](./DEPLOY.md) for the full walkthrough — Ubuntu 22.04 LTS on a
-2 vCPU / 2 GB DigitalOcean droplet: swap, PHP-FPM, Redis, MySQL, Nginx +
-TLS, supervisord (2 AI workers + 1 render worker + scheduler),
-log rotation, post-deploy ritual, and every tuning knob.
+See [DEPLOY.md](./DEPLOY.md) for the full Laravel Forge walkthrough on a
+2 vCPU / 2 GB DigitalOcean droplet: server provisioning, the bits Forge
+doesn't auto-install (swap, Poppler/pdftotext, ImageMagick PDF policy),
+PHP-FPM / Redis / MySQL tuning, environment, deploy script, three Forge
+Daemons (2 AI workers + 1 render worker + scheduler), SSE-aware Nginx
+patch, and every tuning knob.
 
 ## Optional: start all MCP servers
 
