@@ -93,6 +93,189 @@ cd mobile_app
 flutter run
 ```
 
+## Production deployment (2 vCPU / 2 GB droplet)
+
+These steps harden a small DigitalOcean (or equivalent) box so the import
+pipeline runs safely under load. Run as root. Replace `/var/www/tipelodeon`
+with your actual web root if different.
+
+### 1. Add 2 GB swap
+
+```bash
+fallocate -l 2G /swapfile
+chmod 600 /swapfile
+mkswap /swapfile
+swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+sysctl vm.swappiness=10
+echo 'vm.swappiness=10' >> /etc/sysctl.conf
+```
+
+Cheap insurance: one Imagick spike during a chart render can OOM-kill a
+worker without this.
+
+### 2. Install supervisor
+
+```bash
+apt-get update && apt-get install -y supervisor
+systemctl enable supervisor && systemctl start supervisor
+```
+
+### 3. Configure queue workers
+
+Save the following as `/etc/supervisor/conf.d/tipelodeon-workers.conf`.
+Two AI workers handle `imports,enrichments,default`; one dedicated worker
+handles `renders` (CPU-heavy, already serialized via
+`charts.render_concurrency=1`).
+
+```ini
+[program:tipelodeon-ai]
+process_name=%(program_name)s_%(process_num)02d
+command=php /var/www/tipelodeon/web/artisan queue:work redis --queue=imports,enrichments,default --sleep=1 --tries=1 --timeout=300 --memory=256 --max-jobs=500 --max-time=3600
+autostart=true
+autorestart=true
+user=www-data
+numprocs=2
+redirect_stderr=true
+stdout_logfile=/var/log/tipelodeon/ai.log
+stopwaitsecs=310
+
+[program:tipelodeon-renders]
+process_name=%(program_name)s
+command=php /var/www/tipelodeon/web/artisan queue:work redis --queue=renders --sleep=1 --tries=1 --timeout=900 --memory=384 --max-jobs=200 --max-time=3600
+autostart=true
+autorestart=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/log/tipelodeon/renders.log
+stopwaitsecs=910
+
+[program:tipelodeon-schedule]
+process_name=%(program_name)s
+command=php /var/www/tipelodeon/web/artisan schedule:work
+autostart=true
+autorestart=true
+user=www-data
+numprocs=1
+redirect_stderr=true
+stdout_logfile=/var/log/tipelodeon/schedule.log
+```
+
+Activate it:
+
+```bash
+mkdir -p /var/log/tipelodeon
+chown www-data:www-data /var/log/tipelodeon
+supervisorctl reread
+supervisorctl update
+supervisorctl status
+```
+
+Expect to see `tipelodeon-ai_00`, `tipelodeon-ai_01`,
+`tipelodeon-renders`, and `tipelodeon-schedule` all `RUNNING`.
+
+After every deploy, restart workers so they pick up new code:
+
+```bash
+supervisorctl restart tipelodeon-ai:* tipelodeon-renders tipelodeon-schedule
+```
+
+### 4. PHP-FPM tuning
+
+Edit the pool config (`/etc/php/8.4/fpm/pool.d/www.conf`):
+
+```ini
+pm = dynamic
+pm.max_children = 4
+pm.start_servers = 2
+pm.min_spare_servers = 1
+pm.max_spare_servers = 3
+pm.max_requests = 500
+```
+
+Then in `/etc/php/8.4/fpm/php.ini` (or `/etc/php/8.4/cli/php.ini` for
+artisan):
+
+```ini
+memory_limit = 256M
+post_max_size = 100M
+upload_max_filesize = 50M
+max_execution_time = 300
+```
+
+Reload:
+
+```bash
+systemctl restart php8.4-fpm
+```
+
+### 5. Nginx upload limits
+
+In your site config (`/etc/nginx/sites-available/tipelodeon`):
+
+```nginx
+client_max_body_size 100M;
+client_body_timeout 300s;
+proxy_read_timeout 300s;
+```
+
+Reload:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+### 6. MySQL tuning
+
+In `/etc/mysql/mysql.conf.d/mysqld.cnf`:
+
+```ini
+[mysqld]
+innodb_buffer_pool_size = 256M
+innodb_log_file_size    = 64M
+max_connections         = 60
+```
+
+Reload:
+
+```bash
+systemctl restart mysql
+```
+
+Default Ubuntu MySQL will balloon to 1 GB+ without this cap and starve
+workers.
+
+### 7. Verify
+
+```bash
+# Workers
+supervisorctl status
+
+# Live queue depth
+redis-cli llen queues:imports
+redis-cli llen queues:enrichments
+redis-cli llen queues:renders
+
+# Top — workers should appear and stay under 256 MB each
+htop
+
+# Logs
+tail -f /var/log/tipelodeon/ai.log
+tail -f /var/log/tipelodeon/renders.log
+```
+
+### 8. After deploys
+
+```bash
+cd /var/www/tipelodeon/web
+git pull
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan config:cache && php artisan route:cache && php artisan view:cache
+supervisorctl restart tipelodeon-ai:* tipelodeon-renders tipelodeon-schedule
+```
+
 ## Optional: start all MCP servers
 
 From the monorepo root:
