@@ -373,7 +373,9 @@ fi
 # bootstrap in memory between jobs.
 ( flock -w 10 9 || exit 1
     echo 'Restarting FPM…'; sudo -S service $FORGE_PHP_FPM reload ) 9>/tmp/fpmlock
-sudo -S supervisorctl restart tipelodeon-ai:* tipelodeon-renders:* tipelodeon-schedule:* > /dev/null 2>&1 || true
+sudo -S supervisorctl restart tipelodeon-ai:* tipelodeon-renders:* > /dev/null 2>&1 || true
+# If you opted for the schedule:work daemon (rare), also restart it:
+# sudo -S supervisorctl restart tipelodeon-schedule:* > /dev/null 2>&1 || true
 
 # Forge daemons get auto-generated supervisord names like `daemon-12345`.
 # If `tipelodeon-ai:*` etc. don't match, run `sudo supervisorctl status`
@@ -454,16 +456,30 @@ via `ps aux | grep artisan`).
 - **Start on Boot:** ✓
 - **Stop Wait Seconds:** `910`
 
-### Daemon 3: `tipelodeon-schedule`
+### Scheduler — use Forge's Scheduled Jobs (recommended)
 
-- **Command:**
-  ```
-  php8.5 /home/<isolated-user>/tipelodeon.com/current/artisan schedule:work
-  ```
+Laravel needs `php artisan schedule:run` to fire every minute for any
+scheduled tasks (e.g. the daily song-integrity AI batch). Two ways:
+
+**Option A — Forge Scheduled Jobs UI (recommended).** Forge → **Server
+→ Scheduled Jobs → New Scheduled Job**:
+
+- **Command:** `php8.5 /home/<isolated-user>/tipelodeon.com/current/artisan schedule:run`
 - **User:** `<isolated-user>`
-- **Directory:** `/home/<isolated-user>/tipelodeon.com/current`
-- **Processes:** `1`
-- **Start on Boot:** ✓
+- **Frequency:** **Every Minute**
+
+This adds a cron entry. Slightly less responsive than `schedule:work`
+(1-minute granularity vs near-instant) but zero memory cost — perfect
+for the 2 GB box.
+
+**Option B — `schedule:work` daemon** (more responsive, costs ~50 MB
+resident):
+
+- Add a third daemon with command:
+  `php8.5 /home/<isolated-user>/tipelodeon.com/current/artisan schedule:work`
+- Processes: `1`
+
+Pick one. Don't do both.
 
 > **Why `current/` and `php8.5`?** Forge zero-downtime deploys ship each
 > release into `/home/<isolated-user>/<domain>/releases/<timestamp>/`
@@ -482,12 +498,10 @@ Click each daemon → **Start**. Status should flip to **Running**.
 - **Renders** (1 proc) — CPU-bound via Imagick. Internal `pcntl_fork`
   already parallelizes 4 pages per render; a second worker would thrash
   the 2 vCPU.
-- **Schedule** (1 proc) — runs Laravel's scheduler. Without this you
-  don't get any scheduled jobs (e.g. song integrity AI batch).
-
-> **Alternative**: skip Daemon 3 if you'd rather use Forge's
-> **Site → Scheduler → Add Scheduled Job** with `php artisan schedule:run`
-> every minute. Both work; `schedule:work` is slightly more responsive.
+- **Scheduler** — handled by Forge's Scheduled Jobs cron entry (see
+  above). Without it, no scheduled tasks fire (e.g. song integrity AI
+  batch). The cron option is the default; `schedule:work` daemon is
+  optional and only adds responsiveness.
 
 ---
 
@@ -619,7 +633,7 @@ git pull && composer install --no-dev --optimize-autoloader
 php8.5 artisan migrate --force
 php8.5 artisan config:cache && php8.5 artisan route:cache \
   && php8.5 artisan view:cache && php8.5 artisan event:cache
-sudo supervisorctl restart tipelodeon-ai:* tipelodeon-renders:* tipelodeon-schedule:*
+sudo supervisorctl restart tipelodeon-ai:* tipelodeon-renders:*
 ```
 
 > **Heads up about `current/`:** if you `git pull` inside `current/`,
