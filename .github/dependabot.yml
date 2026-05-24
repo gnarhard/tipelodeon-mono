@@ -1,0 +1,37 @@
+version: 2
+
+# Supply-chain defense: the `cooldown` block delays adoption of fresh
+# releases so malicious packages (which are typically caught and yanked
+# within hours-to-days) never reach a PR here. Patch updates wait 3
+# days; everything else waits a week, majors two weeks.
+
+updates:
+  - package-ecosystem: composer
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
