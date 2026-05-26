@@ -2190,10 +2190,29 @@ components:
     AuthProfileUpdateRequest:
       type: object
       properties:
+        name: { type: string }
+        email:
+          type: string
+          format: email
         instrument_type:
           nullable: true
           allOf:
             - $ref: '#/components/schemas/InstrumentType'
+        secondary_instrument_type:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/InstrumentType'
+        ai_lyric_disclaimer_acknowledged:
+          type: boolean
+          description: >-
+            Per-user, cross-device flag. Send true to record acknowledgement,
+            false to clear it (e.g. "Reset tutorials").
+        chart_tour_completed:
+          type: boolean
+          description: >-
+            Per-user, cross-device flag. Send true once the first-chart help
+            overlay has been dismissed, false to surface it again (e.g.
+            "Reset tutorials").
     InstrumentType:
       type: string
       enum:
@@ -2224,6 +2243,12 @@ components:
           nullable: true
           allOf:
             - $ref: '#/components/schemas/InstrumentType'
+        secondary_instrument_type:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/InstrumentType'
+        ai_lyric_disclaimer_acknowledged: { type: boolean }
+        chart_tour_completed: { type: boolean }
     AuthAccessBundle:
       type: object
       properties:
