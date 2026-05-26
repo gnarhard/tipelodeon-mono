@@ -194,7 +194,8 @@ invalidated immediately.
     "email": "mike@example.com",
     "instrument_type": "vocals",
     "secondary_instrument_type": "piano",
-    "ai_lyric_disclaimer_acknowledged": false
+    "ai_lyric_disclaimer_acknowledged": false,
+    "chart_tour_completed": false
   }
 }
 ```
@@ -345,7 +346,8 @@ Return the authenticated user's profile.
     "email": "mike@example.com",
     "instrument_type": "vocals",
     "secondary_instrument_type": "piano",
-    "ai_lyric_disclaimer_acknowledged": false
+    "ai_lyric_disclaimer_acknowledged": false,
+    "chart_tour_completed": false
   }
 }
 ```
@@ -364,7 +366,8 @@ Update the authenticated user's mobile-owned profile fields.
   "email": "mike@example.com",
   "instrument_type": "drums",
   "secondary_instrument_type": "keyboard",
-  "ai_lyric_disclaimer_acknowledged": true
+  "ai_lyric_disclaimer_acknowledged": true,
+  "chart_tour_completed": true
 }
 ```
 
@@ -384,6 +387,12 @@ All fields are optional — only included fields are updated.
   `true` records the acknowledgement (server-side timestamp); sending
   `false` clears it so the dialog returns. The "Reset tutorials" action in
   account settings sends `false`.
+- `chart_tour_completed` is a per-user, cross-device flag. The Flutter app
+  shows an in-place gesture-map overlay (page turns, mark-performed,
+  show/hide controls) the first time a chart is displayed whenever this flag
+  is `false`. Dismissing the overlay (or tapping the command-bar "Help"
+  button and then dismissing) sends `true`; the "Reset tutorials" action in
+  account settings sends `false` so the overlay surfaces again.
 
 ---
 
