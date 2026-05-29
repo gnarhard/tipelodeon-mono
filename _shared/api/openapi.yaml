@@ -2706,6 +2706,28 @@ components:
         active_queue_request_count: { type: integer }
         active_session_tip_amount_cents: { type: integer }
         sessionless_tip_amount_cents: { type: integer }
+    PayoutSchedule:
+      type: object
+      nullable: true
+      description: >-
+        Connected account's automatic-payout schedule, read live from Stripe.
+        Null when there is no Stripe account or no resolvable schedule.
+      properties:
+        interval:
+          type: string
+          enum: [daily, weekly, monthly, manual]
+        weekly_anchor:
+          type: string
+          nullable: true
+          description: Lowercase weekday; present when interval is weekly.
+        monthly_anchor:
+          type: integer
+          nullable: true
+          description: Day of month 1-31; present when interval is monthly.
+        delay_days:
+          type: integer
+          nullable: true
+          description: Business days funds are held before payout; null for manual.
     ProjectWallet:
       type: object
       properties:
@@ -2715,6 +2737,8 @@ components:
         currency: { type: string, enum: [usd] }
         stripe_balance:
           $ref: '#/components/schemas/StripeBalanceSummary'
+        payout_schedule:
+          $ref: '#/components/schemas/PayoutSchedule'
         project_earnings:
           $ref: '#/components/schemas/ProjectWalletEarnings'
     ProjectWalletResponse:

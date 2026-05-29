@@ -1,4 +1,4 @@
-# Payouts API Contracts (v1.3)
+# Payouts API Contracts (v1.4)
 
 ## Scope and auth
 
@@ -170,6 +170,7 @@ Example success:
 - Owner-only endpoint (`403` for non-owners).
 - Returns:
   - account-level Stripe balance (`available`, `pending`, USD totals),
+  - the connected account's automatic-payout `payout_schedule` (see below),
   - project-level earnings aggregates from Tipelodeon request/session data,
   - current payout account status snapshot.
 
@@ -177,6 +178,20 @@ Semantics:
 - Wallet scope is `account_level` because one performer has one Stripe account.
 - Project earnings are reporting views; Stripe balance is source of truth for
   cashout availability.
+
+Payout schedule (`wallet.payout_schedule`):
+- Mirrors the connected Stripe account's automatic-payout settings, read live
+  from Stripe alongside the balance — it is **not** a persisted snapshot, since
+  the performer can change it in their Stripe Express dashboard at any time.
+- `null` when there is no Stripe account yet, or the account has no resolvable
+  schedule. When non-null, all four keys are present:
+  - `interval` — one of `daily` | `weekly` | `monthly` | `manual`.
+  - `weekly_anchor` — lowercase weekday (e.g. `friday`) when `interval` is
+    `weekly`; otherwise `null`.
+  - `monthly_anchor` — day of month `1`–`31` when `interval` is `monthly`;
+    otherwise `null` (Stripe maps 29–31 to the last day of short months).
+  - `delay_days` — business days Stripe holds funds before payout; `null` for
+    `manual`.
 
 ---
 
