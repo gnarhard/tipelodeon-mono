@@ -57,7 +57,11 @@ Setlist routes:
 
 Setlist resource fields:
 - `id`, `project_id`, `name`, `notes`, `folder`, `performed_at`,
-  `created_at`, `archived_at`, `generation_meta`, `sets`.
+  `created_at`, `archived_at`, `generation_meta`, `global_audio_slot`, `sets`.
+- `global_audio_slot`: nullable integer in `{0,1,2}`. Practice Mode's
+  setlist-wide reference-audio slot preference (`All 1st/2nd/3rd`). Null means
+  no preference set. Accepted (optional, nullable) on `PUT /setlists/{setlistId}`;
+  carried over by `duplicate`/copy.
 - `folder`: nullable string (max 255). Setlists with the same `folder`
   value are grouped together in the mobile UI.
 - `performed_at`: nullable ISO-8601 UTC timestamp. Date the setlist is
@@ -303,9 +307,13 @@ Set song payload notes:
   `artist`, and `duration_in_seconds` (nullable int seconds, sourced from
   the underlying `Song` record).
 - `PUT /setlists/{setlistId}/sets/{setId}/songs/{songId}` accepts optional
-  `notes` and optional nullable `color_hex`.
+  `notes`, optional nullable `color_hex`, and optional nullable `audio_slot`.
 - `color_hex` must match `#RRGGBB` when present.
 - `color_hex = null` means clients should render the default dark grey song dot.
+- `audio_slot`: nullable integer in `{0,1,2}`. Practice Mode per-song override
+  of the setlist `global_audio_slot`. `null` means inherit the setlist-wide
+  preference (the coalesce is client-side). Serialized on every `setlist_songs`
+  entry.
 - `PUT /setlists/{setlistId}/sets/{setId}/songs/reorder` reorders all mixed
   set entries, including note entries.
 Set song rules:

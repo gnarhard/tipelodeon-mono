@@ -3475,6 +3475,13 @@ components:
           nullable: true
           pattern: '^#[0-9A-Fa-f]{6}$'
           description: Null means use the default dark grey set-entry indicator.
+        audio_slot:
+          type: integer
+          enum: [0, 1, 2]
+          nullable: true
+          description: >-
+            Practice Mode per-song reference-audio slot override (0/1/2 = 1st/2nd/3rd
+            track). Null means inherit the setlist's global_audio_slot.
         song:
           allOf:
             - $ref: '#/components/schemas/SongSummary'
@@ -3503,6 +3510,13 @@ components:
           type: object
           nullable: true
           additionalProperties: true
+        global_audio_slot:
+          type: integer
+          enum: [0, 1, 2]
+          nullable: true
+          description: >-
+            Practice Mode setlist-wide reference-audio slot preference (0/1/2 =
+            All 1st/2nd/3rd). Null means no preference set.
         sets:
           type: array
           items:
