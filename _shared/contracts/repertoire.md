@@ -471,18 +471,55 @@ Request:
       "artist": "Queen",
       "chart_id": 123,
       "mashup": false,
+      "instrumental": false,
+      "original": false,
+      "is_public": true,
+      "learned": true,
       "theme": "story",
       "energy_level": "high",
       "era": "1970s",
       "genre": "Rock",
       "original_musical_key": "Bb",
       "duration_in_seconds": 354,
-      "tempo_bpm": 72
+      "tempo_bpm": 72,
+      "tuning": "EADGBE",
+      "capo": 0
     }
   ],
   "existing_songs_only": false
 }
 ```
+
+#### Per-item field persistence
+
+Each `songs[]` entry carries the user's review-stage edits. Confirm routes
+each field to one of three targets — getting this wrong silently drops the
+edit, since absent keys fall back to the column default:
+
+- **Per-ProjectSong** (always written to the new `ProjectSong` row, read
+  back by `ProjectSongResource`): `mashup`, `instrumental`, `original`,
+  `is_public`, `learned`, `tuning`, `capo`. These are the review-stage
+  flags/performance attributes and must be persisted at confirm even when
+  the catalog `Song` already exists. The four flags default to their column
+  default when omitted (`instrumental`/`original`/`mashup` → `false`,
+  `is_public`/`learned` → `true`).
+- **Catalog Song, new songs only** (`applySongMetadata`, written only when
+  the `Song` is freshly created so an import never mutates a shared catalog
+  row other projects rely on): `energy_level`, `genre`, `theme`, `tempo_bpm`.
+  For an existing Song these are instead stored as overrides on the
+  `ProjectSong` row.
+- **Catalog Song, always** (intrinsic facts, written unconditionally):
+  `era`, `original_musical_key`, `duration_in_seconds`.
+
+`chart_id` is consumed for chart linking (not stored on the song row).
+`version_label` is reserved at confirm (`ProjectSong` rows are created with
+an empty `version_label`); bulk import does not create alternate versions.
+
+The Flutter client sends `mashup`/`instrumental`/`original` only when `true`
+(an "off" choice is transmitted as key-omission), while `is_public`/`learned`
+are sent unconditionally. Confirm only ever INSERTs (existing repertoire rows
+are caught by dedup before creation), so an omitted flag correctly resolves to
+its column default.
 
 Response (`200`):
 
