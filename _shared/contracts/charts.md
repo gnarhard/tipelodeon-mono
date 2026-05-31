@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.3)
+# Charts API Contracts (v1.4)
 
 ## Scope and auth
 
@@ -64,10 +64,22 @@ Added to all Chart resource responses:
 
 Added to all Chart resource responses:
 - `null` — chart is fully ready (no pending background work)
-- `'generating'` — AI lyric sheet generation in progress
+- `'generating'` — AI lyric sheet generation in progress (lyric-sheet flow only)
+- `'queued'` — bulk import: uploaded, awaiting synchronous AI identification
+- `'deferred'` — bulk import: identification deferred (no AI allowance yet);
+  re-queued by `charts:reap-stale-imports` when allowance frees
+- `'attached'` — bulk import: chart stored with identification intentionally
+  skipped (chart attach/replace path); ready to confirm
 - `'identifying'` — bulk import AI identification in progress
-- `'identified'` — bulk import AI identification complete
+- `'enriching'` — bulk import grounded metadata enrichment in progress
+- `'identified'` — bulk import AI identification + enrichment complete
+- `'duplicate_found'` — bulk import: identified song already in the user's
+  repertoire; awaiting duplicate resolution
 - `'failed'` — background job failed (see `import_error` via render-status endpoint)
+
+Bulk-import identification is **synchronous per-chart** — there is no batch
+API path, so `batch_pending` is never emitted. Charts stuck in `identifying`
+or `enriching` past a TTL are moved to `failed` by `charts:reap-stale-imports`.
 
 ---
 
