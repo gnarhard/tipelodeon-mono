@@ -74,9 +74,10 @@
 ## Bulk import
 
 - Mobile sends at most `20` files per request
-- Each PDF is limited to `2MB`
-- Filename metadata supports `key`, `capo`, `tuning`, `energy`, `era`, `genre`, and `mood`
-- Mood token example: `Songname - Artist -- mood=party.pdf`
+- Each PDF is limited to `10MB` (enforced by `StoreBulkUploadRequest`)
+- Identification is synchronous per-chart — there is no batch API path
+- Filename metadata supports `key`, `capo`, `tuning`, `energy`, `era`, `genre`, and `theme`
+- Theme token example: `Songname - Artist -- theme=party.pdf`
 
 ## Locations
 

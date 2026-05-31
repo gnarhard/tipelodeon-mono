@@ -301,9 +301,10 @@ The bulk import is a three-phase process:
   - max size per PDF: `10MB` (server compresses with Ghostscript `/ebook` if input is > 1 MB and savings >= 100 KB; original is kept otherwise)
 - Uploads PDF chart files and triggers AI identification.
 - Does **not** create Song or ProjectSong records.
-- Large chart batches may queue AI enrichment via the batch API. When the
-  bulk fair-use burst bucket is full, uploads still succeed but affected
-  entries are reported as `deferred`.
+- Identification runs **synchronously per-chart** (one job per chart — there is
+  no batch API path; `batch_pending` is never emitted). When the bulk fair-use
+  burst bucket is full, uploads still succeed but affected entries are reported
+  as `deferred` and re-queued by `charts:reap-stale-imports` once allowance frees.
 - Filename metadata supports: `key`, `capo`, `tuning`, `energy`, `era`, `genre`, `theme`.
 - Theme filename token example: `-- theme=love`.
 
@@ -334,6 +335,15 @@ Chart render-status (`GET /me/charts/{chartId}/render-status`) now includes
 `import_metadata` contains the AI-identified title, artist, and enrichment
 data (energy_level, era, genre, theme, original_musical_key,
 duration_in_seconds, tempo_bpm).
+
+`import_metadata` may also carry a `_provenance` map: per-field source labels
+keyed by the snake_case field name (e.g. `{ "genre": "guessed",
+"original_musical_key": "verified" }`). `verified` means the value came from an
+admin-certified catalog Song; `guessed` means a grounded AI lookup that a human
+has not certified. The presence of the `_provenance` key (even when empty)
+signals that the grounded enrichment pass ran — clients gate the "No details"
+pill on its presence, not on `import_status`. Re-imported metadata stays
+`guessed` until a human marks the Song verified (`confirmed ≠ verified`).
 
 ### Phase 2: Enrich — `POST /repertoire/bulk-enrich`
 

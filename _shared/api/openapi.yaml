@@ -3152,7 +3152,7 @@ components:
         artist: { type: string, nullable: true }
         action:
           type: string
-          enum: [imported, duplicate, queued, deferred, limit_reached]
+          enum: [imported, duplicate, queued, deferred, limit_reached, no_match]
         chart_id: { type: integer, nullable: true }
         song_id: { type: integer, nullable: true }
         duplicate_of: { type: string, nullable: true }
@@ -3643,7 +3643,19 @@ components:
         import_status:
           type: string
           nullable: true
-          enum: [generating, identifying, identified, failed]
+          # null = ready/confirmed. Bulk-import identification is synchronous
+          # per-chart (no batch API), so `batch_pending` is never emitted.
+          # `generating` is the AI lyric-sheet flow only.
+          enum:
+            - generating
+            - queued
+            - deferred
+            - attached
+            - identifying
+            - enriching
+            - identified
+            - duplicate_found
+            - failed
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time, nullable: true }
     ChartResponse:
