@@ -331,19 +331,37 @@ Response (`200`):
 ```
 
 Chart render-status (`GET /me/charts/{chartId}/render-status`) now includes
-`import_metadata` in the response. When `import_status` is `identified`,
-`import_metadata` contains the AI-identified title, artist, and enrichment
-data (energy_level, era, genre, theme, original_musical_key,
+`import_metadata` and `enrichment_state` in the response. When `import_status`
+is `identified`, `import_metadata` contains the AI-identified title, artist, and
+enrichment data (energy_level, era, genre, theme, original_musical_key,
 duration_in_seconds, tempo_bpm).
+
+`enrichment_state` is the **server-authoritative outcome of the grounded
+metadata lookup**, and the single signal clients render the enrichment status
+from — they do NOT infer it client-side:
+
+- `enriched` — the lookup ran and returned at least one field.
+- `empty` — the lookup ran (cache / provider / songs table) and genuinely
+  found nothing. Clients show the "No details · open to retry" pill.
+- `failed` — the lookup was attempted but timed out / hard-failed before a
+  verdict. Transient and retryable: clients show a distinct "Couldn't finish ·
+  retry" affordance and may auto-retry once on resume. A `failed` row must
+  never be rendered as a settled `empty`.
+- `null` — no grounded lookup ran (the content-hash reuse fast path lands a row
+  at `identified` with identity-only metadata). Clients show a plain "Review".
+
+The same `enrichment_state` is emitted per item by the bulk-enrich job snapshot
+(`GET /repertoire/bulk-enrich-jobs/{jobId}`, derived from each item's source +
+payload) so the bulk/retry path and the chart path agree.
 
 `import_metadata` may also carry a `_provenance` map: per-field source labels
 keyed by the snake_case field name (e.g. `{ "genre": "guessed",
 "original_musical_key": "verified" }`). `verified` means the value came from an
 admin-certified catalog Song; `guessed` means a grounded AI lookup that a human
-has not certified. The presence of the `_provenance` key (even when empty)
-signals that the grounded enrichment pass ran — clients gate the "No details"
-pill on its presence, not on `import_status`. Re-imported metadata stays
-`guessed` until a human marks the Song verified (`confirmed ≠ verified`).
+has not certified. `_provenance` now drives ONLY the per-field guessed/verified
+display (e.g. "2 guessed") — it no longer gates the "No details" pill, which is
+driven by `enrichment_state`. Re-imported metadata stays `guessed` until a human
+marks the Song verified (`confirmed ≠ verified`).
 
 ### Phase 2: Enrich — `POST /repertoire/bulk-enrich`
 
