@@ -87,12 +87,35 @@ Forms this rule rules out:
 ### 3. Rewards are loyalty milestones, not credit balances
 
 The reward system is built on `cumulative_tip_cents`, which only grows
-and is never decremented. Rewards are *earned* by passing a cumulative
+and is never decremented. Rewards are *earned* by passing a tipping
 threshold; they are not *spent down* from a balance.
 
-> **Cumulative tipping is a monotonic loyalty ledger. Every $N
-> threshold crossed earns a reward. There is no top-up, no balance, no
-> low-balance prompt, no recommendation to buy more credits.**
+> **Tipping accrues against a monotonic ledger. Every $N threshold
+> crossed earns a reward. There is no top-up, no balance, no low-balance
+> prompt, no recommendation to buy more credits.**
+
+The earning *scope* differs by reward type, but neither scope is a
+spend-down balance:
+
+- **Free-request milestones reset each performance session.** They earn
+  against the audience member's per-session tip total so the "you've
+  earned a free request" moment matches the "$N tipped tonight" meter.
+  The lifetime `cumulative_tip_cents` ledger still increments on every
+  tip (monotonic, never decremented); it just isn't the earning basis
+  for this reward type. A single tip still earns at most one free
+  request (the per-tip cap), and a redemption writes an
+  `audience_reward_claims` row — it never decrements any total.
+- **Performer-delivered rewards stay on the lifetime cumulative ledger.**
+  A repeating $30 sticker reward owes the performer one sticker per $30
+  crossed over the audience member's lifetime, so a $90 tip still leaves
+  three to deliver.
+
+Neither path collects a credit balance, decrements on use, detects a
+low balance, or prompts a purchase — so both stay clear of the
+TouchTunes "revenue-enhancing" family. The session-scoped free-request
+earning was introduced 2026-06; **re-confirm the invariant-3 FTO read
+before launch** (it was previously written assuming all earning was
+cumulative).
 
 This invariant keeps Tipelodeon outside TouchTunes US 11,144,946 /
 US 11,978,083 ("revenue-enhancing features"), whose claims require
