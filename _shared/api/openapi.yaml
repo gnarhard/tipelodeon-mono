@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.4
-  version: 1.4.0
+  title: Tipelodeon API v1.5
+  version: 1.5.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -15,6 +15,14 @@ info:
     - Chart viewport preferences are per `(user, chart, page)`.
 
     Changelog:
+    - v1.5: Audience block/hide. Owner-only block, unblock, and
+      blocked-list endpoints keyed on `audience_profiles.id`
+      (`audience_profile_id`). Blocking hides the profile's existing
+      pending requests from the queue and silently refuses future
+      submissions via the `audience_blocked` 422 on the public request
+      path (enforced BEFORE any Stripe PaymentIntent). Charges already
+      made stand — block never refunds. New `BlockedAudienceProfile`
+      schema and `AudienceProfileId` path parameter.
     - v1.4: `SongRequestStatus` adds `unresolved`. Stopping or auto-ending
       a performance session marks still-active requests as `unresolved`
       (was `cancelled`); resuming the session restores them to `active`.
@@ -615,6 +623,101 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RequestHistoryCollectionResponse'
+        '404':
+          description: Not found (user does not have access to the project)
+
+  /me/projects/{projectId}/audience/{audienceProfile}/block:
+    post:
+      tags: [Queue]
+      summary: Block an audience member for a project
+      description: |
+        Owner-only. Sets `audience_profiles.blocked_at` (and records
+        `blocked_by_user_id`) for the given profile, scoped to the project.
+        Blocking hides the profile's existing pending requests from the
+        queue and the performance-detail timeline, and causes future public
+        submissions to be silently refused with the `audience_blocked` 422
+        (enforced BEFORE any Stripe PaymentIntent). Charges already made
+        stand — this never refunds. Idempotent: blocking an already-blocked
+        profile is a no-op and still returns `200`. Members receive `403`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/AudienceProfileId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Audience member blocked (or already blocked)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/BlockedAudienceProfile'
+        '403':
+          description: Forbidden (only the project owner can block audience members)
+        '404':
+          description: |
+            Not found (user lacks access to the project, or the audience
+            profile does not belong to this project)
+    delete:
+      tags: [Queue]
+      summary: Unblock an audience member for a project
+      description: |
+        Owner-only. Clears `audience_profiles.blocked_at` and
+        `blocked_by_user_id` for the given profile. Unblock only re-allows
+        future requests; it does NOT resurrect previously-hidden requests.
+        Idempotent: unblocking a profile that is not blocked is a no-op and
+        still returns `200`. Members receive `403`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/AudienceProfileId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Audience member unblocked (or already not blocked)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      audience_profile_id: { type: integer }
+                      is_blocked: { type: boolean, enum: [false] }
+        '403':
+          description: Forbidden (only the project owner can block audience members)
+        '404':
+          description: |
+            Not found (user lacks access to the project, or the audience
+            profile does not belong to this project)
+
+  /me/projects/{projectId}/audience/blocked:
+    get:
+      tags: [Queue]
+      summary: List blocked audience members for a project
+      description: |
+        Owner-only. Lists this project's blocked audience profiles, newest
+        blocked first (`blocked_at DESC`). Members receive `403`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Blocked audience profiles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BlockedAudienceProfile'
+        '403':
+          description: Forbidden (only the project owner can view blocked audience members)
         '404':
           description: Not found (user does not have access to the project)
 
@@ -2012,6 +2115,13 @@ paths:
         Persisted `requests.song_id` is never null.
         Public requests are available on every project that has finished
         payout setup.
+
+        Block enforcement: if the resolved audience profile has been blocked
+        by the project owner, the request is refused with a `422`
+        `audience_blocked` error. This check runs BEFORE any Stripe
+        PaymentIntent is created, so a blocked member is never charged. The
+        message is intentionally soft and does not reveal the block. Charges
+        already made before a block stand (credit-at-request-time).
       parameters:
         - $ref: '#/components/parameters/ProjectSlug'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2038,7 +2148,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/PublicRequestCreateResponse'
         '422':
-          description: Validation failed, request gating, or minimum tip violation
+          description: |
+            Validation failed, request gating, minimum tip violation, or the
+            audience member is blocked (`code=audience_blocked`, enforced
+            before any Stripe PaymentIntent).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: object
+                    required: [code, message]
+                    properties:
+                      code: { type: string, enum: [audience_blocked] }
+                      message:
+                        type: string
+                        example: This project isn't accepting requests right now.
+                  - type: object
+                    properties:
+                      message: { type: string }
+                      errors:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items: { type: string }
 
 components:
   securitySchemes:
@@ -2068,6 +2200,12 @@ components:
       name: projectId
       required: true
       schema: { type: integer }
+    AudienceProfileId:
+      in: path
+      name: audienceProfile
+      required: true
+      schema: { type: integer }
+      description: The per-project audience identity (`audience_profiles.id`).
     ReportingTimezone:
       in: query
       name: timezone
@@ -3015,6 +3153,29 @@ components:
         note: { type: string, nullable: true }
         played_at: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
+    BlockedAudienceProfile:
+      type: object
+      required: [audience_profile_id, blocked_at]
+      properties:
+        audience_profile_id:
+          type: integer
+          description: The blocked profile's `audience_profiles.id`.
+        display_name:
+          type: string
+          nullable: true
+          description: |
+            Best available label for the audience member (a name on the
+            profile, else the most recent `requester_name` from the
+            profile's requests). Null when no name is known.
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: When the profile was last seen, if recorded.
+        blocked_at:
+          type: string
+          format: date-time
+          description: When the profile was blocked. Non-null in this list.
     QueueDailyRecordEvent:
       type: object
       properties:
