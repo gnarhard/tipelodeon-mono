@@ -155,8 +155,10 @@ Blocked-audience gate:
 - Charges already made before a block stand — block never refunds
   (credit-at-request-time, `.agent-rules/15-patent-constraints.md`). The
   backstop path: if a charge already succeeded, the request is still
-  recorded but is hidden by the read-side queue/timeline filter and the
-  performer is not notified.
+  recorded but is hidden from the actionable queue by the read-side filter
+  and the performer is not notified. The performance-detail timeline KEEPS
+  the recorded activity, labeled blocked (`is_blocked: true`); blocking only
+  suppresses the live queue, not the historical timeline.
 
 Inappropriate-content gate:
 - Audience free text (the request `note`, and the Stripe billing display

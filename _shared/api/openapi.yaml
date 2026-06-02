@@ -31,6 +31,13 @@ info:
       flags audience content for admin review (dedup per request+user,
       queues an admin notification on first creation only). New
       `RequestId` path parameter.
+      Timeline labeling: blocking no longer hides a member's activity from
+      the performance-detail timeline — those events stay, labeled blocked
+      (`is_blocked: true`); a reported request's events carry
+      `is_reported: true`. Discrete `audience_blocked`, `audience_unblocked`,
+      and `content_reported` timeline events are logged on block/unblock/first-report
+      (pure UX/analytics metadata; see song-performances.md). These are
+      timeline-event fields, NOT queue-row fields — `QueueRequest` is unchanged.
     - v1.4: `SongRequestStatus` adds `unresolved`. Stopping or auto-ending
       a performance session marks still-active requests as `unresolved`
       (was `cancelled`); resuming the session restores them to `active`.
@@ -642,11 +649,13 @@ paths:
         Owner-only. Sets `audience_profiles.blocked_at` (and records
         `blocked_by_user_id`) for the given profile, scoped to the project.
         Blocking hides the profile's existing pending requests from the
-        queue and the performance-detail timeline, and causes future public
-        submissions to be silently refused with the `audience_blocked` 422
-        (enforced BEFORE any Stripe PaymentIntent). Charges already made
-        stand — this never refunds. Idempotent: blocking an already-blocked
-        profile is a no-op and still returns `200`. Members receive `403`.
+        queue and causes future public submissions to be silently refused
+        with the `audience_blocked` 422 (enforced BEFORE any Stripe
+        PaymentIntent). The performance-detail timeline KEEPS the blocked
+        member's events, labeled blocked (`is_blocked: true`) — blocking
+        never erases history. Charges already made stand — this never
+        refunds. Idempotent: blocking an already-blocked profile is a no-op
+        and still returns `200`. Members receive `403`.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'

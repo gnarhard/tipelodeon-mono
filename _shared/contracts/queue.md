@@ -557,7 +557,13 @@ Block an audience member for this project. **Owner-only — members receive
 Blocking:
 
 - Hides the profile's existing pending (`active`) requests from
-  `GET /queue` and from the performance-detail timeline.
+  `GET /queue`.
+- Does **not** hide the member's activity from the performance-detail
+  timeline. The timeline KEEPS their events, labeled blocked
+  (`is_blocked: true`); a reported request's events carry
+  `is_reported: true`. Blocking never erases history. A discrete
+  `audience_blocked` (and symmetric `audience_unblocked`) timeline event is
+  logged on each real transition (see `song-performances.md`).
 - Silently refuses the profile's future public submissions with the `422`
   `audience_blocked` error (see `public.md`). That check runs **before** any
   Stripe PaymentIntent, so a blocked member is never charged.
@@ -709,6 +715,11 @@ does not belong to this project; `403` when the caller is not the owner.
 - A **duplicate** report by the same user is a silent no-op: no second report
   row is created and **no second admin notification is queued**. Both the
   first creation and the idempotent no-op return `200`.
+- On **first creation**, a discrete `content_reported` timeline event is
+  logged (tied to the reported request's own session; see
+  `song-performances.md`), and that request's other timeline events carry
+  `is_reported: true` so the performance detail can label them. The duplicate
+  no-op logs no second event.
 - The requester is **never** notified. `Idempotency-Key` is supported.
 
 ### Success response (`200`)
