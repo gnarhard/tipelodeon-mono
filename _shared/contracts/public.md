@@ -134,6 +134,30 @@ Payout setup gate:
 - If project tips are disabled independently, positive-tip and tip-only
   submissions return `422` with message only (no `code` field).
 
+Blocked-audience gate:
+- If the resolved audience profile has been blocked by the project owner
+  (see `queue.md` → "Block an Audience Member"), request creation returns
+  `422`:
+
+  ```json
+  {
+    "code": "audience_blocked",
+    "message": "This project isn't accepting requests right now."
+  }
+  ```
+
+- This check runs **before** any Stripe PaymentIntent is created, so a
+  blocked member is never charged. The message is intentionally soft and
+  does not reveal the block.
+- The block key is the per-project `audience_profile_id`, never the
+  requester name. Requests with a null `audience_profile_id`
+  (cash/manual/anonymous/legacy) are never blocked.
+- Charges already made before a block stand — block never refunds
+  (credit-at-request-time, `.agent-rules/15-patent-constraints.md`). The
+  backstop path: if a charge already succeeded, the request is still
+  recorded but is hidden by the read-side queue/timeline filter and the
+  performer is not notified.
+
 Cooldown and repeat-lock gates:
 - These checks fire only for song requests; tip-only submissions bypass them.
 - When `repeats_enabled=false` and the requested song already has a

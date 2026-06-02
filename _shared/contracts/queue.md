@@ -9,7 +9,10 @@
   mutations (`POST /queue`, `PATCH /queue/{id}`, `DELETE /queue/{id}`,
   `PUT /queue/reorder`, `POST /me/requests/{id}/played`,
   `POST /me/reward-claims/{id}/delivered`) are owner-only; members receive
-  `403`. The persistent queue strip is read-only for members in clients;
+  `403`. The audience block endpoints
+  (`POST`/`DELETE /audience/{audienceProfile}/block`,
+  `GET /audience/blocked`) are also owner-only; members receive `403`.
+  The persistent queue strip is read-only for members in clients;
   the
   `entitlements.can_access_queue` / `entitlements.can_access_history` flags
   always resolve to `true` for members and `false` for non-members.
@@ -536,6 +539,132 @@ non-repeating reward and progresses a repeating one).
 
 Returned when the reward claim does not exist or its threshold belongs to a
 project the authenticated user does not have access to.
+
+---
+
+## Block an Audience Member
+
+- **Method**: `POST`
+- **Path**: `/audience/{audienceProfile}/block`
+- **Route prefix**: `/api/v1/me/projects/{project_id}`
+
+Block an audience member for this project. **Owner-only — members receive
+`403`.** The block key is the per-project audience identity
+`audience_profiles.id` (`audience_profile_id`), never the requester name.
+
+Blocking:
+
+- Hides the profile's existing pending (`active`) requests from
+  `GET /queue` and from the performance-detail timeline.
+- Silently refuses the profile's future public submissions with the `422`
+  `audience_blocked` error (see `public.md`). That check runs **before** any
+  Stripe PaymentIntent, so a blocked member is never charged.
+- Does **not** refund any charge already made. Charges stand
+  (credit-at-request-time, `.agent-rules/15-patent-constraints.md`). Block
+  is never tied to a performance/"played" signal.
+
+The endpoint is **idempotent**: blocking an already-blocked profile is a
+no-op and still returns `200`. `Idempotency-Key` is supported for safe
+retries.
+
+`audience_profile_id` is nullable on requests (null for cash/manual/
+anonymous/legacy). The block affordance is hidden in clients when it is
+null; there is no profile to block.
+
+### Success response (`200`)
+
+```json
+{
+  "data": {
+    "audience_profile_id": 88,
+    "display_name": "Jane Smith",
+    "last_seen_at": "2026-05-30T19:32:14+00:00",
+    "blocked_at": "2026-06-01T20:10:00+00:00"
+  }
+}
+```
+
+The `data` payload is the `BlockedAudienceProfile` resource (see below).
+
+### Error responses
+
+- `403` — caller is not the project owner.
+- `404` — caller lacks access to the project, or the audience profile does
+  not belong to this project.
+
+---
+
+## Unblock an Audience Member
+
+- **Method**: `DELETE`
+- **Path**: `/audience/{audienceProfile}/block`
+- **Route prefix**: `/api/v1/me/projects/{project_id}`
+
+Unblock an audience member. **Owner-only — members receive `403`.** Clears
+`blocked_at` and `blocked_by_user_id`.
+
+Unblock only re-allows **future** requests; it does **not** resurrect
+previously-hidden requests. The endpoint is **idempotent**: unblocking a
+profile that is not blocked is a no-op and still returns `200`.
+`Idempotency-Key` is supported.
+
+### Success response (`200`)
+
+```json
+{
+  "data": {
+    "audience_profile_id": 88,
+    "is_blocked": false
+  }
+}
+```
+
+### Error responses
+
+- `403` — caller is not the project owner.
+- `404` — caller lacks access to the project, or the audience profile does
+  not belong to this project.
+
+---
+
+## List Blocked Audience Members
+
+- **Method**: `GET`
+- **Path**: `/audience/blocked`
+- **Route prefix**: `/api/v1/me/projects/{project_id}`
+
+List this project's blocked audience profiles, newest blocked first
+(`blocked_at DESC`). **Owner-only — members receive `403`.** Backs the
+"Blocked audience" list in Settings.
+
+### Success response (`200`)
+
+```json
+{
+  "data": [
+    {
+      "audience_profile_id": 88,
+      "display_name": "Jane Smith",
+      "last_seen_at": "2026-05-30T19:32:14+00:00",
+      "blocked_at": "2026-06-01T20:10:00+00:00"
+    }
+  ]
+}
+```
+
+### Error responses
+
+- `403` — caller is not the project owner.
+- `404` — caller does not have access to the project.
+
+### `BlockedAudienceProfile` resource
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `audience_profile_id` | int | The blocked profile's `audience_profiles.id`. |
+| `display_name` | string \| null | Best available label (profile name, else most recent `requester_name`). `null` when no name is known. |
+| `last_seen_at` | string(date-time) \| null | When the profile was last seen, if recorded. |
+| `blocked_at` | string(date-time) | When the profile was blocked. Non-null in this list. |
 
 ---
 
