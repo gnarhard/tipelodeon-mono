@@ -187,6 +187,8 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 | `request_kind` | `"repertoire"` \| `"custom"` \| null | Populated on `request` events only. `"repertoire"` = song from catalog; `"custom"` = performer-entered free-text title; null for all other event types. |
 | `audience_ordinal` | integer \| null | Session-scoped 1..N ordinal for the audience member. Assigned by first-seen event per `audience_profile_id` ordered by `occurred_at` ASC then `id` ASC. All later events for the same profile share the same ordinal. Null when no `audience_profile_id` is present. |
 | `note` | string \| null | Audience-provided note on `request` events; null otherwise. |
+| `is_blocked` | boolean | Present on request-bearing events (`song_queued`, `song`, `request`, `request_updated`, `request_voided`, `tip_only`, `original`, `reward_used`). True when the event's audience member is currently blocked. The event is still returned (blocking no longer hides timeline activity); the client labels it. Defaults to `false` when no audience profile is attached. |
+| `is_reported` | boolean | Present on request-bearing events. True when the event's `song_request_id` has at least one content report (any review state). The client labels it. Defaults to `false` when the event has no joined request. |
 
 **Complete event-type reference**
 
@@ -212,6 +214,9 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 | `link_clicked` | Audience member clicked a link on the project page | `link_type`, `audience_profile_id`, `audience_name` |
 | `audience_page_viewed` | Audience member opened the project page | `audience_profile_id`, `audience_name` |
 | `new_audience_member_viewed` | First time a given visitor opened the project page during an active session (idempotent per visitor token per session) | `visitor_token`, `audience_profile_id`, `audience_name` |
+| `audience_blocked` | Performer blocked an audience member (logged once per real block transition; tied to the active session, or session-less if none) | `audience_profile_id`, `audience_name`, `audience_ordinal` |
+| `audience_unblocked` | Performer unblocked an audience member (logged once per real unblock transition) | `audience_profile_id`, `audience_name`, `audience_ordinal` |
+| `content_reported` | Performer reported a request (logged once, on the first report of that request; tied to the reported request's own session) | `song_request_id`, `audience_profile_id`, `audience_name`, `audience_ordinal` |
 
 **Field details for song / request events**
 
@@ -251,6 +256,8 @@ Each event object has a discriminator field `event_type`. Shared fields present 
 **`request` event lifecycle**: When an audience member places a request, two events appear simultaneously: a raw `request` event (the "placed" moment, carrying `payment_provider`, `payment_method`, `request_kind`, `note`) and a `song_queued` event. When the performer plays the song, a `song` or `request` (promoted) event appears. The placed `request` event is distinguished from the performed one by the presence of `payment_provider` (placed) vs `was_requested: true` (performed).
 
 **`reward_used` vs `reward_claimed`**: `reward_claimed` fires when the audience crosses the tip threshold (money side). `reward_used` fires when the audience redeems that reward for a specific song (request side). Both can appear in the same session for the same audience member.
+
+**Moderation events and labeling**: Blocking an audience member NO LONGER removes their activity from this timeline — their existing events stay and carry `is_blocked: true` so the client can label them. (The live queue still suppresses a blocked member's active requests; see queue.md.) A discrete `audience_blocked` / `audience_unblocked` event is logged on each real block/unblock transition (idempotent re-block/re-unblock no-ops do not log). A `content_reported` event is logged once, on the first report of a request, and that request's other timeline events carry `is_reported: true`. These three moderation events are pure UX/analytics metadata — no payment, credit, or performed-song linkage.
 
 ### GET `/api/v1/me/projects/{project}/performances/{performanceSession}/events`
 

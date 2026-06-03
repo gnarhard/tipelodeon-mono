@@ -155,8 +155,39 @@ Blocked-audience gate:
 - Charges already made before a block stand — block never refunds
   (credit-at-request-time, `.agent-rules/15-patent-constraints.md`). The
   backstop path: if a charge already succeeded, the request is still
-  recorded but is hidden by the read-side queue/timeline filter and the
-  performer is not notified.
+  recorded but is hidden from the actionable queue by the read-side filter
+  and the performer is not notified. The performance-detail timeline KEEPS
+  the recorded activity, labeled blocked (`is_blocked: true`); blocking only
+  suppresses the live queue, not the historical timeline.
+
+Inappropriate-content gate:
+- Audience free text (the request `note`, and the Stripe billing display
+  name captured for the requester) is run through a content filter
+  (`ContentModerationService`, backed by `config/content_moderation.php`).
+- **Pre-charge reject**: if the `note` contains objectionable language,
+  request creation returns `422`:
+
+  ```json
+  {
+    "code": "inappropriate_content",
+    "message": "Please remove inappropriate language before submitting."
+  }
+  ```
+
+  This check runs **before** any Stripe PaymentIntent is created (alongside
+  the blocked-audience gate), so the audience member is never charged. Unlike
+  the block message, this message MAY be shown to the audience member — it is
+  their own content. The same gate applies to the snackbar paths
+  (`createPaymentIntent`, `submitTiplessRequest`, `submitFreeRequest`) and to
+  the requester display-name prompt (`submitDisplayName`).
+- **Post-charge mask**: if profane content arrives after a charge already
+  succeeded (the webhook / in-page-confirm backstop in
+  `AudienceRequestPaymentService::findOrCreateFromPaymentIntentPayload`), the
+  offending terms in the `note` and the billing display name are **masked**
+  (`***`) before persistence. The charge **stands** and is **never refunded**
+  (credit-at-request-time, patent invariant #1,
+  `.agent-rules/15-patent-constraints.md`). Post-charge content is masked,
+  never rejected.
 
 Cooldown and repeat-lock gates:
 - These checks fire only for song requests; tip-only submissions bypass them.

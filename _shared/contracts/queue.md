@@ -11,7 +11,9 @@
   `POST /me/reward-claims/{id}/delivered`) are owner-only; members receive
   `403`. The audience block endpoints
   (`POST`/`DELETE /audience/{audienceProfile}/block`,
-  `GET /audience/blocked`) are also owner-only; members receive `403`.
+  `GET /audience/blocked`) and the content-report endpoint
+  (`POST /requests/{request}/report`) are also owner-only; members
+  receive `403`.
   The persistent queue strip is read-only for members in clients;
   the
   `entitlements.can_access_queue` / `entitlements.can_access_history` flags
@@ -555,7 +557,13 @@ Block an audience member for this project. **Owner-only — members receive
 Blocking:
 
 - Hides the profile's existing pending (`active`) requests from
-  `GET /queue` and from the performance-detail timeline.
+  `GET /queue`.
+- Does **not** hide the member's activity from the performance-detail
+  timeline. The timeline KEEPS their events, labeled blocked
+  (`is_blocked: true`); a reported request's events carry
+  `is_reported: true`. Blocking never erases history. A discrete
+  `audience_blocked` (and symmetric `audience_unblocked`) timeline event is
+  logged on each real transition (see `song-performances.md`).
 - Silently refuses the profile's future public submissions with the `422`
   `audience_blocked` error (see `public.md`). That check runs **before** any
   Stripe PaymentIntent, so a blocked member is never charged.
@@ -665,6 +673,75 @@ List this project's blocked audience profiles, newest blocked first
 | `display_name` | string \| null | Best available label (profile name, else most recent `requester_name`). `null` when no name is known. |
 | `last_seen_at` | string(date-time) \| null | When the profile was last seen, if recorded. |
 | `blocked_at` | string(date-time) | When the profile was blocked. Non-null in this list. |
+
+---
+
+## Report Audience Content
+
+- **Method**: `POST`
+- **Path**: `/requests/{request}/report`
+- **Route prefix**: `/api/v1/me/projects/{project_id}`
+
+Flag an audience request's free text (the `note` and/or the requester
+display name) for admin review. **Owner-only — members receive `403`.**
+Reporting is a **flag, not a block**: it does **not** remove or hide the
+request row. To stop a member's future submissions, block the audience
+profile instead (see "Block an Audience Member").
+
+The report targets the request id (`requests.id`), not the
+`audience_profile_id`, so the affordance is available even on cash/manual/
+anonymous rows that have no profile to block. Gating mirrors the block
+endpoint: `404` when the caller lacks access to the project or the request
+does not belong to this project; `403` when the caller is not the owner.
+
+### Request body (optional)
+
+```json
+{
+  "reason": "Hate speech in the dedication."
+}
+```
+
+- `reason` — optional, nullable string, max 500 chars.
+
+### Behavior
+
+- **Idempotent**: a report is deduplicated on `(request_id,
+  reported_by_user_id)`. A given user can report a given request only once.
+- On **first creation**, an admin notification (`ContentReportSubmission`,
+  queued to `config('mail.from.address')`) is sent so a human can action it
+  within 24 hours. The reported request's note + requester display name, the
+  reporting performer, the project, the reason, and a timestamp are included.
+- A **duplicate** report by the same user is a silent no-op: no second report
+  row is created and **no second admin notification is queued**. Both the
+  first creation and the idempotent no-op return `200`.
+- On **first creation**, a discrete `content_reported` timeline event is
+  logged (tied to the reported request's own session; see
+  `song-performances.md`), and that request's other timeline events carry
+  `is_reported: true` so the performance detail can label them. The duplicate
+  no-op logs no second event.
+- The requester is **never** notified. `Idempotency-Key` is supported.
+
+### Success response (`200`)
+
+```json
+{
+  "data": {
+    "id": 42,
+    "status": "open",
+    "created_at": "2026-06-01T22:30:00+00:00"
+  }
+}
+```
+
+`status` is one of `open`, `reviewed`, `dismissed` (admin-managed; reports
+are created `open`).
+
+### Error responses
+
+- `403` — caller is not the project owner.
+- `404` — caller lacks access to the project, or the request does not belong
+  to this project.
 
 ---
 

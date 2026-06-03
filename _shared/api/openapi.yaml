@@ -23,6 +23,21 @@ info:
       path (enforced BEFORE any Stripe PaymentIntent). Charges already
       made stand — block never refunds. New `BlockedAudienceProfile`
       schema and `AudienceProfileId` path parameter.
+      UGC content moderation (Apple Guideline 1.2): the public request
+      path adds an `inappropriate_content` 422 on a profane `note`
+      (enforced BEFORE any Stripe PaymentIntent; post-charge content is
+      masked, never refunded). New owner-only, idempotent
+      `POST /me/projects/{projectId}/requests/{request}/report` endpoint
+      flags audience content for admin review (dedup per request+user,
+      queues an admin notification on first creation only). New
+      `RequestId` path parameter.
+      Timeline labeling: blocking no longer hides a member's activity from
+      the performance-detail timeline — those events stay, labeled blocked
+      (`is_blocked: true`); a reported request's events carry
+      `is_reported: true`. Discrete `audience_blocked`, `audience_unblocked`,
+      and `content_reported` timeline events are logged on block/unblock/first-report
+      (pure UX/analytics metadata; see song-performances.md). These are
+      timeline-event fields, NOT queue-row fields — `QueueRequest` is unchanged.
     - v1.4: `SongRequestStatus` adds `unresolved`. Stopping or auto-ending
       a performance session marks still-active requests as `unresolved`
       (was `cancelled`); resuming the session restores them to `active`.
@@ -634,11 +649,13 @@ paths:
         Owner-only. Sets `audience_profiles.blocked_at` (and records
         `blocked_by_user_id`) for the given profile, scoped to the project.
         Blocking hides the profile's existing pending requests from the
-        queue and the performance-detail timeline, and causes future public
-        submissions to be silently refused with the `audience_blocked` 422
-        (enforced BEFORE any Stripe PaymentIntent). Charges already made
-        stand — this never refunds. Idempotent: blocking an already-blocked
-        profile is a no-op and still returns `200`. Members receive `403`.
+        queue and causes future public submissions to be silently refused
+        with the `audience_blocked` 422 (enforced BEFORE any Stripe
+        PaymentIntent). The performance-detail timeline KEEPS the blocked
+        member's events, labeled blocked (`is_blocked: true`) — blocking
+        never erases history. Charges already made stand — this never
+        refunds. Idempotent: blocking an already-blocked profile is a no-op
+        and still returns `200`. Members receive `403`.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -720,6 +737,61 @@ paths:
           description: Forbidden (only the project owner can view blocked audience members)
         '404':
           description: Not found (user does not have access to the project)
+
+  /me/projects/{projectId}/requests/{request}/report:
+    post:
+      tags: [Queue]
+      summary: Report an audience request for admin review
+      description: |
+        Owner-only. Flags an audience request's free text (the note and/or the
+        requester display name) for admin review and queues an admin
+        notification so a human can action it within 24 hours. The request row
+        is NOT removed or hidden by reporting — reporting is a flag, not a
+        block. To stop a member's future submissions, block the audience
+        profile instead.
+
+        Idempotent: a given user can report a given request only once
+        (deduplicated on `request_id` + `reported_by_user_id`). A duplicate
+        report by the same user is a silent no-op — no second report row is
+        created and no second admin notification is queued. Both the first
+        creation and the idempotent no-op return `200`.
+
+        Members (non-owners) receive `403`. The requester is never notified.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/RequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, maxLength: 500, nullable: true }
+      responses:
+        '200':
+          description: |
+            Report recorded (newly created or an idempotent no-op for a
+            duplicate report by the same user).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      status: { type: string, enum: [open, reviewed, dismissed] }
+                      created_at: { type: string, format: date-time, nullable: true }
+        '403':
+          description: Forbidden (only the project owner can report content)
+        '404':
+          description: |
+            Not found (user lacks access to the project, or the request does
+            not belong to this project)
 
   /me/projects/{projectId}/wallet:
     get:
@@ -2122,6 +2194,13 @@ paths:
         PaymentIntent is created, so a blocked member is never charged. The
         message is intentionally soft and does not reveal the block. Charges
         already made before a block stand (credit-at-request-time).
+
+        Content gate: if the `note` contains objectionable language, the
+        request is refused with a `422` `inappropriate_content` error, also
+        BEFORE any Stripe PaymentIntent is created. The message MAY be shown
+        to the audience member (it is their own content). Post-charge content
+        (arriving via the webhook backstop after a successful charge) is
+        masked, never rejected — the charge stands and is never refunded.
       parameters:
         - $ref: '#/components/parameters/ProjectSlug'
         - $ref: '#/components/parameters/IdempotencyKey'
@@ -2149,9 +2228,10 @@ paths:
                 $ref: '#/components/schemas/PublicRequestCreateResponse'
         '422':
           description: |
-            Validation failed, request gating, minimum tip violation, or the
-            audience member is blocked (`code=audience_blocked`, enforced
-            before any Stripe PaymentIntent).
+            Validation failed, request gating, minimum tip violation, the
+            audience member is blocked (`code=audience_blocked`), or the note
+            contains objectionable language (`code=inappropriate_content`).
+            Both refusal codes are enforced before any Stripe PaymentIntent.
           content:
             application/json:
               schema:
@@ -2163,6 +2243,13 @@ paths:
                       message:
                         type: string
                         example: This project isn't accepting requests right now.
+                  - type: object
+                    required: [code, message]
+                    properties:
+                      code: { type: string, enum: [inappropriate_content] }
+                      message:
+                        type: string
+                        example: Please remove inappropriate language before submitting.
                   - type: object
                     properties:
                       message: { type: string }
@@ -2206,6 +2293,12 @@ components:
       required: true
       schema: { type: integer }
       description: The per-project audience identity (`audience_profiles.id`).
+    RequestId:
+      in: path
+      name: request
+      required: true
+      schema: { type: integer }
+      description: An audience request (`requests.id`), scoped to the project.
     ReportingTimezone:
       in: query
       name: timezone
