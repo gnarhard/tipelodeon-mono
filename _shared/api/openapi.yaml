@@ -29,8 +29,9 @@ info:
       masked, never refunded). New owner-only, idempotent
       `POST /me/projects/{projectId}/requests/{request}/report` endpoint
       flags audience content for admin review (dedup per request+user,
-      queues an admin notification on first creation only). New
-      `RequestId` path parameter.
+      queues an admin notification on first creation only). Manually-added
+      requests (`payment_provider: "none"`) are not reportable and return
+      `422`. New `RequestId` path parameter.
       Timeline labeling: blocking no longer hides a member's activity from
       the performance-detail timeline — those events stay, labeled blocked
       (`is_blocked: true`); a reported request's events carry
@@ -750,6 +751,12 @@ paths:
         block. To stop a member's future submissions, block the audience
         profile instead.
 
+        **Manually-added requests** (performer-entered queue items,
+        `payment_provider: "none"`) are not reportable — their text is authored
+        by the performer, not the audience — and return `422`. Anonymous
+        digital rows (no audience profile) remain reportable because the
+        affordance targets the request id, not the audience profile.
+
         Idempotent: a given user can report a given request only once
         (deduplicated on `request_id` + `reported_by_user_id`). A duplicate
         report by the same user is a silent no-op — no second report row is
@@ -792,6 +799,11 @@ paths:
           description: |
             Not found (user lacks access to the project, or the request does
             not belong to this project)
+        '422':
+          description: |
+            The request is a manually-added (performer-entered) queue item
+            (`payment_provider: "none"`), which carries no audience content to
+            report.
 
   /me/projects/{projectId}/wallet:
     get:

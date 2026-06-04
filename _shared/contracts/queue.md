@@ -689,10 +689,14 @@ request row. To stop a member's future submissions, block the audience
 profile instead (see "Block an Audience Member").
 
 The report targets the request id (`requests.id`), not the
-`audience_profile_id`, so the affordance is available even on cash/manual/
-anonymous rows that have no profile to block. Gating mirrors the block
-endpoint: `404` when the caller lacks access to the project or the request
-does not belong to this project; `403` when the caller is not the owner.
+`audience_profile_id`, so the affordance stays available on anonymous rows
+that carry no profile to block. **Manually-added requests** (performer-entered
+queue items, `payment_provider: "none"`) are the one exception: their text is
+authored by the performer, not the audience, so they are **not** reportable —
+the affordance is hidden client-side and the endpoint returns `422`. Other
+gating mirrors the block endpoint: `404` when the caller lacks access to the
+project or the request does not belong to this project; `403` when the caller
+is not the owner.
 
 ### Request body (optional)
 
@@ -742,6 +746,8 @@ are created `open`).
 - `403` — caller is not the project owner.
 - `404` — caller lacks access to the project, or the request does not belong
   to this project.
+- `422` — the request is a manually-added (performer-entered) queue item
+  (`payment_provider: "none"`), which carries no audience content to report.
 
 ---
 
