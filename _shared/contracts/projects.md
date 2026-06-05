@@ -19,6 +19,7 @@
 - `GET /{projectId}/members` - list owner and invited members
 - `POST /{projectId}/members` - owner-only invite of an existing Tipelodeon user
 - `DELETE /{projectId}/members/{membershipId}` - owner-only removal of a project member
+- `POST /{projectId}/transfer-ownership` - owner-only handoff of the band to an existing member
 
 ---
 
@@ -40,6 +41,51 @@
 - Removing a member deletes the `project_members` row.
 - Returns `{ "message": "Project member removed successfully." }` on success.
 - Non-owners receive `403`. Membership IDs from other projects return `404`.
+
+---
+
+## Ownership transfer (Make band leader)
+
+Ownership is a single column (`projects.owner_user_id`); the owner is never a
+`project_members` row. Registration does not auto-create a project, so when a
+band member signs up before the leader, the member ends up owning the band.
+This endpoint lets the current owner hand the band to a rightful leader who is
+already an invited member.
+
+- `POST /{projectId}/transfer-ownership` — owner-only. Body:
+  `{ "project_member_id": <int> }` (the membership row id from `members[].id`).
+  This exact field name is used verbatim by the FormRequest, controller, and
+  the Dart client.
+- Runs one DB transaction that: flips `owner_user_id`; deletes the new owner's
+  member row (the owner is never a member row); upserts the former owner as a
+  `member`; reconciles both `notify_on_request` preference rows to the role
+  defaults (new owner `true`, former owner `false`); promotes the new owner's
+  synced song copies to canonical lineage (nulls `source_project_song_id` so
+  `ownerProjectSongs()` returns them); and writes an append-only
+  `project_ownership_transfers` audit row.
+- The former owner is demoted to `member` as a **consequence** of the flip,
+  not via a separate role change.
+- Returns `200` with the refreshed members overview
+  (`{ "data": { "owner", "members" } }`) plus a top-level `warnings: [...]`
+  array of `{ code, message }`. Clients then re-fetch the access bundle
+  (`GET /me/projects`) for the authoritative per-project role, so the response
+  body is not load-bearing for role.
+- **Warnings (allow + warn, never block):**
+  - `new_owner_payout_not_ready` — the new owner's payout account is not
+    enabled, so new fan tips are declined until they finish setup. No tips are
+    charged or held in the meantime (the per-request payout gate already
+    rejects with `payout_setup_incomplete`).
+  - `new_owner_over_project_limit` — informational; the limit gates *creating*
+    projects, not handoffs.
+  - `active_performance_session` — informational; tipping is not session-coupled.
+- **Blocks:** non-owner → `403`; target not a member of *this* project,
+  unknown id, non-integer, or a soft-deleted target → `422`.
+- Acknowledgement of consequences is **client-side** (a confirm dialog). There
+  is no server two-phase handshake — it would deadlock the Idempotency-Key
+  middleware, which replays the stored response for a repeated
+  `(actor, method, path, Idempotency-Key)`.
+- Two queued emails go out `afterCommit`: one to the new owner, one to the
+  former owner.
 
 ---
 

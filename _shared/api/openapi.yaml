@@ -524,6 +524,48 @@ paths:
         '422':
           description: Validation failed
 
+  /me/projects/{projectId}/transfer-ownership:
+    post:
+      tags: [Projects]
+      summary: Hand the band (project) to an existing member (owner-only)
+      description: |
+        Transfers ownership of the project to an existing member identified by
+        `project_member_id`. The former owner is demoted to a regular `member`
+        as a consequence (there is no separate owner member row to demote), and
+        the new owner's synced song copies are promoted to canonical lineage.
+        Acknowledgement of consequences is client-side; there is no server
+        two-phase handshake (the global Idempotency-Key middleware dedupes a
+        replayed POST). Advisory `warnings[]` (e.g. the new owner has not
+        finished payout setup) are returned but never block the transfer. The
+        per-request payout gate still prevents any misrouted charge. See
+        `_shared/contracts/projects.md` → "Ownership transfer".
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectOwnershipTransferRequest'
+      responses:
+        '200':
+          description: |
+            Ownership transferred. Returns the refreshed members overview plus
+            advisory `warnings[]` (clients re-fetch the access bundle for the
+            authoritative role, so this body is not load-bearing for role).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectOwnershipTransferResponse'
+        '403':
+          description: Forbidden (caller is not the project owner)
+        '422':
+          description: |
+            Validation failed: missing/non-integer `project_member_id`, a member
+            of another project, an unknown id, or a soft-deleted target.
+
   /me/projects/{projectId}/preferences:
     put:
       tags: [Projects]
@@ -2584,6 +2626,34 @@ components:
         message: { type: string }
         member:
           $ref: '#/components/schemas/ProjectMember'
+    ProjectOwnershipTransferRequest:
+      type: object
+      required: [project_member_id]
+      properties:
+        project_member_id:
+          type: integer
+          description: |
+            Membership row id (from `members[].id`) of the existing member who
+            becomes the new owner.
+    ProjectTransferWarning:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Stable warning code (e.g. `new_owner_payout_not_ready`).
+        message:
+          type: string
+          description: Human-readable text, surfaced verbatim in the app dialog.
+    ProjectOwnershipTransferResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/ProjectMembersPayload'
+        warnings:
+          type: array
+          description: Advisory, non-blocking codes acknowledged before handoff.
+          items:
+            $ref: '#/components/schemas/ProjectTransferWarning'
     Project:
       type: object
       properties:
