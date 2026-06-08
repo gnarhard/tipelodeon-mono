@@ -2198,6 +2198,17 @@ paths:
                   description: Allowed for desktop platforms only.
                 is_enabled:
                   type: boolean
+                release_notes:
+                  type: string
+                  nullable: true
+                  maxLength: 20000
+                  description: >
+                    Raw release notes (e.g. a git commit log) from the release
+                    pipeline. Write-only: never stored on the policy nor
+                    returned. When supplied on an enabled release with a
+                    version, it triggers an AI-summarized product-update email
+                    to all subscribed users, deduped once per version across
+                    the per-platform PATCHes.
       responses:
         '200':
           description: Updated release policy
