@@ -2207,12 +2207,11 @@ paths:
                     pipeline. Write-only: never stored on the policy nor
                     returned. Supplying it STAGES a pending product-update
                     announcement keyed by version (deduped across the
-                    per-platform PATCHes); no email is sent at this point.
-                    The releases:poll-appstore scheduled command broadcasts the
-                    AI-summarized email to all subscribed users once the App
-                    Store reports the version live (READY_FOR_SALE). Use the
-                    releases:announce command for platforms without App Store
-                    review.
+                    per-platform PATCHes); no email is sent at this point. An
+                    admin reviews the AI-summarized preview and sends the email
+                    to all subscribed users from the dashboard releases page
+                    (or the releases:announce command) once the release is
+                    live.
       responses:
         '200':
           description: Updated release policy
