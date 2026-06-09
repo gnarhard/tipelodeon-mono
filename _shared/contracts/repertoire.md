@@ -590,6 +590,11 @@ Behavior:
 - `source_project_song_ids` must all belong to `source_project_id`.
 - If `include_charts=true`, copies linked chart PDFs and rendered chart images
   for the selected songs into the destination project.
+- Charts the performer claimed from the community library (referenced through a
+  `ChartClaim` rather than an owned `Chart` row) are carried by re-claiming the
+  same shared chart for the destination song — the PDF is not duplicated. These
+  re-claims also count toward `copied_charts` and bump the chart's
+  `claim_count`. Only honored when `include_charts=true`.
 - If `include_annotations=true`, copies the latest saved chart annotations for
   each cloned chart page, rewriting `owner_user_id` to the authenticated user.
   Only honored when `include_charts=true`; silently ignored otherwise.

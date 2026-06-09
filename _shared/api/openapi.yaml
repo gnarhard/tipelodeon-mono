@@ -1249,7 +1249,15 @@ paths:
                   type: array
                   minItems: 1
                   items: { type: integer }
-                include_charts: { type: boolean, default: false }
+                include_charts:
+                  type: boolean
+                  default: false
+                  description: |
+                    Carry the selected songs' charts into the destination
+                    project. Owned charts are cloned (linked PDFs and rendered
+                    images); charts the performer claimed from the community
+                    library are re-claimed for the destination song rather than
+                    duplicated. Both kinds count toward `copied_charts`.
                 include_annotations:
                   type: boolean
                   default: false
