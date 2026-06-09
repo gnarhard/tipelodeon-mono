@@ -153,13 +153,20 @@ Learned flag:
 - Filter: `GET /repertoire?learned=1` / `?learned=0`.
 
 Reference links:
-- Fields on `songs`: `youtube_video_url`, `ultimate_guitar_url` (nullable).
+- Stored in the `song_reference_links` table and serialized as a
+  `reference_links` array on the nested `song` object. Each entry is
+  `{ id, kind, label, url, position }`, ordered by `position`.
+- `kind` is one of the system kinds `youtube`, `ultimate_guitar`, `lyrics`
+  (auto-created on every Song, undeletable, `label` null → a default display
+  label) or `custom` (user-owned, full CRUD via the reference-link endpoints).
 - Scope: global per canonical song, shared across all projects that use the
   song.
-- Auto-resolution: on repertoire song create, and on any update that flips
-  `learned` to `false`, the backend resolves missing URLs via
-  `YoutubeVideoResolver` (falls back to a YouTube search URL) and builds an
-  Ultimate Guitar title search URL. Existing URLs are never overwritten.
+- Auto-resolution: on Song create the backend seeds the three system links
+  with free search URLs — a YouTube results search (upgradable on-demand to a
+  direct video URL), an Ultimate Guitar title search, and a Google
+  `<title> <artist> lyrics` search. Existing rows are never overwritten;
+  `songs:backfill-reference-links` reconciles songs created before a kind
+  existed.
 - Returned in the nested `song` object on repertoire list/show payloads.
 
 ### List
@@ -173,7 +180,7 @@ Reference links:
   - `request_count`
   - `total_tip_amount_cents`
   - `last_performed_at`
-  - Nested `song` object: `youtube_video_url`, `ultimate_guitar_url`
+  - Nested `song` object: `reference_links` (see Reference links above)
 
 ### Create
 - `POST /repertoire`
@@ -183,8 +190,8 @@ Reference links:
 - `version_label` is optional (nullable string, max 50 chars). When provided,
   the duplicate check compares both `song_id` and `version_label` instead of
   `song_id` alone, allowing multiple versions of the same song.
-- On create, the backend auto-resolves the canonical Song's
-  `youtube_video_url` and `ultimate_guitar_url` when they are null.
+- On create, the backend seeds the canonical Song's system reference links
+  (`youtube`, `ultimate_guitar`, `lyrics`) when they are missing.
 
 Limit error:
 
@@ -204,8 +211,8 @@ Limit error:
   override level.
 - Title/artist changes are saved to `project_songs` only (the `songs` table
   and `song_id` are not modified).
-- When `learned` flips to `false`, the backend backfills the canonical
-  Song's reference URLs if they are currently null.
+- When `learned` flips to `false`, the backend ensures the canonical Song's
+  system reference links exist (idempotent; existing rows are untouched).
 
 Project-song notes:
 - Field: `notes`
