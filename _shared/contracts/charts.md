@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.4)
+# Charts API Contracts (v1.5)
 
 ## Scope and auth
 
@@ -158,6 +158,37 @@ Notes:
   is also stored as a fraction of canvas height in `[0.005, 0.5]`.
 - `texts[].id` is a stable client-generated identifier so the client can
   target a specific label across moves, edits, and undo entries.
+
+### Bulk fetch saved annotations
+- **Method**: `GET`
+- **Path**: `/api/v1/me/annotations/latest`
+- **Query params**:
+  - `per_page`: optional int, `1..200`, default `100`. Out-of-range or
+    non-integer values return `422`.
+  - `cursor`: optional Laravel cursor-pagination cursor, taken from the
+    previous page's `meta.next_cursor`.
+- Semantics: cursor-paginated dump of **every** saved annotation row owned
+  by the authenticated user (`owner_user_id`), across all charts and pages,
+  ordered by `id` ascending. Owner scope is the authority — there is no
+  chart-accessibility join, and other users' rows on shared charts are
+  never included.
+- **Response**: standard Laravel cursor-paginated collection. Each `data`
+  row has exactly the same shape as the per-page
+  `GET .../annotations/latest` resource (`id`, `chart_id`, `page_number`,
+  `local_version_id`, `strokes`, `texts`, `client_created_at`,
+  `created_at`). `meta.next_cursor` is the cursor string to pass back as
+  `?cursor=` for the next page, or `null` on the last page.
+
+Notes:
+- This endpoint exists for the app's "Prepare for offline use" flow: the
+  client pages through it to warm its local annotation cache, then writes
+  known-empty markers for chart pages with no server row. Previously
+  unopened pages therefore render a definitive empty (rather than unknown)
+  baseline offline, and new ink drawn offline can be saved on top of it.
+- `created_at` is always a non-null ISO8601 timestamp: every server write
+  path creates the row through Eloquent with default timestamps, and the
+  app parses it as a required field. `client_created_at` stays nullable
+  (legacy rows may lack it).
 
 ---
 

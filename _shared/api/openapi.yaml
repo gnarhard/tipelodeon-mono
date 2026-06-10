@@ -2133,6 +2133,40 @@ paths:
         '422':
           description: Validation failed (unknown stroke kind, missing or malformed points, out-of-range values)
 
+  /me/annotations/latest:
+    get:
+      tags: [Charts]
+      summary: Bulk fetch the caller's saved chart annotations
+      description: >
+        Cursor-paginated dump of every saved annotation row owned by the
+        authenticated user (`owner_user_id`), across all charts and pages,
+        ordered by `id` ascending. Owner scope is the authority — there is
+        no chart-accessibility join, and other users' rows on shared charts
+        are never included. Powers the app's "Prepare for offline use"
+        cache warm-up: the client pages through this endpoint, then writes
+        known-empty markers for chart pages with no server row so offline
+        opens get a definitive empty baseline.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: per_page
+          schema: { type: integer, minimum: 1, maximum: 200, default: 100 }
+        - in: query
+          name: cursor
+          schema: { type: string }
+          description: >
+            Opaque Laravel pagination cursor from the previous page's
+            `meta.next_cursor`.
+      responses:
+        '200':
+          description: Cursor-paginated annotation rows
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartAnnotationVersionCollectionResponse'
+        '422':
+          description: Validation failed (`per_page` outside 1..200 or non-integer)
+
   /app/version-policy:
     get:
       tags: [App]
@@ -4094,6 +4128,56 @@ components:
                   performed_order_index: { type: integer, nullable: true }
         meta:
           type: object
+          additionalProperties: true
+    ChartAnnotationVersionResource:
+      type: object
+      description: >
+        A saved annotation row. Exactly the same resource shape returned by
+        `GET /me/charts/{chartId}/pages/{page}/annotations/latest`.
+      properties:
+        id: { type: integer }
+        chart_id: { type: integer }
+        page_number:
+          type: integer
+          minimum: 0
+          description: Zero-based page number.
+        local_version_id: { type: string }
+        strokes:
+          type: array
+          items: { $ref: '#/components/schemas/AnnotationStroke' }
+        texts:
+          type: array
+          items: { $ref: '#/components/schemas/AnnotationText' }
+          description: Always an array (`[]` for rows stored without texts).
+        client_created_at: { type: string, format: date-time, nullable: true }
+        created_at:
+          type: string
+          format: date-time
+          description: >
+            Always present — every server write path creates the row through
+            Eloquent with default timestamps, and the app parses this as a
+            required field.
+      required: [created_at]
+    ChartAnnotationVersionCollectionResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChartAnnotationVersionResource'
+        links:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          properties:
+            per_page: { type: integer }
+            next_cursor:
+              type: string
+              nullable: true
+              description: >
+                Pass back as `?cursor=` to fetch the next page; null when
+                there are no more rows.
           additionalProperties: true
     ChartSongSummary:
       type: object
