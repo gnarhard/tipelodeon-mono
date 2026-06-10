@@ -2080,10 +2080,14 @@ paths:
     get:
       tags: [Charts]
       summary: Get saved chart annotation
+      description: >
+        Access: the chart's owner, anyone with access to its project, or
+        anyone holding a community ChartClaim on it. Returns the caller's own
+        per-user annotation row (`data: null` when nothing has been saved).
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ChartId'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/AnnotationPage'
       responses:
         '200':
           description: Latest annotation payload or null
@@ -2092,11 +2096,16 @@ paths:
     post:
       tags: [Charts]
       summary: Save chart annotation
-      description: Last-write-wins per chart/page/user. Each save replaces the prior saved annotation state.
+      description: >
+        Last-write-wins per chart/page/user. Each save replaces the prior
+        saved annotation state. Omitting `texts` entirely preserves the
+        stored labels (so pre-text app builds cannot erase them); sending
+        `texts: []` clears them. Access follows the same owner / project /
+        claim rule as the GET.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ChartId'
-        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/AnnotationPage'
         - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
@@ -2106,14 +2115,23 @@ paths:
               type: object
               required: [local_version_id, created_at, strokes]
               properties:
-                local_version_id: { type: string }
+                local_version_id: { type: string, maxLength: 255 }
                 created_at: { type: string, format: date-time }
                 strokes:
                   type: array
-                  items: { type: object }
+                  maxItems: 10000
+                  items: { $ref: '#/components/schemas/AnnotationStroke' }
+                texts:
+                  type: array
+                  maxItems: 1000
+                  items: { $ref: '#/components/schemas/AnnotationText' }
       responses:
         '201':
-          description: Annotation saved
+          description: Annotation saved (first save for this chart/page/user)
+        '200':
+          description: Annotation replaced (subsequent saves)
+        '422':
+          description: Validation failed (unknown stroke kind, missing or malformed points, out-of-range values)
 
   /app/version-policy:
     get:
@@ -2440,6 +2458,14 @@ components:
       name: page
       required: true
       schema: { type: integer, minimum: 1 }
+    AnnotationPage:
+      in: path
+      name: page
+      required: true
+      description: >
+        Zero-based page number (matches all stored annotation rows). Values
+        above 10000 are rejected with 422; non-numeric values 404.
+      schema: { type: integer, minimum: 0, maximum: 10000 }
     ProjectSlug:
       in: path
       name: projectSlug
@@ -2447,6 +2473,105 @@ components:
       schema: { type: string }
 
   schemas:
+    AnnotationPoint:
+      type: object
+      required: [x, y]
+      description: >
+        A stroke point in normalized canvas coordinates. Nominally 0..1, but
+        ink may run slightly past the canvas edge while the pointer is
+        captured; the server accepts -10..10 and rejects anything beyond as
+        malformed.
+      properties:
+        x: { type: number, format: float, minimum: -10, maximum: 10 }
+        y: { type: number, format: float, minimum: -10, maximum: 10 }
+        pressure:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          nullable: true
+          description: >
+            Stylus pressure (0..1), or absent for devices that do not report
+            it. Drives variable-width ink rendering.
+    AnnotationTextPosition:
+      type: object
+      required: [x, y]
+      description: A text label's top-left corner, strictly inside 0..1.
+      properties:
+        x: { type: number, format: float, minimum: 0, maximum: 1 }
+        y: { type: number, format: float, minimum: 0, maximum: 1 }
+    AnnotationStroke:
+      type: object
+      required: [points, color_value, thickness]
+      description: >
+        A drawing stroke, shape, or stamp. Geometry depends on `kind`: freehand
+        kinds (`pen`, `highlighter`) hold many points; `line`/`arrow` and
+        `rectangle`/`ellipse` hold two anchor points; `stamp` holds one anchor.
+      properties:
+        id:
+          type: string
+          maxLength: 64
+          description: Stable id for selection / editing. Empty for legacy rows.
+        kind:
+          type: string
+          default: pen
+          enum:
+            [
+              pen,
+              pencil,
+              highlighter,
+              line,
+              rectangle,
+              ellipse,
+              arrow,
+              musical_bar,
+              tab_bar,
+              stamp,
+            ]
+        points:
+          type: array
+          minItems: 1
+          maxItems: 10000
+          items: { $ref: '#/components/schemas/AnnotationPoint' }
+        color_value:
+          type: integer
+          format: int64
+          description: ARGB32 color value.
+        thickness:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 10000
+        opacity:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 1
+          description: Below 1 for highlighter ink.
+        symbol_id:
+          type: string
+          maxLength: 64
+          nullable: true
+          description: For stamp strokes, the musical glyph id to render.
+        is_eraser:
+          type: boolean
+          default: false
+          description: When true, the stroke removes ink beneath it.
+    AnnotationText:
+      type: object
+      required: [id, text, position, color_value, font_size]
+      properties:
+        id: { type: string, maxLength: 64 }
+        text: { type: string, maxLength: 500 }
+        position: { $ref: '#/components/schemas/AnnotationTextPosition' }
+        color_value: { type: integer, format: int64 }
+        font_size:
+          type: number
+          format: float
+          minimum: 0.005
+          maximum: 0.5
+          description: Fraction of canvas height.
     AuthLoginRequest:
       type: object
       required: [email, password]
