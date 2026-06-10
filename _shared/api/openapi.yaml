@@ -2483,7 +2483,19 @@ components:
         kind:
           type: string
           default: pen
-          enum: [pen, highlighter, line, rectangle, ellipse, arrow, stamp]
+          enum:
+            [
+              pen,
+              pencil,
+              highlighter,
+              line,
+              rectangle,
+              ellipse,
+              arrow,
+              musical_bar,
+              tab_bar,
+              stamp,
+            ]
         points:
           type: array
           items: { $ref: '#/components/schemas/AnnotationPoint' }
