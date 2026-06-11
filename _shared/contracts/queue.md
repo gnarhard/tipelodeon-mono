@@ -159,9 +159,9 @@ When a performance session ends, every still-`"active"` request tied to that ses
 - `PerformanceSessionService::applyAutoEndRules()` (6h max-duration / 4h-inactivity timer)
 - `performances:end-idle-audience` artisan command (audience-auto sessions with no child writes for N minutes)
 
-Unresolved requests do not appear in `GET /queue` (which filters on `status = "active"`). Tip-only writes (`song.title="Tip Jar Support"`) are paused the same way — once the performer finishes, the queue strip starts the next session empty. Payment is not refunded; the transition is a queue-state change only, consistent with the credit-at-request-time rule in `.agent-rules/15-patent-constraints.md`.
+Unresolved requests do not appear in `GET /queue` (which filters on `status = "active"`). **Tip-only writes (`song.title="Tip Jar Support"`) are the exception**: a tip-only row is a COMPLETED payment, not a queue item awaiting performance, so all three end paths finalize it as `"played"` (with `played_at` = the session end time) instead of `"unresolved"` — leaving it unresolved permanently mislabeled a finished tip whenever the session never resumed. Either way the queue strip starts the next session empty, payment is not refunded, and the transition is a queue-state change only, consistent with the credit-at-request-time rule in `.agent-rules/15-patent-constraints.md` (the played flag stays pure analytics metadata).
 
-If the same session is later reopened via `POST /performances/{id}/resume`, every request on that session with `status = "unresolved"` transitions back to `"active"` in the same transaction. The strip refills with those items in their original positions (`session_sequence`, `score_cents`, and `tip_amount_cents` are preserved).
+If the same session is later reopened via `POST /performances/{id}/resume`, every request on that session with `status = "unresolved"` transitions back to `"active"` in the same transaction. The strip refills with those items in their original positions (`session_sequence`, `score_cents`, and `tip_amount_cents` are preserved). Tip-only rows finalized as `"played"` at the end stay played.
 
 Explicitly-`"cancelled"` requests (e.g., a performer or audience member removed a request mid-show) are **not** affected by the session-end transition and never reappear on resume — only `unresolved` requests are restored.
 

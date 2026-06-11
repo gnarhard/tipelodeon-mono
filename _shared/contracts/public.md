@@ -114,9 +114,37 @@ Tips-disabled behavior:
 - When project setting `is_accepting_tips=false`, client must send
   `tip_amount_cents=0`.
 - Tip-only submissions are rejected while tips are disabled.
+- The PAYMENT path is refused outright while tips are disabled — on the
+  snackbar, `createPaymentIntent` errors for every flow (a moneyless
+  project routes song requests through the tipless path); no
+  PaymentIntent (not even a $0 one) is ever created with tips off.
 - `min_tip_cents` is ignored while tips are disabled.
-- Tip and minimum-tip values with cents are rounded up to the next whole dollar
-  before validation and persistence.
+- Tip and minimum-tip values with cents are rounded to the NEAREST whole
+  dollar (half-up) before validation and persistence — never up-only, so
+  the audience is never charged more than the typed amount implies.
+  $4.49 → $4 (which may then fall below a floor and be refused);
+  $4.50 → $5.
+
+Minimum-tip floors (when tips are enabled):
+- The effective floor stacks via `AudienceTipFloor`:
+  `max(project min_tip_cents, per-song project_songs.min_tip_cents,
+  cooldown-bust amount when the song is on cooldown)`. The per-song
+  minimum is enforced on BOTH the public API and the snackbar.
+- The snackbar re-derives the per-song minimum and cooldown state from
+  the database at payment time; the values carried in the Alpine
+  open payload are display-only and never trusted for the floor.
+- Tip-only (Tip Jar) submissions have a $5 floor
+  (`AudienceTipFloor::TIP_ONLY_MIN_CENTS`), enforced server-side on
+  both surfaces even when the project minimum is $0 — a $0 "tip-only"
+  carries no money and is refused.
+- The snackbar's payment path refuses `tip_amount_cents <= 0`; $0
+  submissions belong to the tipless / free-claim flows.
+
+Requests-disabled behavior:
+- Song requests are refused while `is_accepting_requests=false`.
+- Tip-only submissions are EXEMPT from the requests gate on both the
+  public API and the snackbar — a project can run tip-jar-only with
+  requests off (and tips on).
 
 Payout setup gate:
 - If owner payout setup is incomplete, request creation returns `422`:
@@ -129,8 +157,14 @@ Payout setup gate:
 ```
 
 - Payout setup is only required when project `is_accepting_tips=true`.
-- If project requests are disabled independently, API returns `422` with
-  message only (no `code` field).
+- "Complete" means payout-account `status = enabled` — a connected but
+  onboarding-incomplete account does not pass. The audience project page
+  and the snackbar apply the same status gate to decide whether to show
+  the song list / tip UI at all, so a pending account never presents a
+  card form Stripe would refuse.
+- If project requests are disabled independently, song-request
+  submissions return `422` with message only (no `code` field);
+  tip-only submissions are exempt (see "Requests-disabled behavior").
 - If project tips are disabled independently, positive-tip and tip-only
   submissions return `422` with message only (no `code` field).
 
@@ -220,14 +254,24 @@ Cooldown and repeat-lock gates:
   Cooldowns are session-scoped: only performances in the currently active
   `PerformanceSession` count. When a new session is started (performer or
   `audience_auto`), all songs are off cooldown regardless of when they were
-  played in any prior session. If no session is active at request time the
-  audience-initiated flow auto-starts an `audience_auto` session, which is
-  empty by definition, so no song can be on cooldown in it.
+  played in any prior session.
   `cooldown_ends_at` is the `performed_at + cooldown_minutes` of the
   most recent `SongPerformance` row for the song in the active session.
 
-  The bust amount **replaces** `min_tip_cents` for that request; audience may
-  tip more. Payment fires at request time exactly like a normal request — the
+  Validation-before-session-mutation: cooldown/repeat checks read a
+  PEEK at the session the write would attach to (the active session,
+  else the grace-resumable one). The real resume/create happens only
+  after every refusal gate passes — a rate-limited, below-minimum, or
+  cooldown-refused submission never resumes a stopped show and never
+  creates a fresh session (fresh-session creation also expires pending
+  free-request claims, a side effect a refused write must not trigger).
+  When no session would exist yet, nothing can be on cooldown or
+  repeat-locked.
+
+  The bust amount JOINS the floor stack — the effective minimum becomes
+  `max(project min, per-song min, bust)`; a bust amount configured below
+  the project minimum never LOWERS the floor. Audience may tip more.
+  Payment fires at request time exactly like a normal request — the
   cooldown is request-time pricing keyed off past performance state, never a
   performance-conditioned payout. See `.agent-rules/15-patent-constraints.md`.
 
@@ -275,6 +319,15 @@ Audience reward thresholds:
   session starts or the grace window passes (scheduled sweep). They are
   loyalty milestones, never a stored balance
   (`.agent-rules/15-patent-constraints.md`, invariant 3).
+- Lowering a `free_request` threshold mid-show via
+  `PUT /me/projects/{id}/reward-thresholds/{id}` immediately grants a
+  catch-up pending claim to each active-session tipper who already
+  out-tipped the NEW threshold (at most one per member per edit,
+  mirroring the per-tip cap; `reward_earned` event tagged
+  `source: "threshold_lowered"`; no performer email — the performer
+  made the edit). Without this the recomputed earn math would silently
+  consume the already-paid crossing. Raising a threshold never revokes
+  an earned claim.
 - **Other reward types** (e.g. `free_cd`, `custom`): informational only.
   The project page shows "You've earned: {reward_label}! Approach the
   musician to receive your reward." The performer fulfills manually.

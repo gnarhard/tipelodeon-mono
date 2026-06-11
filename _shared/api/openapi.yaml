@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.6
-  version: 1.6.0
+  title: Tipelodeon API v1.7
+  version: 1.7.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -15,6 +15,21 @@ info:
     - Chart viewport preferences are per `(user, chart, page)`.
 
     Changelog:
+    - v1.7: Audience-flow guardrails. Tip floors stack server-side
+      (project min, per-song min, cooldown-bust via max — bust never
+      lowers the floor; per-song min now enforced on the public API);
+      tip-only $5 floor enforced server-side; amounts round to the
+      NEAREST whole dollar (was up-only); the snackbar payment path
+      refuses tips-off projects and $0 amounts; tip-only submissions
+      are exempt from the requests gate (tip-jar-only mode) on both
+      surfaces; payout gating requires status=enabled (not account
+      presence) on the page and snackbar; public-request validation
+      runs BEFORE session resume/create (rejected submissions cause no
+      session side effects); lowering a free_request threshold grants
+      catch-up claims immediately (one per active-session member per
+      edit); tip-only rows finalize as `played` at session end instead
+      of `unresolved`; cash tip entries capped at 1,000,000 cents and
+      list per_page clamped 1-100.
     - v1.6: Queue-item guardrails and reward-claim grace window.
       "Performer-added" is now `payment_provider: "none"` AND
       `audience_profile_id: null` — audience tipless submissions share
@@ -4457,7 +4472,7 @@ components:
       type: object
       required: [amount_cents, local_date, timezone]
       properties:
-        amount_cents: { type: integer, minimum: 1 }
+        amount_cents: { type: integer, minimum: 1, maximum: 1000000 }
         local_date: { type: string, format: date, example: '2026-03-15' }
         timezone: { type: string, example: America/Denver }
         note: { type: string, maxLength: 255, nullable: true }
