@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.5
-  version: 1.5.0
+  title: Tipelodeon API v1.6
+  version: 1.6.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -15,6 +15,24 @@ info:
     - Chart viewport preferences are per `(user, chart, page)`.
 
     Changelog:
+    - v1.6: Queue-item guardrails and reward-claim grace window.
+      "Performer-added" is now `payment_provider: "none"` AND
+      `audience_profile_id: null` — audience tipless submissions share
+      the `none` provider but are NOT performer-added. `PATCH`/`DELETE
+      /me/projects/{projectId}/queue/{queueRequest}` are documented and
+      restricted to performer-added items (403 otherwise); DELETE now
+      cancels (status `cancelled`) instead of erasing the row. The
+      content-report 422 applies only to performer-added items, so
+      audience tipless requests ARE reportable. `PUT /queue/reorder`
+      is REMOVED (it never persisted an order). `QueueRequest` gains
+      `score_cents`, `request_location`, `is_manual`, and `is_awarded`.
+      Queue scoring: paid requests score their tip; plain tipless
+      requests score 0 (FIFO); `awarded` free-claim requests score
+      above the current queue top. Pending free-request reward claims
+      now survive a session end through the 60-minute post-show grace
+      window (a resume keeps them claimable); they expire when the
+      next fresh session starts or a scheduled sweep observes the
+      window lapsed.
     - v1.5: Audience block/hide. Owner-only block, unblock, and
       blocked-list endpoints keyed on `audience_profiles.id`
       (`audience_profile_id`). Blocking hides the profile's existing
@@ -607,10 +625,14 @@ paths:
       tags: [Queue]
       summary: Get the active request queue for a project
       description: |
-        Returns the active request queue ordered by `tip_amount_cents DESC`,
-        then `created_at ASC`. Supports ETag caching for queue polling.
-        When `timezone` is supplied, `meta.daily_record_event` reports a new
-        project-scoped daily gross-tip record for the current local day.
+        Returns the active request queue ordered by `score_cents DESC`,
+        then `created_at ASC`. Paid requests score their tip amount;
+        plain tipless requests score 0 (so they queue FIFO below every
+        tipped request); `awarded` free-claim requests score above the
+        queue top at redemption time. Supports ETag caching for queue
+        polling. When `timezone` is supplied, `meta.daily_record_event`
+        reports a new project-scoped daily gross-tip record for the
+        current local day.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -656,6 +678,84 @@ paths:
                 $ref: '#/components/schemas/NoActiveSessionError'
         '422':
           description: Validation failed or originals are disabled
+
+  /me/projects/{projectId}/queue/{queueRequest}:
+    patch:
+      tags: [Queue]
+      summary: Update the tip amount on a performer-added queue item
+      description: |
+        Owner-only. Updates `tip_amount_cents` (normalized to whole
+        dollars; `score_cents` follows) on a performer-added queue item.
+
+        **Performer-added** means `payment_provider: "none"` AND
+        `audience_profile_id: null`. Audience tipless submissions share
+        the `none` provider but carry an audience profile and are NOT
+        editable — editing one would fabricate a tip the audience member
+        never paid. Such rows return `403`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/QueueRequestId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tip_amount_cents]
+              properties:
+                tip_amount_cents: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Queue item updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ManualQueueItemResponse'
+        '403':
+          description: Not a performer-added queue item
+        '404':
+          description: |
+            Not found (user lacks access to the project, or the request
+            does not belong to this project)
+        '422':
+          description: Validation failed, or the item is no longer active
+    delete:
+      tags: [Queue]
+      summary: Cancel a performer-added queue item
+      description: |
+        Owner-only. Cancels an active performer-added queue item: the
+        row transitions to status `cancelled` (it is NOT erased), leaves
+        the active queue, and never reappears — a session resume restores
+        only `unresolved` requests. A `request_voided` timeline event is
+        recorded.
+
+        Restricted to performer-added items (`payment_provider: "none"`
+        AND `audience_profile_id: null`). Audience requests — paid or
+        tipless — are the audience member's record and cannot be removed
+        this way (`403`); charges already made always stand.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/QueueRequestId'
+      responses:
+        '200':
+          description: Queue item cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Queue item deleted. }
+        '403':
+          description: Not a performer-added queue item
+        '404':
+          description: |
+            Not found (user lacks access to the project, or the request
+            does not belong to this project)
+        '422':
+          description: The item is no longer active
 
   /me/projects/{projectId}/requests/history:
     get:
@@ -793,11 +893,14 @@ paths:
         block. To stop a member's future submissions, block the audience
         profile instead.
 
-        **Manually-added requests** (performer-entered queue items,
-        `payment_provider: "none"`) are not reportable — their text is authored
-        by the performer, not the audience — and return `422`. Anonymous
-        digital rows (no audience profile) remain reportable because the
-        affordance targets the request id, not the audience profile.
+        **Performer-added requests** (manual queue items,
+        `payment_provider: "none"` AND `audience_profile_id: null`) are not
+        reportable — their text is authored by the performer, not the
+        audience — and return `422`. Audience tipless submissions share the
+        `none` provider but carry an audience profile; their notes ARE
+        audience-authored, so they remain reportable. Anonymous digital rows
+        (no audience profile, paid provider) also remain reportable because
+        the affordance targets the request id, not the audience profile.
 
         Idempotent: a given user can report a given request only once
         (deduplicated on `request_id` + `reported_by_user_id`). A duplicate
@@ -843,9 +946,9 @@ paths:
             not belong to this project)
         '422':
           description: |
-            The request is a manually-added (performer-entered) queue item
-            (`payment_provider: "none"`), which carries no audience content to
-            report.
+            The request is a performer-added queue item
+            (`payment_provider: "none"` with no audience profile), which
+            carries no audience content to report.
 
   /me/projects/{projectId}/wallet:
     get:
@@ -2455,6 +2558,12 @@ components:
       required: true
       schema: { type: integer }
       description: An audience request (`requests.id`), scoped to the project.
+    QueueRequestId:
+      in: path
+      name: queueRequest
+      required: true
+      schema: { type: integer }
+      description: A queue item (`requests.id`), scoped to the project.
     ReportingTimezone:
       in: query
       name: timezone
@@ -3527,14 +3636,34 @@ components:
         id: { type: integer }
         audience_profile_id: { type: integer, nullable: true }
         performance_session_id: { type: integer }
+        session_sequence: { type: integer, nullable: true }
         song:
           $ref: '#/components/schemas/SongSummary'
         tip_amount_cents: { type: integer }
+        score_cents:
+          type: integer
+          description: |
+            Queue-ordering score. Paid requests score their tip; plain
+            tipless requests score 0; `awarded` free-claim requests
+            score above the queue top at redemption time.
         tip_amount_dollars: { type: string }
         status:
           $ref: '#/components/schemas/SongRequestStatus'
         requester_name: { type: string, nullable: true }
         note: { type: string, nullable: true }
+        request_location: { type: string, nullable: true }
+        is_manual:
+          type: boolean
+          description: |
+            True only for performer-added items (`payment_provider:
+            "none"` AND no audience profile). Audience tipless
+            submissions share the `none` provider but are NOT manual.
+        is_awarded:
+          type: boolean
+          description: |
+            True for free-request reward redemptions
+            (`payment_provider: "awarded"`) while the project accepts
+            tips.
         played_at: { type: string, format: date-time, nullable: true }
         created_at: { type: string, format: date-time }
     BlockedAudienceProfile:

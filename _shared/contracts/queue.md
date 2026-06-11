@@ -7,7 +7,7 @@
 - Route prefix: `/api/v1/me/projects/{project_id}`
 - Queue read and history are accessible to every project member. Queue
   mutations (`POST /queue`, `PATCH /queue/{id}`, `DELETE /queue/{id}`,
-  `PUT /queue/reorder`, `POST /me/requests/{id}/played`,
+  `POST /me/requests/{id}/played`,
   `POST /me/reward-claims/{id}/delivered`) are owner-only; members receive
   `403`. The audience block endpoints
   (`POST`/`DELETE /audience/{audienceProfile}/block`,
@@ -29,7 +29,17 @@
 Get the active request queue for a project. **Supports ETag caching** for
 efficient polling.
 
-Queue is ordered by `tip_amount_cents DESC`, then `created_at ASC`.
+Queue is ordered by `score_cents DESC`, then `created_at ASC`. Scoring:
+
+- **Paid requests** score their tip amount (`score_cents =
+  tip_amount_cents`).
+- **Plain tipless requests** (audience submissions on a
+  moneyless/$0-minimum project — snackbar and public-API paths alike)
+  score `0`, so they queue FIFO below every tipped request.
+- **Awarded free-claim requests** (`payment_provider: "awarded"`) score
+  100 cents above the highest active score at redemption time — an
+  earned loyalty perk that deliberately jumps the queue.
+- **Performer-added items** score their entered tip amount.
 
 ### Query parameters
 
@@ -155,6 +165,8 @@ If the same session is later reopened via `POST /performances/{id}/resume`, ever
 
 Explicitly-`"cancelled"` requests (e.g., a performer or audience member removed a request mid-show) are **not** affected by the session-end transition and never reappear on resume — only `unresolved` requests are restored.
 
+Pending free-request reward claims are NOT expired by any of the three end paths. They survive the post-show grace window so a resume (performer-initiated or audience-auto) finds them still claimable — the resumed session is the same gig. They lapse when the project's next fresh session is created, or when the `rewards:expire-stale-free-claims` scheduled sweep observes the grace window has passed (see "Post-show grace window" in `performance-sessions.md`). Performer-delivered reward claims (`free_cd`, `custom`, …) are never expired by session boundaries.
+
 ---
 
 ## Add Item to Queue (Manual)
@@ -274,8 +286,15 @@ Clients should prompt the performer to start a session and retry.
 - **Method**: `PATCH`
 - **Path**: `/queue/{requestId}`
 
-Update the tip amount on a manual (performer-added) queue item. Only manual items
-(`is_manual=true`) that are still active can be edited.
+Update the tip amount on a manual (performer-added) queue item. Only manual
+items (`is_manual=true`) that are still active can be edited.
+
+**Performer-added** means `payment_provider = "none"` AND
+`audience_profile_id IS NULL`. Audience tipless submissions deliberately share
+the `"none"` provider (so the queue strip renders them as song requests), but
+they carry an audience profile and are **not** editable — editing one would
+fabricate a tip the audience member never paid. They return the same `403` as
+paid requests.
 
 ### Request body
 
@@ -373,13 +392,22 @@ Returned when the owning project does not expose
 
 ---
 
-## Delete Queue Request
+## Delete (Cancel) Queue Request
 
 - **Method**: `DELETE`
 - **Path**: `/queue/{requestId}`
 
-Permanently remove an active request from the queue. Unlike marking as played,
-deleted requests do not appear in history. Owner-only — members receive `403`.
+Cancel an active **performer-added** queue item. The row is NOT erased: it
+transitions to `status = "cancelled"`, leaves the active queue via the status
+filter, and never reappears — session resume restores only `"unresolved"`
+requests. A `request_voided` timeline event is recorded. Owner-only — members
+receive `403`.
+
+Restricted to performer-added items (`payment_provider = "none"` AND
+`audience_profile_id IS NULL`). Audience requests — paid or tipless — are the
+audience member's record and cannot be removed this way; charges already made
+always stand (credit-at-request-time,
+`.agent-rules/15-patent-constraints.md`).
 
 ### Success response (`200`)
 
@@ -393,70 +421,19 @@ deleted requests do not appear in history. Owner-only — members receive `403`.
 
 **User does not have access to project (`404`)**
 
+**Not a performer-added queue item (`403`)**
+
+```json
+{
+  "message": "Only manual queue items can be deleted."
+}
+```
+
 **Item already played (`422`)**
 
 ```json
 {
   "message": "Only active queue items can be deleted."
-}
-```
-
----
-
-## Reorder Queue
-
-- **Method**: `PUT`
-- **Path**: `/queue/reorder`
-
-Set a custom display order for the active queue. When a custom order is set, it
-takes precedence over the default tip-based sort. New requests that arrive after
-reordering are appended to the end of the custom order.
-
-### Request body
-
-```json
-{
-  "request_ids": [3, 1, 2]
-}
-```
-
-`request_ids` must contain exactly the set of currently active request IDs. Any
-mismatch (missing or extra IDs) returns `422`.
-
-### Success response (`200`)
-
-```json
-{
-  "message": "Queue reordered.",
-  "data": [
-    {
-      "id": 3,
-      "performance_session_id": 7,
-      "session_sequence": 4,
-      "song": { "id": 10, "title": "Bohemian Rhapsody", "artist": "Queen" },
-      "tip_amount_cents": 500,
-      "tip_amount_dollars": "5",
-      "status": "active",
-      "requester_name": null,
-      "note": null,
-      "is_manual": true,
-      "request_location": null,
-      "played_at": null,
-      "created_at": "2026-02-14T17:10:00+00:00"
-    }
-  ]
-}
-```
-
-### Error responses
-
-**User does not have access to project (`404`)**
-
-**ID mismatch (`422`)**
-
-```json
-{
-  "message": "request_ids must contain exactly the current active request IDs."
 }
 ```
 

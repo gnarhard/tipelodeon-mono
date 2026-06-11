@@ -249,14 +249,32 @@ Audience reward thresholds:
   their `audience_profile`. This value only grows; it never resets.
 - Claims are tracked in `audience_reward_claims` (one row per claim).
 - **Repeating thresholds**: the audience earns the reward at every multiple
-  of `threshold_cents`. Available claims = `floor(cumulative / threshold) -
-  claims_made`.
-- **Non-repeating thresholds**: earned once when cumulative >= threshold.
+  of `threshold_cents`. The earning basis differs by type:
+  - `free_request` thresholds earn against the member's **current-session
+    tip total** (the "$N tipped tonight" meter), so the milestone resets
+    each gig. A single tip earns at most ONE free request even when it
+    crosses several multiples at once (per-tip cap,
+    `.agent-rules/15-patent-constraints.md` invariant 3).
+  - Performer-delivered thresholds earn against **lifetime**
+    `cumulative_tip_cents`: available claims =
+    `floor(cumulative / threshold) - claims_made`, uncapped per tip (a
+    $90 tip on a $30 sticker threshold owes three stickers).
+- **Non-repeating thresholds**: earned once when lifetime cumulative >=
+  threshold.
 - **`free_request` type**: auto-claimable. The request page shows progress
   ("You're $X away from: Free Song!") and a claim button when earned.
   Free requests are submitted with `payment_provider=awarded` and
-  `tip_amount_cents=0`, bypassing tip and minimum-tip requirements.
-  Tip-only submissions cannot use a free request credit.
+  `tip_amount_cents=0`, bypassing tip and minimum-tip requirements. An
+  awarded request scores 100 cents above the highest active queue score
+  at redemption time (an earned perk); plain tipless requests score 0
+  and queue FIFO. Tip-only submissions cannot redeem an earned free
+  request.
+- Earned-but-unredeemed `free_request` claims are scoped to the gig plus
+  its 60-minute post-show grace window: they survive a session end and
+  stay claimable if the session resumes, then lapse when the next fresh
+  session starts or the grace window passes (scheduled sweep). They are
+  loyalty milestones, never a stored balance
+  (`.agent-rules/15-patent-constraints.md`, invariant 3).
 - **Other reward types** (e.g. `free_cd`, `custom`): informational only.
   The project page shows "You've earned: {reward_label}! Approach the
   musician to receive your reward." The performer fulfills manually.
