@@ -50,7 +50,9 @@ as the moment an individual cash tip was received.
 
 **Validation Rules:**
 - `performance_session_id`: required, integer, must belong to the project (422 otherwise)
-- `amount_cents`: required, integer, min 1
+- `amount_cents`: required, integer, min 1, max 1,000,000 ($10,000 per
+  entry — a fat-finger guard for cents-typed-as-dollars; the value is
+  self-reported and moves no money)
 - `local_date`: required, date format `Y-m-d`
 - `timezone`: required, valid IANA timezone identifier
 - `note`: optional, string, max 255 characters
@@ -106,7 +108,9 @@ Update a previously recorded cash tip bucket total.
 
 **Validation Rules:**
 - `performance_session_id`: required, integer, must belong to the project (422 otherwise)
-- `amount_cents`: required, integer, min 1
+- `amount_cents`: required, integer, min 1, max 1,000,000 ($10,000 per
+  entry — a fat-finger guard for cents-typed-as-dollars; the value is
+  self-reported and moves no money)
 - `local_date`: required, date format `Y-m-d`
 - `timezone`: required, valid IANA timezone identifier
 - `note`: optional, string, max 255 characters
@@ -152,7 +156,7 @@ List cash tip bucket totals for the project, optionally filtered by local date.
 | Param | Type | Description |
 |-------|------|-------------|
 | `local_date` | string | Filter to a single date (`YYYY-MM-DD`). Optional. |
-| `per_page` | int | Items per page (default: 50) |
+| `per_page` | int | Items per page (default: 50, clamped to 1–100) |
 | `page` | int | Page number |
 
 ### Success response (`200`)
