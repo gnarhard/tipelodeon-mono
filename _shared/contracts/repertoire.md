@@ -1,4 +1,4 @@
-# Repertoire API Contracts (v1.6)
+# Repertoire API Contracts (v1.7)
 
 ## Scope and auth
 
@@ -7,6 +7,35 @@
 - Route prefix: `/api/v1/me/projects/{project_id}`.
 
 ---
+
+## Catalog ownership
+
+- The `songs` table (the deduplicated global catalog) is **admin/system-owned**:
+  enrichment, backfill, integrity review, and verification write it. The only
+  user-originated writes are (a) first creation of a brand-new Song (the
+  create/import that mints the row also seeds its metadata) and (b) mashups,
+  which own a private Song row outside the dedup system. User flows may also
+  restore a soft-deleted Song via find-or-create.
+- `project_songs` is the complete project-owned copy of the catalog song.
+  Repertoire edits of any field land there; an existing `songs` row is never
+  mutated by a repertoire or import endpoint.
+- **Catalog snapshot fields** — `album`, `era`, `original_musical_key`,
+  `duration_in_seconds` — are full per-row copies (not read-time fallbacks):
+  - Seeded from the catalog Song when the `project_songs` row is created
+    (clone/copy/member-sync paths copy the source row's values instead).
+  - Later catalog enrichment/backfill fills **blanks only** on existing rows
+    (`ProjectSongCatalogFillService`); a non-null project value is never
+    overwritten. Clearing a snapshot field to null re-opens it to future
+    catalog fills (a cleared column is indistinguishable from a never-seeded
+    blank).
+  - "Verified" is a **seed-time guarantee**, not a live link: admin
+    corrections to a verified Song do not rewrite existing repertoires.
+- Override fields with read-time fallback (`theme`, `tempo_bpm`, `energy`,
+  `danceability`, `genre`, `time_signature`) keep their existing
+  `project_songs.X ?? songs.X` semantics documented below.
+- Because users no longer write the catalog, repertoire edits can no longer
+  trip the Song verification-invalidating hook (de-verification now only
+  happens through admin/system writes).
 
 ## Theme metadata
 
@@ -187,6 +216,11 @@ Reference links:
 - Supports theme, `instrumental`, `original`, `mashup`, `is_public`,
   `learned`, `version_label`, and project-song `notes` in request and
   response payloads.
+- Also accepts the catalog snapshot fields `era`, `original_musical_key`
+  (new in v1.7 — previously ignored on create), and `duration_in_seconds`:
+  provided values land on the new `project_songs` row; omitted ones are
+  seeded from the catalog Song. For a brand-new Song they additionally seed
+  the catalog row itself (first creation — see "Catalog ownership").
 - `version_label` is optional (nullable string, max 50 chars). When provided,
   the duplicate check compares both `song_id` and `version_label` instead of
   `song_id` alone, allowing multiple versions of the same song.
@@ -207,10 +241,18 @@ Limit error:
 ### Update
 - `PUT /repertoire/{projectSongId}`
 - Supports `title`, `artist`, theme, `instrumental`, `original`, `mashup`,
-  `is_public`, `learned`, and project-song `notes` updates at project
-  override level.
-- Title/artist changes are saved to `project_songs` only (the `songs` table
-  and `song_id` are not modified).
+  `is_public`, `learned`, project-song `notes`, and the catalog snapshot
+  fields `era`, `original_musical_key`, `duration_in_seconds` (plus the
+  override fields `energy`, `danceability`, `genre`, `time_signature`,
+  `tempo_bpm`, `performed_musical_key`, `tuning`, `capo`, `min_tip_cents`,
+  `needs_improvement`).
+- Every field is saved to `project_songs` only — including era / original
+  key / duration, which used to route to the catalog Song (see "Catalog
+  ownership"). The `songs` table and `song_id` are never modified.
+- Of the listed fields, only energy / danceability / genre / time_signature
+  / tempo_bpm (and theme) are catalog-fallback override fields;
+  performed_musical_key, tuning, capo, min_tip_cents, and needs_improvement
+  are purely project-local with no songs-table counterpart.
 - When `learned` flips to `false`, the backend ensures the canonical Song's
   system reference links exist (idempotent; existing rows are untouched).
 
@@ -224,11 +266,12 @@ Project-song notes:
 
 ### Bulk update
 - `POST /repertoire/bulk-update`
-- Body: `{ project_song_ids: [int], fields: { is_public?, learned?, mashup?, instrumental?, original? } }`
+- Body: `{ project_song_ids: [int], fields: { is_public?, learned?, mashup?, instrumental?, original?, energy?, danceability?, time_signature?, era?, genre?, theme? } }`
 - Limits: 1–500 IDs per request; at least one whitelisted field is required.
 - Access: IDs outside the current user/project are silently skipped.
 - Response: `{ "message": "Updated N song(s).", "updated_count": N }`.
-- Single DB transaction.
+- Single DB transaction. All fields — era included — land on `project_songs`
+  in one mass update; the catalog Song is never written.
 - This replaces the old per-row `demote_to_learn` flag — callers now flip
   `learned: false` through either this bulk endpoint or the standard
   update endpoint.
@@ -266,9 +309,11 @@ Project-song notes:
     copied onto the corresponding cloned chart, rewritten to the caller as
     `owner_user_id`. Only honored when `include_charts=true`; silently
     ignored otherwise.
-- Copied metadata mirrors the source `project_song` (title, artist, energy,
-  genre, theme, instrumental, original, mashup, is_public, performed key,
-  tuning, capo, notes, needs_improvement). `learned` is preserved.
+- Copied metadata mirrors the source `project_song` (title, artist, album,
+  energy, danceability, genre, era, theme, time_signature, instrumental,
+  original, mashup, is_public, performed key, original key, tuning, capo,
+  tempo_bpm, duration, min_tip_cents, notes, needs_improvement). `learned`
+  is preserved.
   Performance counters (`performance_count`, `last_performed_at`) are
   **not** copied.
 - Response `201`:
@@ -493,7 +538,9 @@ Poll response (`200`):
 
 - Finalizes the import with user-confirmed metadata.
 - Creates Song records (findOrCreate), ProjectSong records, and links charts.
-- Applies user-confirmed metadata to Song records (fills null fields only).
+- Applies user-confirmed metadata to Song records only when confirm just
+  created the Song (first creation — see "Catalog ownership"); existing
+  catalog rows are never written.
 - Throttle: `throttle:chart-uploads`.
 
 Request:
@@ -511,7 +558,9 @@ Request:
       "is_public": true,
       "learned": true,
       "theme": "story",
-      "energy_level": "high",
+      "energy": 85,
+      "danceability": 60,
+      "time_signature": "4/4",
       "era": "1970s",
       "genre": "Rock",
       "original_musical_key": "Bb",
@@ -540,11 +589,16 @@ edit, since absent keys fall back to the column default:
   `is_public`/`learned` → `true`).
 - **Catalog Song, new songs only** (`applySongMetadata`, written only when
   the `Song` is freshly created so an import never mutates a shared catalog
-  row other projects rely on): `energy_level`, `genre`, `theme`, `tempo_bpm`.
-  For an existing Song these are instead stored as overrides on the
-  `ProjectSong` row.
-- **Catalog Song, always** (intrinsic facts, written unconditionally):
-  `era`, `original_musical_key`, `duration_in_seconds`.
+  row other projects rely on): `energy`, `danceability`, `time_signature`,
+  `genre`, `theme`, `tempo_bpm`, `era`, `album`, `original_musical_key`,
+  `duration_in_seconds`.
+  For an existing Song, the override fields (`energy`, `danceability`,
+  `time_signature`, `genre`, `theme`, `tempo_bpm`) are stored as overrides
+  on the `ProjectSong` row and
+  the snapshot fields (`era`, `album`, `original_musical_key`,
+  `duration_in_seconds`) are stored as the `ProjectSong` snapshot values —
+  this also applies when the catalog Song is admin-verified (the user's
+  values are kept locally; the verified row is untouched).
 
 `chart_id` is consumed for chart linking (not stored on the song row).
 `version_label` is reserved at confirm (`ProjectSong` rows are created with
@@ -593,7 +647,9 @@ Response (`200`):
 ```
 
 Behavior:
-- Copies only the selected source `project_song` rows and their overrides.
+- Copies only the selected source `project_song` rows and their overrides
+  (including the catalog snapshot fields album / era / original key /
+  duration, so per-project edits survive the copy).
 - `source_project_song_ids` must all belong to `source_project_id`.
 - If `include_charts=true`, copies linked chart PDFs and rendered chart images
   for the selected songs into the destination project.
