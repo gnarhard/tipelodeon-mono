@@ -1546,11 +1546,12 @@ paths:
   /me/projects/{projectId}/setlists/{setlistId}/sets/generate-ai:
     post:
       tags: [Setlists]
-      summary: Generate AI-powered sets in an existing setlist
+      summary: Queue AI-powered set generation in an existing setlist
       description: |
         Uses AI to select songs from the project repertoire based on
-        natural language prompts for each set. Creates multiple sets
-        in one call.
+        natural language prompts for each set. Generation runs async on
+        a queue (a long show outlives a sane request timeout), so this
+        returns 202 with a job id the client polls for the result.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -1563,14 +1564,49 @@ paths:
             schema:
               $ref: '#/components/schemas/AiSetGenerateRequest'
       responses:
-        '201':
-          description: AI sets generated
+        '202':
+          description: Generation queued
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AiSetGenerateResponse'
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      job_id: { type: integer }
+                      status: { type: string, enum: [pending] }
         '422':
-          description: Validation failed, empty repertoire, or AI generation failed
+          description: Validation failed
+
+  /me/projects/{projectId}/setlists/{setlistId}/sets/generate-ai/{jobId}:
+    get:
+      tags: [Setlists]
+      summary: Poll the status of a queued AI set generation
+      description: |
+        Reports the lifecycle of a generation queued via the POST
+        endpoint. Once `status` is `completed` the payload carries the
+        created sets and generation meta (the old synchronous response
+        body); `failed` carries a user-facing `error` message. Empty
+        repertoire and provider failures surface here as `failed`, not
+        as a 422 on the POST.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - $ref: '#/components/parameters/SetlistId'
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Current generation job state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiSetGenerationStatusResponse'
+        '404':
+          description: Job not found, or it belongs to another setlist/user
 
   /me/projects/{projectId}/setlists/{setlistId}/sets/{setId}/songs/import-text:
     post:
@@ -3975,18 +4011,32 @@ components:
                 minLength: 3
                 maxLength: 500
                 description: Natural language description of the desired set vibe, including desired song count.
-    AiSetGenerateResponse:
+    AiSetGenerationStatusResponse:
       type: object
       properties:
         data:
-          type: array
-          items:
-            $ref: '#/components/schemas/SetlistSetResource'
-        meta:
           type: object
           properties:
+            job_id: { type: integer }
+            status:
+              type: string
+              enum: [pending, running, completed, failed]
+              description: |
+                Clients must treat unknown values as still-running so the
+                server can add intermediate states without breaking older
+                clients out of their poll loop.
+            error:
+              type: string
+              nullable: true
+              description: User-facing failure message when status is failed.
+            sets:
+              type: array
+              description: Present only when status is completed.
+              items:
+                $ref: '#/components/schemas/SetlistSetResource'
             generation:
               type: object
+              description: Present only when status is completed.
               properties:
                 generation_version: { type: string }
                 provider: { type: string }
