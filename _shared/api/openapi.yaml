@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.5
-  version: 1.5.0
+  title: Tipelodeon API v1.6
+  version: 1.6.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -15,6 +15,17 @@ info:
     - Chart viewport preferences are per `(user, chart, page)`.
 
     Changelog:
+    - v1.6: ProjectSong owns its catalog snapshot. `era`,
+      `original_musical_key`, `duration_in_seconds`, and the newly
+      documented `album` response field on RepertoireSong (already emitted
+      by older servers) are project-owned copies of the
+      catalog Song: seeded at repertoire-row creation, blanks filled by
+      later catalog enrichment, and user edits stored on `project_songs`
+      only. The shared `songs` catalog is admin/system-owned; the only
+      user-originated catalog write is first creation of a brand-new
+      Song (mashups own a private row). `original_musical_key` is now
+      accepted on repertoire create as well as update. Field list is
+      otherwise unchanged — clients need no payload changes.
     - v1.5: Audience block/hide. Owner-only block, unblock, and
       blocked-list endpoints keyed on `audience_profiles.id`
       (`audience_profile_id`). Blocking hides the profile's existing
@@ -3843,7 +3854,21 @@ components:
           description: When false, the song is conceptually "to-learn".
         is_public: { type: boolean, default: true }
         energy_level: { type: string, nullable: true }
-        era: { type: string, nullable: true }
+        era:
+          type: string
+          nullable: true
+          description: >-
+            Project-owned catalog snapshot: seeded from the catalog Song when
+            the repertoire row is created, blanks filled by later catalog
+            enrichment, edits stored here and never written back to the
+            catalog.
+        album:
+          type: string
+          nullable: true
+          description: >-
+            Project-owned catalog snapshot (seed-time copy; see era).
+            Read-only today — no user endpoint writes it outside
+            bulk-import confirm.
         genre: { type: string, nullable: true }
         song:
           $ref: '#/components/schemas/SongSummary'
@@ -3851,13 +3876,21 @@ components:
           type: integer
           nullable: true
         performed_musical_key: { type: string, nullable: true }
-        original_musical_key: { type: string, nullable: true }
+        original_musical_key:
+          type: string
+          nullable: true
+          description: >-
+            Project-owned catalog snapshot (seed-time copy; see era). The key
+            the song was originally written in, as this project knows it.
         tuning: { type: string, nullable: true }
         capo: { type: integer, nullable: true }
         tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
         original_tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
         notes: { type: string, nullable: true }
-        duration_in_seconds: { type: integer, nullable: true }
+        duration_in_seconds:
+          type: integer
+          nullable: true
+          description: Project-owned catalog snapshot (seed-time copy; see era).
         needs_improvement: { type: boolean }
         performance_count: { type: integer }
         request_count:
@@ -3916,10 +3949,21 @@ components:
         learned: { type: boolean, nullable: true }
         is_public: { type: boolean, nullable: true }
         energy_level: { type: string, nullable: true }
-        era: { type: string, nullable: true }
+        era:
+          type: string
+          nullable: true
+          description: >-
+            Writes the project-owned snapshot on project_songs; the shared
+            songs catalog is never touched (the only user-originated catalog
+            write is first creation of a brand-new Song).
         genre: { type: string, nullable: true }
         performed_musical_key: { type: string, nullable: true }
-        original_musical_key: { type: string, nullable: true }
+        original_musical_key:
+          type: string
+          nullable: true
+          description: >-
+            Writes the project-owned snapshot on project_songs (accepted on
+            both create and update); never written back to the catalog.
         tuning: { type: string, nullable: true }
         capo: { type: integer, nullable: true }
         tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
@@ -3927,7 +3971,12 @@ components:
           type: string
           nullable: true
           maxLength: 3000
-        duration_in_seconds: { type: integer, nullable: true }
+        duration_in_seconds:
+          type: integer
+          nullable: true
+          description: >-
+            Writes the project-owned snapshot on project_songs; never written
+            back to the catalog.
     BulkEnrichRequest:
       type: object
       required: [songs]
