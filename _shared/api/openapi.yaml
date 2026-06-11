@@ -2085,7 +2085,7 @@ paths:
               type: object
               required: [zoom_scale, offset_dx, offset_dy]
               properties:
-                zoom_scale: { type: number }
+                zoom_scale: { type: number, minimum: 0.25, maximum: 4 }
                 offset_dx: { type: number }
                 offset_dy: { type: number }
       responses:
@@ -3010,7 +3010,7 @@ components:
           additionalProperties:
             type: object
             properties:
-              zoom_scale: { type: number }
+              zoom_scale: { type: number, minimum: 0.25, maximum: 4 }
               offset_dx: { type: number }
               offset_dy: { type: number }
     ProjectMemberPreferenceUpdateRequest:
