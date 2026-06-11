@@ -103,6 +103,9 @@ or `enriching` past a TTL are moved to `failed` by `charts:reap-stale-imports`.
 }
 ```
 
+- `zoom_scale` is clamped to **0.25–4.0** (1.0 = fit to viewport; below 1.0
+  shrinks the chart past fit). `offset_dx` / `offset_dy` are unbounded.
+
 ---
 
 ## Chart Annotations
