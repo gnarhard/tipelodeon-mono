@@ -137,7 +137,7 @@ returned. Matching includes both the queue payload and the record-event state.
 Every `requests` row is linked to a `performance_session` — the column is NOT NULL. Two rules:
 
 - **Performer-initiated writes** (`POST /queue`, `POST /me/requests/{id}/played`, repertoire mark-played) require an active performance session for the project. If none is active, the endpoint returns `409 Conflict` with body `{"error": "no_active_session"}`. The client is expected to prompt the performer to start a session and retry.
-- **Audience-initiated writes** (public request / Stripe webhook) auto-start a `start_source = "audience_auto"` free-play session on the project if none is active. The audience member is never rejected because the performer hasn't started a session — money is never turned away.
+- **Audience-initiated writes** (public request / Stripe webhook) auto-start a `start_source = "audience_auto"` free-play session on the project if none is active — unless the project's last session ended within the past 60 minutes, in which case that session is resumed and the write is attributed to it (see "Post-show grace window" in `performance-sessions.md`). The audience member is never rejected because the performer hasn't started a session — money is never turned away.
 
 If the performer later starts a real session (setlist or free-play) while an `audience_auto` session is active, the existing session is **adopted**: `start_source` flips to `"performer"`, `setlist_id`/`mode`/`location`/`timezone` are written through to the existing row. There is no duplicate session and no orphan writes.
 

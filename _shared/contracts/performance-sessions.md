@@ -23,8 +23,12 @@ A `performance_sessions` row groups every metric (request, song performance, tip
 ## `start_source` semantics
 
 - **`performer`** — performer pressed Start (setlist or free play). This is the default on `POST /api/v1/me/projects/{project}/performances/start`.
-- **`audience_auto`** — auto-started by the server on the first audience write (Stripe webhook create, or public request submit) when no session was active. Always `mode = "free_play"`, no setlist. Idle audience-auto sessions end automatically after 30 minutes of no child writes (`ended_reason = "inactivity"`).
+- **`audience_auto`** — auto-started by the server on the first audience write (Stripe webhook create, or public request submit) when no session was active and no session ended within the last hour (see "Post-show grace window"). Always `mode = "free_play"`, no setlist. Idle audience-auto sessions end automatically after 30 minutes of no child writes (`ended_reason = "inactivity"`).
 - **`backfill`** — one synthetic session per project, created during the initial one-time data migration to absorb rows that existed before session linkage was mandatory. `is_synthetic = true`. Excluded from stats by default.
+
+## Post-show grace window
+
+When an audience write (Stripe webhook tip create, or public request submit) arrives with **no active session** but the project's most recent non-synthetic, non-deleted session has `ended_at` within the last **60 minutes**, the server **resumes that session** instead of starting a new `audience_auto` one — the tip/request is attributed to the just-ended performance. Resume here has the standard semantics (see "Resume restores unresolved queue items" below): `is_active` flips back to `true`, `ended_at` / `ended_reason` clear, `started_at` and `start_source` are preserved, and `unresolved` requests on the session return to `active`. The resumed session is subject to the normal auto-end rules, so it closes again after inactivity. If the last session ended more than 60 minutes ago, a fresh `audience_auto` session starts as before.
 
 ## Adoption
 
