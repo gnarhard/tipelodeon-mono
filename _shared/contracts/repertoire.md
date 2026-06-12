@@ -211,6 +211,10 @@ Limit error:
   override level.
 - Title/artist changes are saved to `project_songs` only (the `songs` table
   and `song_id` are not modified).
+- `version_label` rename returns `409` when the caller already has another
+  row for the same song with the target label in this project. The check is
+  scoped to the unique `(project_id, user_id, song_id, version_label)`
+  index — labels held only by other members never block a rename.
 - When `learned` flips to `false`, the backend ensures the canonical Song's
   system reference links exist (idempotent; existing rows are untouched).
 
@@ -224,9 +228,40 @@ Project-song notes:
 
 ### Bulk update
 - `POST /repertoire/bulk-update`
-- Body: `{ project_song_ids: [int], fields: { is_public?, learned?, mashup?, instrumental?, original? } }`
+- Body: `{ project_song_ids: [int], fields: { ... } }` — `fields` accepts
+  every editable song field, all optional:
+  - `title`, `artist` — string, max 255. NOT nullable: a title/artist can be
+    overwritten but never cleared.
+  - `version_label` — nullable string, max 50; `null` is normalized to `''`
+    (primary version). Collision-skip rule below.
+  - `original_musical_key`, `performed_musical_key` — nullable `MusicalKey`
+    enum value (`C` … `Bm`, sharp/flat spellings distinct).
+  - `tuning` — nullable string, max 50.
+  - `capo` — nullable integer, 0–12.
+  - `tempo_bpm` — nullable integer, 30–300.
+  - `duration_in_seconds` — nullable integer, 0–86400.
+  - `notes` — nullable string, max 3000.
+  - `min_tip_cents` — nullable integer, 0–50000.
+  - `energy`, `danceability` — nullable integer, 0–100.
+  - `time_signature` — nullable string matching `^\d{1,2}/\d{1,2}$`.
+  - `era` — nullable canonical era label (`_shared/constants/eras.json`);
+    free-text input is normalized first, as on the single update.
+  - `genre` — nullable canonical genre label (`_shared/constants/genres.json`).
+  - `theme` — nullable canonical theme enum value.
+  - `is_public`, `learned`, `mashup`, `instrumental`, `original` — boolean.
+- Omitted keys are left untouched; for nullable fields an explicit `null`
+  clears the value.
 - Limits: 1–500 IDs per request; at least one whitelisted field is required.
 - Access: IDs outside the current user/project are silently skipped.
+- Every write lands on `project_songs` only — the shared `songs` table is
+  never modified.
+- Version-label collision skip: when `fields.version_label` is present, rows
+  that would violate the unique
+  `(project_id, user_id, song_id, version_label)` index are excluded from
+  the update entirely — rows whose `song_id` appears more than once in the
+  selection, and rows whose target label already exists on a row outside the
+  selection. Excluded rows receive no field changes (not even other fields)
+  and do not count in `updated_count`.
 - Response: `{ "message": "Updated N song(s).", "updated_count": N }`.
 - Single DB transaction.
 - This replaces the old per-row `demote_to_learn` flag — callers now flip
