@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.7
-  version: 1.7.0
+  title: Tipelodeon API v1.8
+  version: 1.8.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -15,6 +15,17 @@ info:
     - Chart viewport preferences are per `(user, chart, page)`.
 
     Changelog:
+    - v1.8: Full-field repertoire bulk update. `POST
+      /me/projects/{projectId}/repertoire/bulk-update` accepts every
+      editable song field (22 keys: title/artist non-nullable; nullable
+      version_label, original/performed keys, tuning, capo, tempo_bpm,
+      duration_in_seconds, notes, min_tip_cents alongside the existing
+      11 categorization/flag fields); explicit `null` clears nullable
+      fields; rows whose new version_label would violate the
+      `(project_id, user_id, song_id, version_label)` unique index are
+      silently excluded (no fields applied, not counted in
+      `updated_count`). The single-song PUT documents its 409 label
+      collision as scoped to the caller's own rows.
     - v1.7: Audience-flow guardrails. Tip floors stack server-side
       (project min, per-song min, cooldown-bust via max — bust never
       lowers the floor; per-song min now enforced on the public API);
@@ -1226,6 +1237,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SingleRepertoireResponse'
+        '409':
+          description: >-
+            `version_label` rename collides with another of the caller's
+            own rows for the same song in this project. Scoped to the
+            unique `(project_id, user_id, song_id, version_label)` index —
+            labels held only by other members do not block a rename.
     delete:
       tags: [Repertoire]
       summary: Delete repertoire song
@@ -1542,12 +1559,25 @@ paths:
   /me/projects/{projectId}/repertoire/bulk-update:
     post:
       tags: [Repertoire]
-      summary: Bulk update boolean flags on repertoire songs
-      description: >-
-        Applies the same boolean field change (`is_public`, `learned`,
-        `mashup`, `instrumental`) to many repertoire songs in a single
-        transaction. IDs that do not belong to the current user/project
-        are silently skipped. Replaces the legacy `demote_to_learn` flag.
+      summary: Bulk update editable fields on repertoire songs
+      description: |
+        Applies the same field changes to many repertoire songs in a
+        single transaction. Every editable song field is supported (see
+        `fields` below). Omitted keys are left untouched; for nullable
+        fields an explicit `null` clears the value. Every write lands on
+        `project_songs` only — the shared `songs` table is never
+        modified. IDs that do not belong to the current user/project are
+        silently skipped.
+
+        When `fields.version_label` is present, rows that would violate
+        the unique `(project_id, user_id, song_id, version_label)` index
+        are excluded from the update entirely: rows whose `song_id`
+        appears more than once in the selection, and rows whose target
+        label already exists on a row outside the selection. Excluded
+        rows receive no field changes (not even other fields) and do not
+        count toward `updated_count`.
+
+        Replaces the legacy `demote_to_learn` flag.
       security: [{ bearerAuth: [] }]
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -1569,13 +1599,70 @@ paths:
                   type: object
                   description: At least one of the whitelisted keys is required.
                   properties:
+                    title:
+                      type: string
+                      maxLength: 255
+                      description: Not nullable — a title cannot be cleared.
+                    artist:
+                      type: string
+                      maxLength: 255
+                      description: Not nullable — an artist cannot be cleared.
+                    version_label:
+                      type: string
+                      nullable: true
+                      maxLength: 50
+                      description: >-
+                        `null` is normalized to the empty string (primary
+                        version). See the collision-skip rule in the
+                        endpoint description.
+                    energy: { type: integer, nullable: true, minimum: 0, maximum: 100 }
+                    danceability: { type: integer, nullable: true, minimum: 0, maximum: 100 }
+                    time_signature:
+                      type: string
+                      nullable: true
+                      pattern: '^\d{1,2}/\d{1,2}$'
+                    era:
+                      type: string
+                      nullable: true
+                      description: >-
+                        Canonical era label (see `_shared/constants/eras.json`);
+                        free-text input ("1970s", "70s") is normalized
+                        before validation, as on the single update.
+                    genre:
+                      type: string
+                      nullable: true
+                      description: >-
+                        Canonical genre label (see
+                        `_shared/constants/genres.json`).
+                    theme:
+                      allOf:
+                        - $ref: '#/components/schemas/SongTheme'
+                      nullable: true
+                    instrumental: { type: boolean }
+                    original: { type: boolean }
+                    mashup: { type: boolean }
                     is_public: { type: boolean }
                     learned: { type: boolean }
-                    mashup: { type: boolean }
-                    instrumental: { type: boolean }
+                    performed_musical_key:
+                      allOf:
+                        - $ref: '#/components/schemas/MusicalKey'
+                      nullable: true
+                    original_musical_key:
+                      allOf:
+                        - $ref: '#/components/schemas/MusicalKey'
+                      nullable: true
+                    tuning: { type: string, nullable: true, maxLength: 50 }
+                    capo: { type: integer, nullable: true, minimum: 0, maximum: 12 }
+                    tempo_bpm: { type: integer, nullable: true, minimum: 30, maximum: 300 }
+                    min_tip_cents: { type: integer, nullable: true, minimum: 0, maximum: 50000 }
+                    notes: { type: string, nullable: true, maxLength: 3000 }
+                    duration_in_seconds: { type: integer, nullable: true, minimum: 0, maximum: 86400 }
       responses:
         '200':
-          description: Rows updated; response includes `updated_count`.
+          description: >-
+            Rows updated; response includes `updated_count`
+            (scope-skipped and version-label-collision rows are not
+            counted).
         '422':
           description: Validation failed (missing fields, too many IDs, etc.)
         '404':
@@ -3954,6 +4041,48 @@ components:
           christmas,
           halloween,
           patriotic,
+        ]
+    MusicalKey:
+      type: string
+      description: >-
+        Canonical musical key. Sharp and flat spellings are distinct
+        values; minor keys carry an `m` suffix.
+      enum:
+        [
+          C,
+          Cm,
+          'C#',
+          'C#m',
+          Db,
+          Dbm,
+          D,
+          Dm,
+          'D#',
+          'D#m',
+          Eb,
+          Ebm,
+          E,
+          Em,
+          F,
+          Fm,
+          'F#',
+          'F#m',
+          Gb,
+          Gbm,
+          G,
+          Gm,
+          'G#',
+          'G#m',
+          Ab,
+          Abm,
+          A,
+          Am,
+          'A#',
+          'A#m',
+          Bb,
+          Bbm,
+          B,
+          Bm,
         ]
     RepertoireSong:
       type: object
