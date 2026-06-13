@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.5)
+# Charts API Contracts (v1.6)
 
 ## Scope and auth
 
@@ -144,7 +144,13 @@ Annotations are **project-song specific** via the chart that carries them:
       "text": "Capo 3",
       "position": { "x": 0.5, "y": 0.1 },
       "color_value": 4294198070,
-      "font_size": 0.04
+      "font_size": 0.04,
+      "font_family": "Caveat",
+      "bold": false,
+      "italic": false,
+      "underline": false,
+      "strikethrough": false,
+      "align": "left"
     }
   ]
 }
@@ -161,6 +167,14 @@ Notes:
   is also stored as a fraction of canvas height in `[0.005, 0.5]`.
 - `texts[].id` is a stable client-generated identifier so the client can
   target a specific label across moves, edits, and undo entries.
+- **(v1.6)** Label styling is optional so older clients that omit it keep
+  working; the server persists and returns whatever is sent:
+  - `texts[].font_family`: optional string, max 64; omitted/`null` means the
+    app's default typeface.
+  - `texts[].bold` / `italic` / `underline` / `strikethrough`: optional
+    booleans, default `false`.
+  - `texts[].align`: optional, one of `left` / `center` / `right` /
+    `justify`, default `left`.
 
 ### Bulk fetch saved annotations
 - **Method**: `GET`
