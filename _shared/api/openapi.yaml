@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.10
-  version: 1.10.0
+  title: Tipelodeon API v1.12
+  version: 1.12.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
@@ -15,6 +15,44 @@ info:
     - Chart viewport preferences are per `(user, chart, page)`.
 
     Changelog:
+    - v1.10: Online-only AI-lyric page insert. `POST
+      /me/charts/{chartId}/pages/lyrics` generates a lyric sheet
+      server-side (lyric cache → external lyric APIs → AI) and inserts it
+      as a single new page BEFORE a 0-based `position` (`== page_count`
+      appends), PRESERVING the chart's existing pages — unlike `POST
+      /me/charts/generate-lyrics`, which replaces a song-less chart's
+      source. Owner-only; shares the offline page ops' `op_id`
+      idempotency (a replay does NOT regenerate or re-insert), positional
+      side-data renumber for ALL owners, `has_renders` reset, and
+      re-render. Optional `title`/`artist` fall back to the chart's
+      `import_metadata`; optional `bypass_cache` re-sources fresh lyrics.
+      Coded errors beyond the shared page-op set: 429 `ai_limit_exceeded`,
+      422 `missing_song_details`, 502 `lyric_generation_failed` (chart
+      left untouched on a generation failure).
+    - v1.9: Offline-first chart page operations. Three owner-only
+      endpoints add/remove/reorder the pages of an existing chart, all
+      positions 0-based (page 0 = first page, matching the annotation
+      `page` param and the cache-manifest). `POST
+      /me/charts/{chartId}/pages` (multipart) inserts a single-page PDF
+      or image before `position` (`== page_count` appends) from source
+      `template|photo|upload` (+ `template_kind` for templates); `DELETE
+      /me/charts/{chartId}/pages/{page}` removes a 0-based page (422
+      `cannot_delete_last_page`); `PUT /me/charts/{chartId}/pages/reorder`
+      applies a 0-based permutation (`order[i]` = current index that
+      becomes new index `i`; identity is a no-op). Each op carries a
+      client `op_id` plus a required `Idempotency-Key`; a replayed op
+      returns current chart state without re-applying. The server
+      renumbers `chart_annotation_versions` + `chart_page_user_prefs`
+      (positional `page_number`) for ALL owners transactionally so ink
+      and zoom follow the page, resets `has_renders`, and re-renders.
+      Single-device positional reconciliation only — no
+      fingerprint/page_map/page_revision. Coded errors: 409
+      `chart_not_ready`, 422 `cannot_delete_last_page` /
+      `page_limit_reached` (255-page cap) / `file_too_large` (10MB) /
+      `storage_limit_exceeded`. `blank` template pages must carry faint
+      content (hairline border/guide line) or the renderer's
+      blank-page-skip drops them. AI-lyric pages are not a multipart add
+      `source`; they have a dedicated online-only insert (see v1.10).
     - v1.8: Full-field repertoire bulk update. `POST
       /me/projects/{projectId}/repertoire/bulk-update` accepts every
       editable song field (22 keys: title/artist non-nullable; nullable
@@ -2297,6 +2335,299 @@ paths:
         '200':
           description: Viewport saved
 
+  /me/charts/{chartId}/pages:
+    post:
+      tags: [Charts]
+      summary: Add a page to a chart (offline-first, owner-only)
+      description: |
+        Owner-only. Inserts a single new page into the chart's source PDF
+        at a 0-based `position` (page 0 = first page; `position ==
+        page_count` appends). Single-page-add only: a multi-page `file`
+        is rejected. Resets `has_renders=false` and re-renders.
+
+        Side data is renumbered transactionally for ALL owners:
+        `chart_annotation_versions` and `chart_page_user_prefs` rows at or
+        after `position` shift up by one, so each user's ink and viewport
+        follow the page.
+
+        Retry safety: `Idempotency-Key` (required; reuse one key per
+        logical op) plus a server-recorded per-chart `op_id`. A replayed
+        `op_id` is NOT re-applied — the server returns the current chart
+        state. Single-device positional reconciliation only: no
+        fingerprint, page_map, or page_revision.
+
+        CRITICAL: a `template_kind: blank` page MUST carry faint client
+        content (a hairline border or guide line). The renderer skips
+        blank pages, so a truly empty blank page is silently dropped.
+
+        AI-lyric pages are NOT a multipart add `source`; they have a
+        dedicated online-only insert: `POST
+        /me/charts/{chartId}/pages/lyrics`.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ChartId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, position, source, op_id]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: |
+                    Single-page PDF or image (PNG/JPEG/WebP/HEIC),
+                    max 10MB. A multi-page PDF is rejected (422).
+                position:
+                  type: integer
+                  minimum: 0
+                  description: |
+                    0-based index to insert BEFORE. `position ==
+                    page_count` appends; `position > page_count` is 422.
+                source:
+                  type: string
+                  enum: [template, photo, upload]
+                template_kind:
+                  type: string
+                  description: Required iff `source == template`.
+                  enum:
+                    - blank
+                    - single_staff
+                    - double_staff
+                    - triple_staff
+                    - treble_bass
+                    - guitar_tab
+                op_id:
+                  type: string
+                  format: uuid
+                  description: Client operation id for server-side de-dupe.
+      responses:
+        '200':
+          description: |
+            Page added (or an idempotent replay of a prior `op_id`). The
+            returned chart has the new `page_count`, `has_renders: false`,
+            and the current `import_status`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '403':
+          description: Forbidden (only the chart owner may restructure pages)
+        '409':
+          description: Chart is mid-import/mid-render and not ready for page ops
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartNotReadyError'
+        '422':
+          description: |
+            Validation failed (multi-page file, bad `position`, unknown
+            `template_kind`, missing `op_id`), or a coded limit error:
+            `page_limit_reached` (255-page cap), `file_too_large` (10MB),
+            or `storage_limit_exceeded`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ChartPageLimitError'
+                  - type: object
+                    properties:
+                      message: { type: string }
+                      errors:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items: { type: string }
+
+  /me/charts/{chartId}/pages/lyrics:
+    post:
+      tags: [Charts]
+      summary: Insert an AI-generated lyric page (online-only, owner-only)
+      description: |
+        Owner-only and ONLINE-ONLY. Sources a lyric sheet server-side
+        (lyric cache → external lyric APIs → AI generation), renders it to
+        a single PDF page, and inserts that page into the chart's source
+        PDF BEFORE the 0-based `position` (`position == page_count`
+        appends). The chart's EXISTING pages are PRESERVED — this does NOT
+        replace the chart source (that is `POST /me/charts/generate-lyrics`
+        for a song-less import chart).
+
+        Shares the offline page ops' retry safety and side-effects:
+        `Idempotency-Key` + per-chart `op_id` (a replayed `op_id` does NOT
+        regenerate or re-insert — generation is skipped before any AI
+        call, and the current chart is returned); `chart_annotation_versions`
+        and `chart_page_user_prefs` rows at or after `position` shift up by
+        one for ALL owners transactionally; `has_renders` resets and the
+        chart re-renders.
+
+        `title` / `artist` are optional and fall back to the chart's
+        `import_metadata`; `bypass_cache` re-sources fresh lyrics (the
+        "Regenerate" action) instead of serving a cached sheet.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ChartId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChartLyricPageRequest'
+      responses:
+        '200':
+          description: |
+            Lyric page added (or an idempotent replay of a prior `op_id`).
+            Returns the chart with the new `page_count` and
+            `has_renders: false`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '403':
+          description: Forbidden (only the chart owner may restructure pages)
+        '409':
+          description: Chart is mid-import/mid-render and not ready for page ops
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartNotReadyError'
+        '422':
+          description: |
+            A coded error — `position_out_of_range`, `page_limit_reached`
+            (255-page cap), `storage_limit_exceeded`, or
+            `missing_song_details` (no title/artist from the body or
+            `import_metadata`) — or a standard validation failure
+            (bad `position`, missing/malformed `op_id`).
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ChartLyricPageError'
+                  - type: object
+                    properties:
+                      message: { type: string }
+                      errors:
+                        type: object
+                        additionalProperties:
+                          type: array
+                          items: { type: string }
+        '429':
+          description: |
+            The owner's monthly AI fair-use limit is reached
+            (`code: ai_limit_exceeded`); nothing is generated or inserted.
+        '502':
+          description: |
+            No lyric sheet could be sourced (AI / network failure;
+            `code: lyric_generation_failed`). The chart is left untouched.
+
+  /me/charts/{chartId}/pages/{page}:
+    delete:
+      tags: [Charts]
+      summary: Remove a page from a chart (offline-first, owner-only)
+      description: |
+        Owner-only. Removes the 0-based `{page}` from the chart's source
+        PDF, resets `has_renders=false`, and re-renders. Side data is
+        renumbered transactionally for ALL owners: rows at the removed
+        index are dropped and later rows shift down by one, so ink and
+        viewport follow the surviving pages. A chart must keep at least
+        one page. Retry safety via `Idempotency-Key` + `op_id` as on the
+        add endpoint (a replayed `op_id` returns current chart state).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ChartId'
+        - $ref: '#/components/parameters/ChartPageIndex'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - name: op_id
+          in: query
+          required: true
+          description: |
+            Client-generated uuid for per-chart operation de-dupe. Sent as a
+            query parameter because the client's DELETE transport carries no
+            body; the server also accepts it as a body field via merged input.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: |
+            Page removed (or an idempotent replay of a prior `op_id`).
+            Returns the chart with the decremented `page_count` and
+            `has_renders: false`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '403':
+          description: Forbidden (only the chart owner may restructure pages)
+        '404':
+          description: Page index out of range for the current `page_count`
+        '409':
+          description: Chart is mid-import/mid-render and not ready for page ops
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartNotReadyError'
+        '422':
+          description: |
+            Cannot remove the last remaining page
+            (`code: cannot_delete_last_page`); delete the chart instead.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartCannotDeleteLastPageError'
+
+  /me/charts/{chartId}/pages/reorder:
+    put:
+      tags: [Charts]
+      summary: Reorder a chart's pages (offline-first, owner-only)
+      description: |
+        Owner-only. Reorders the chart's pages per a 0-based permutation
+        of the current pages: `order[i]` is the current page index that
+        becomes the new index `i`. `order` must list each current index
+        exactly once (length `== page_count`). The identity order is a
+        no-op (returns the chart unchanged, no re-render). Otherwise the
+        source PDF is reordered, the same permutation is applied to
+        `chart_annotation_versions` and `chart_page_user_prefs` `page_number`
+        for ALL owners transactionally, `has_renders` resets, and the
+        chart re-renders. Retry safety via `Idempotency-Key` + `op_id`
+        (a replayed `op_id` returns current chart state).
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ChartId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChartPageReorderRequest'
+      responses:
+        '200':
+          description: |
+            Pages reordered (identity order is a no-op; a replayed `op_id`
+            returns current chart state). Returns the chart with
+            `has_renders: false` while the re-render is in flight.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartResponse'
+        '403':
+          description: Forbidden (only the chart owner may restructure pages)
+        '409':
+          description: Chart is mid-import/mid-render and not ready for page ops
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartNotReadyError'
+        '422':
+          description: |
+            Invalid `order` (not a permutation of current pages: missing
+            index, duplicate, out-of-range, or wrong length), or missing
+            `op_id`.
+
   /me/charts/{chartId}/render-status:
     get:
       tags: [Charts]
@@ -2747,6 +3078,15 @@ components:
         Zero-based page number (matches all stored annotation rows). Values
         above 10000 are rejected with 422; non-numeric values 404.
       schema: { type: integer, minimum: 0, maximum: 10000 }
+    ChartPageIndex:
+      in: path
+      name: page
+      required: true
+      description: >
+        Zero-based index of a chart page to operate on (page 0 = first
+        page, matching the annotation `page` param and the cache-manifest).
+        404 when out of range for the chart's current `page_count`.
+      schema: { type: integer, minimum: 0 }
     ProjectSlug:
       in: path
       name: projectSlug
@@ -4590,6 +4930,101 @@ components:
         expected_render_count: { type: integer, minimum: 0, nullable: true }
         has_renders: { type: boolean }
         missing_render_file_count: { type: integer, minimum: 0 }
+    ChartPageReorderRequest:
+      type: object
+      required: [op_id, order]
+      properties:
+        op_id:
+          type: string
+          format: uuid
+          description: Client operation id for server-side de-dupe.
+        order:
+          type: array
+          description: >
+            0-based permutation of the chart's current pages. `order[i]`
+            is the current page index that becomes the new index `i`; must
+            list each current index exactly once (length == page_count).
+            The identity order is a no-op.
+          items: { type: integer, minimum: 0 }
+    ChartPageRemoveRequest:
+      type: object
+      required: [op_id]
+      properties:
+        op_id:
+          type: string
+          format: uuid
+          description: Client operation id for server-side de-dupe.
+    ChartNotReadyError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [chart_not_ready]
+        message: { type: string }
+    ChartCannotDeleteLastPageError:
+      type: object
+      properties:
+        code:
+          type: string
+          enum: [cannot_delete_last_page]
+        message: { type: string }
+    ChartPageLimitError:
+      type: object
+      description: >
+        Coded 422 on the add-page endpoint when a hard limit is hit.
+      properties:
+        code:
+          type: string
+          enum: [page_limit_reached, file_too_large, storage_limit_exceeded]
+        message: { type: string }
+    ChartLyricPageRequest:
+      type: object
+      required: [op_id, position]
+      properties:
+        op_id:
+          type: string
+          format: uuid
+          description: Client operation id for server-side de-dupe.
+        position:
+          type: integer
+          minimum: 0
+          description: >
+            0-based index to insert the generated lyric page BEFORE.
+            `position == page_count` appends; `position > page_count` is
+            422 `position_out_of_range`.
+        title:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: >
+            Song title. Optional — falls back to the chart's
+            `import_metadata.title` when omitted.
+        artist:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: >
+            Song artist. Optional — falls back to the chart's
+            `import_metadata.artist` when omitted.
+        bypass_cache:
+          type: boolean
+          default: false
+          description: >
+            When true, re-source fresh lyrics (the "Regenerate" action)
+            instead of serving a cached sheet.
+    ChartLyricPageError:
+      type: object
+      description: >
+        Coded 422 on the AI-lyric page insert endpoint.
+      properties:
+        code:
+          type: string
+          enum:
+            - position_out_of_range
+            - page_limit_reached
+            - storage_limit_exceeded
+            - missing_song_details
+        message: { type: string }
         import_metadata:
           type: object
           nullable: true
