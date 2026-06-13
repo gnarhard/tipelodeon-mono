@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.9)
+# Charts API Contracts (v1.10)
 
 ## Scope and auth
 
@@ -14,11 +14,13 @@
 - **Method**: `POST`
 - **Path**: `/api/v1/me/charts`
 - **Body**: multipart
-  - `file`: PDF (required)
+  - `file`: a PDF, **or** a raster image (PNG / JPEG / WebP / HEIC) that the
+    server wraps into a single-page PDF before anything else touches it
+    (required)
   - `song_id`: int (required)
   - `project_id`: int (required)
 - **Upload limits**:
-  - single PDF max: `10MB` (server compresses with Ghostscript `/ebook` if input is > 1 MB and savings >= 100 KB; original is kept otherwise)
+  - max file size: `10MB` (a PDF over 1 MB is compressed with Ghostscript `/ebook` when savings >= 100 KB, original kept otherwise; an image is wrapped into a single-page PDF first)
   - route throttle: `5` requests per minute per authenticated user
 - **Semantics**: upsert by `(owner_user_id, project_id, song_id)`
   - First upload creates a new chart and returns `201`.
@@ -182,9 +184,9 @@ a chartless chart (see Add), which does a full render.
 - **Headers**: `Idempotency-Key` (**required** — clients reuse one key per
   logical op so retries are dedupe-safe).
 - **Body**: `multipart/form-data`
-  - `file`: a **single-page** PDF or an image (PNG / JPEG / WebP / HEIC).
-    Max `10MB`. **Single-page-add only** — a multi-page PDF is rejected
-    (`422`); to replace the whole chart, re-upload via `POST /me/charts`.
+  - `file`: a single page (an image — PNG / JPEG / WebP / HEIC — or a
+    single-page PDF), **or** a multi-page PDF whose every page is inserted in
+    order at `position` as one logical op. Max `10MB`.
   - `position`: int `>= 0`. The new page is inserted **before** this index.
     `position == page_count` appends to the end. `position > page_count`
     is rejected (`422`).
@@ -193,15 +195,18 @@ a chartless chart (see Add), which does a full render.
     `blank` | `single_staff` | `double_staff` | `triple_staff` |
     `treble_bass` | `guitar_tab`. Omitted/ignored for `photo` / `upload`.
   - `op_id`: uuid (client-generated operation id; see de-dupe above).
-- **Semantics**: inserts the page into the source PDF at `position`,
-  rewrites the stored PDF, renumbers per-page side data (above), shifts
-  existing pages' render rows up by one (images **preserved**, not
-  re-rasterized), and dispatches a **focused** background re-render of only
-  the new page. `has_renders` stays `true` and existing pages keep serving
-  their cached images, so the screen never blanks. `page_count` grows by one.
-  **Exception:** adding the first page to a *chartless* chart (empty
-  `storage_path_pdf`, `page_count == 0`) bootstraps the source from that page
-  and runs a full render, so `has_renders` is `false` until it lands.
+- **Semantics**: splices the uploaded page(s) into the source PDF at
+  `position`, rewrites the stored PDF, renumbers per-page side data (above),
+  shifts existing pages' render rows up by the number of inserted pages
+  (images **preserved**, not re-rasterized), and dispatches a **focused**
+  background re-render of only the new page range. `has_renders` stays `true`
+  and existing pages keep serving their cached images, so the screen never
+  blanks. `page_count` grows by the number of pages added (one for an image or
+  single-page PDF; `N` for an `N`-page PDF).
+  **Exception:** adding the first page(s) to a *chartless* chart (empty
+  `storage_path_pdf`, `page_count == 0`) bootstraps the source from the
+  uploaded file directly and runs a full render, so `has_renders` is `false`
+  until it lands.
 - **Response** `200`:
 
 ```json
@@ -290,12 +295,12 @@ All errors return a `{ "code": ..., "message": ... }` body:
 | --- | --- | --- |
 | `409` | `chart_not_ready` | The chart is mid-import (`import_status` is `generating`/`failed`). A blocking **empty** `storage_path_pdf` returns this **only when `page_count > 0`** (corrupt state); a brand-new chartless chart (`page_count == 0`) instead **accepts its first page** and bootstraps the source from it. |
 | `422` | `cannot_delete_last_page` | DELETE only — removing the last remaining page. |
-| `422` | `page_limit_reached` | Add only — the chart already has the maximum **255** pages. |
+| `422` | `page_limit_reached` | Add only — the chart is at, or the upload's page count would push it past, the maximum **255** pages. |
 | `422` | `file_too_large` | Add only — the uploaded `file` exceeds `10MB`. |
 | `422` | `storage_limit_exceeded` | Add only — the owner's `chart_pdf_bytes` storage quota would be exceeded. |
 
-Validation failures (bad `position`, a multi-page `file`, a malformed
-`order`, an unknown `template_kind`, a missing `op_id`) return the standard
+Validation failures (bad `position`, a malformed `order`, an unknown
+`template_kind`, a missing `op_id`) return the standard
 Laravel `422` `{ "message", "errors" }` body. `403` is returned to any
 caller who is not the chart's owner (members and claim-holders may annotate,
 but only the owner may restructure pages). The 0-based `{page}` on DELETE is
@@ -333,7 +338,7 @@ but only the owner may restructure pages). The 0-based `{page}` on DELETE is
 Unlike the three offline page ops above, this one is **online-only**: it
 sources a lyric sheet (lyric cache → external lyric APIs → AI generation) and
 renders it to a single PDF page **server-side**, then inserts that page using
-the **same single-page insert** the multipart add uses. The chart's existing
+the **same page-insert path** the multipart add uses (here always one page). The chart's existing
 pages are **preserved** — this does **not** replace the chart source (that is
 what `POST /me/charts/generate-lyrics` does for a song-less import chart). It
 shares the page ops' owner-only authorization, `op_id` idempotency, positional
