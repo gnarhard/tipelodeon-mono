@@ -372,6 +372,19 @@ A band, solo act, or performance context. All data is scoped to a project.
 
 Global song catalog. Songs are deduplicated by normalized title+artist.
 
+**Original-artist-only catalog (covers):** the catalog holds metadata only for
+ORIGINAL-ARTIST recordings. A COVER (performing artist ≠ original recording
+artist) may share a `songs` row for identity/dedup, but that row stays a bare
+identity shell (title/artist/normalized_key only) — its enriched metadata lives
+on the per-project `project_songs` copy instead. The cover signal (`is_cover`,
+`original_artist`) comes from the AI identity step and rides through
+`import_metadata`; a cover catalog row is marked internally (in
+`songs.field_sources`, no extra column) so import-confirm, metadata enrichment,
+and `songs:backfill-metadata` all keep it empty. The `songs:flag-cover-catalog-rows`
+maintenance command demotes legacy cover rows (report-only by default; `--apply`
+marks + clears metadata; never deletes). See `contracts/repertoire.md` →
+"Original-artist-only catalog (covers)".
+
 **Fields:**
 - `id` (PK)
 - `title` - Song title
