@@ -2853,6 +2853,19 @@ components:
           minimum: 0.005
           maximum: 0.5
           description: Fraction of canvas height.
+        font_family:
+          type: string
+          maxLength: 64
+          nullable: true
+          description: Font family; omitted/null means the app default typeface.
+        bold: { type: boolean, default: false }
+        italic: { type: boolean, default: false }
+        underline: { type: boolean, default: false }
+        strikethrough: { type: boolean, default: false }
+        align:
+          type: string
+          enum: [left, center, right, justify]
+          default: left
     AuthLoginRequest:
       type: object
       required: [email, password]
