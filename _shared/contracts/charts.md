@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.8)
+# Charts API Contracts (v1.9)
 
 ## Scope and auth
 
@@ -139,8 +139,12 @@ every row after the removed index down by one (and drops the rows at the
 removed index); reorder applies the permutation to the `page_number` of every
 row. Because all owners are renumbered together inside the transaction, ink
 and zoom never desync from the visible page after a move. The source PDF is
-rewritten and the chart is **re-rendered** (`has_renders` resets to `false`
-until the new renders land — clients poll `GET .../render-status`).
+rewritten, but renders are updated **incrementally**: existing pages' render
+images are preserved (only their `page_number` is renumbered), so they never
+blank. An **add** triggers a focused background re-render of just the new page;
+**remove** and **reorder** re-rasterize nothing. `has_renders` therefore stays
+`true` across these ops — the one exception is bootstrapping the first page of
+a chartless chart (see Add), which does a full render.
 
 ### Add a page
 
@@ -161,9 +165,14 @@ until the new renders land — clients poll `GET .../render-status`).
     `treble_bass` | `guitar_tab`. Omitted/ignored for `photo` / `upload`.
   - `op_id`: uuid (client-generated operation id; see de-dupe above).
 - **Semantics**: inserts the page into the source PDF at `position`,
-  rewrites the stored PDF, resets `has_renders=false`, renumbers per-page
-  side data (above), and dispatches a re-render. The chart's `page_count`
-  grows by one.
+  rewrites the stored PDF, renumbers per-page side data (above), shifts
+  existing pages' render rows up by one (images **preserved**, not
+  re-rasterized), and dispatches a **focused** background re-render of only
+  the new page. `has_renders` stays `true` and existing pages keep serving
+  their cached images, so the screen never blanks. `page_count` grows by one.
+  **Exception:** adding the first page to a *chartless* chart (empty
+  `storage_path_pdf`, `page_count == 0`) bootstraps the source from that page
+  and runs a full render, so `has_renders` is `false` until it lands.
 - **Response** `200`:
 
 ```json
@@ -173,14 +182,16 @@ until the new renders land — clients poll `GET .../render-status`).
     "id": 42,
     "project_id": 1,
     "page_count": 4,
-    "has_renders": false,
+    "has_renders": true,
     "import_status": null
   }
 }
 ```
 
-  (`chart` is the full Chart resource; `page_count` reflects the new total
-  and `has_renders` is `false` until the re-render completes.)
+  (`chart` is the full Chart resource; `page_count` reflects the new total.
+  `has_renders` stays `true` — the new page renders in the background while
+  existing pages keep displaying. It is `false` only in the chartless-bootstrap
+  case above.)
 
 > **CRITICAL client requirement — blank template pages must not be empty.**
 > The server's renderer **skips blank pages** (a page with no detectable
@@ -203,10 +214,11 @@ until the new renders land — clients poll `GET .../render-status`).
   server reads it from the merged request input, so a body field is also
   accepted.
 
-- **Semantics**: removes the page from the source PDF, renumbers per-page
+- **Semantics**: removes the page from the source PDF and renumbers per-page
   side data (rows at the removed index are dropped; later rows shift down by
-  one), resets `has_renders=false`, and re-renders. `page_count` shrinks by
-  one.
+  one). The removed page's render images are deleted and the survivors' render
+  rows shift down with them — **no re-rasterization**, so `has_renders` stays
+  `true`. `page_count` shrinks by one.
 - **Response** `200`: `{ "message": "Page removed.", "chart": <Chart> }`.
 - **Errors**:
   - `422 cannot_delete_last_page` — a chart must keep at least one page; the
@@ -235,9 +247,10 @@ until the new renders land — clients poll `GET .../render-status`).
 - The **identity order** (`[0, 1, 2, ...]`) is a **no-op**: the server
   returns the current chart unchanged without rewriting the PDF or
   re-rendering.
-- **Semantics**: reorders pages in the source PDF per the permutation,
-  applies the same permutation to per-page side data (above), resets
-  `has_renders=false`, and re-renders.
+- **Semantics**: reorders pages in the source PDF per the permutation and
+  applies the same permutation to per-page side data (above) **and to the
+  render rows** — the existing images are permuted in place, never
+  re-rasterized, so `has_renders` stays `true`.
 - **Response** `200`: `{ "message": "Pages reordered.", "chart": <Chart> }`.
 
 ### Shared errors (all three endpoints)
@@ -246,7 +259,7 @@ All errors return a `{ "code": ..., "message": ... }` body:
 
 | HTTP | `code` | When |
 | --- | --- | --- |
-| `409` | `chart_not_ready` | The chart is mid-import or mid-render (`import_status` is non-null, or renders are in flight). Page ops require a settled chart; the client should poll `render-status` and retry. |
+| `409` | `chart_not_ready` | The chart is mid-import (`import_status` is `generating`/`failed`). A blocking **empty** `storage_path_pdf` returns this **only when `page_count > 0`** (corrupt state); a brand-new chartless chart (`page_count == 0`) instead **accepts its first page** and bootstraps the source from it. |
 | `422` | `cannot_delete_last_page` | DELETE only — removing the last remaining page. |
 | `422` | `page_limit_reached` | Add only — the chart already has the maximum **255** pages. |
 | `422` | `file_too_large` | Add only — the uploaded `file` exceeds `10MB`. |
@@ -296,7 +309,9 @@ pages are **preserved** — this does **not** replace the chart source (that is
 what `POST /me/charts/generate-lyrics` does for a song-less import chart). It
 shares the page ops' owner-only authorization, `op_id` idempotency, positional
 side-data renumbering (annotations + viewport prefs shift up from `position`
-for all owners, transactionally), `has_renders` reset, and re-render dispatch.
+for all owners, transactionally), and the **incremental render** model: existing
+pages' render images are preserved + renumbered and only the new lyric page is
+rendered (focused), so `has_renders` stays `true`.
 
 Because the `source` enum on the multipart add endpoint covers only the
 offline-capable kinds (`template` / `photo` / `upload`), AI lyrics are **not**
