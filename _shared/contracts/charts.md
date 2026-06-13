@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.8)
+# Charts API Contracts (v1.9)
 
 ## Scope and auth
 
@@ -80,6 +80,35 @@ Added to all Chart resource responses:
 Bulk-import identification is **synchronous per-chart** — there is no batch
 API path, so `batch_pending` is never emitted. Charts stuck in `identifying`
 or `enriching` past a TTL are moved to `failed` by `charts:reap-stale-imports`.
+
+---
+
+## Generate Lyric Sheet for an Import Row (v1.9)
+
+- **Method**: `POST`
+- **Path**: `/api/v1/me/projects/{project}/charts/generate-lyrics`
+- **Headers**: `Idempotency-Key` (supported)
+- **Body** (JSON):
+  - `title`: string (required)
+  - `artist`: string (required)
+  - `bypass_cache`: bool (optional; re-source fresh lyrics instead of the cached sheet)
+- **Semantics**: Generates an AI lyric sheet for an **unconfirmed import row that
+  has no chart yet** — a catalog pick or a fresh manual entry in the import inbox,
+  which has neither a confirmed `Song` (so `POST /me/charts/generate-lyrics`'s
+  `song_id` does not apply) nor an existing chart (so
+  `POST /me/charts/{chart}/generate-lyrics` has nothing to target). The server
+  **mints a song-less chart** (`song_id = null`, `source_type = 'ai_generated'`,
+  `import_status = 'generating'`) from the supplied title/artist and dispatches
+  generation into it.
+  - Returns `202` with a Chart resource. The client records `chart.id` on the
+    row, then polls `GET /me/charts/{chartId}/render-status` until
+    `import_status` is null and `status` is `ready`. A later "Regenerate" on the
+    same row targets that chart via `POST /me/charts/{chart}/generate-lyrics`.
+  - Returns `422` (`missing_song_details`) if title or artist is blank.
+  - Returns `429` if the interactive AI usage quota is exceeded.
+  - Returns `404` if the caller has no access to `{project}`.
+- **Response fields**: Same as `POST /me/charts/generate-lyrics` (a Chart
+  resource with `source_type = 'ai_generated'` and `import_status = 'generating'`).
 
 ---
 
