@@ -1,4 +1,4 @@
-# Charts API Contracts (v1.6)
+# Charts API Contracts (v1.8)
 
 ## Scope and auth
 
@@ -80,6 +80,244 @@ Added to all Chart resource responses:
 Bulk-import identification is **synchronous per-chart** — there is no batch
 API path, so `batch_pending` is never emitted. Charts stuck in `identifying`
 or `enriching` past a TTL are moved to `failed` by `charts:reap-stale-imports`.
+
+---
+
+## Chart Page Operations (offline-first)
+
+Three **owner-only** endpoints let the chart owner add, remove, and reorder the
+pages of an existing chart while the app stays usable offline. They are the
+authoritative server side of the app's single-device positional page editor.
+
+**Positions are 0-based** throughout these endpoints: page `0` is the first
+page. This matches the `page` parameter on the annotation routes
+(`/pages/{page}/annotations`) and the 0-indexed `page_number` in the
+cache-manifest, so a page index means the same thing across ink, viewport,
+and rendered-image caches.
+
+### Design: single-device positional reconciliation
+
+These endpoints intentionally use **positional** reconciliation only. There is
+**no fingerprint, no `page_map`, and no `page_revision`** token in the
+request or response. A page is identified solely by its current 0-based index
+within the chart, and the server renumbers all per-page side data by position.
+This keeps the contract small for the single-device editing model: the owner
+edits page order from one device at a time, and a stale client simply re-reads
+the chart (`page_count`) after each op.
+
+Every op carries a client-generated `op_id` (uuid) **and** an
+`Idempotency-Key` header. The `op_id` travels in the request body for the
+`POST` (add) and `PUT` (reorder) ops; for the `DELETE` (remove) op — whose
+client transport sends no body — it travels as the `?op_id=` query parameter
+instead. The server reads it from the merged request input either way. The two
+mechanisms together give retry safety:
+
+- The `Idempotency-Key` is the transport-level dedupe used by the global
+  idempotency middleware; the client **reuses one key for all retries of the
+  same logical op** (a new logical op uses a new key).
+- The `op_id` is a server-recorded, per-chart operation de-dupe. When the
+  server sees an `op_id` it has already applied to this chart, it **does not
+  re-apply** the mutation — it returns the **current** chart state (`200`) as
+  if the op had just succeeded. This makes a replay safe even if the original
+  response was lost and the client retries with the same `op_id` but the
+  middleware window has expired.
+
+### Positional side-data renumbering (all owners, transactional)
+
+A single chart's render images, ink, and saved viewport are all keyed by
+positional page number. When a page is inserted, removed, or reordered, the
+server **renumbers, in one database transaction**, for **every** owner of an
+annotation or preference row on that chart (not just the caller):
+
+- `chart_annotation_versions` (keyed by `(chart_id, owner_user_id,
+  page_number)`) — so each user's ink follows the page to its new index.
+- `chart_page_user_prefs` (the per-`(user_id, chart_id, page)` viewport) — so
+  each user's zoom/offset follows the page.
+
+Insert shifts every row at or after the insert index up by one; delete shifts
+every row after the removed index down by one (and drops the rows at the
+removed index); reorder applies the permutation to the `page_number` of every
+row. Because all owners are renumbered together inside the transaction, ink
+and zoom never desync from the visible page after a move. The source PDF is
+rewritten and the chart is **re-rendered** (`has_renders` resets to `false`
+until the new renders land — clients poll `GET .../render-status`).
+
+### Add a page
+
+- **Method**: `POST`
+- **Path**: `/api/v1/me/charts/{chartId}/pages`
+- **Headers**: `Idempotency-Key` (**required** — clients reuse one key per
+  logical op so retries are dedupe-safe).
+- **Body**: `multipart/form-data`
+  - `file`: a **single-page** PDF or an image (PNG / JPEG / WebP / HEIC).
+    Max `10MB`. **Single-page-add only** — a multi-page PDF is rejected
+    (`422`); to replace the whole chart, re-upload via `POST /me/charts`.
+  - `position`: int `>= 0`. The new page is inserted **before** this index.
+    `position == page_count` appends to the end. `position > page_count`
+    is rejected (`422`).
+  - `source`: one of `template` | `photo` | `upload`.
+  - `template_kind`: required **iff** `source == template`, one of
+    `blank` | `single_staff` | `double_staff` | `triple_staff` |
+    `treble_bass` | `guitar_tab`. Omitted/ignored for `photo` / `upload`.
+  - `op_id`: uuid (client-generated operation id; see de-dupe above).
+- **Semantics**: inserts the page into the source PDF at `position`,
+  rewrites the stored PDF, resets `has_renders=false`, renumbers per-page
+  side data (above), and dispatches a re-render. The chart's `page_count`
+  grows by one.
+- **Response** `200`:
+
+```json
+{
+  "message": "Page added.",
+  "chart": {
+    "id": 42,
+    "project_id": 1,
+    "page_count": 4,
+    "has_renders": false,
+    "import_status": null
+  }
+}
+```
+
+  (`chart` is the full Chart resource; `page_count` reflects the new total
+  and `has_renders` is `false` until the re-render completes.)
+
+> **CRITICAL client requirement — blank template pages must not be empty.**
+> The server's renderer **skips blank pages** (a page with no detectable
+> content is dropped from the rendered output). A `template_kind: blank`
+> page therefore **must carry faint content** drawn by the client — e.g. a
+> hairline page border or a single faint guide line — so the page survives
+> rendering. A truly empty `blank` page will be silently dropped and the
+> chart will come back with one fewer rendered page than expected. Staff /
+> tab templates already have line content and are unaffected.
+
+### Remove a page
+
+- **Method**: `DELETE`
+- **Path**: `/api/v1/me/charts/{chartId}/pages/{page}`
+- **Headers**: `Idempotency-Key` (**required**).
+- **Path param**: `{page}` is the **0-based** index of the page to remove.
+- **Query param**: `op_id` (uuid, **required**) — `?op_id=<uuid>`. Unlike the
+  add/reorder ops, the remove op carries `op_id` as a query parameter rather
+  than a body field, because the client's `DELETE` transport sends no body. The
+  server reads it from the merged request input, so a body field is also
+  accepted.
+
+- **Semantics**: removes the page from the source PDF, renumbers per-page
+  side data (rows at the removed index are dropped; later rows shift down by
+  one), resets `has_renders=false`, and re-renders. `page_count` shrinks by
+  one.
+- **Response** `200`: `{ "message": "Page removed.", "chart": <Chart> }`.
+- **Errors**:
+  - `422 cannot_delete_last_page` — a chart must keep at least one page; the
+    final page cannot be removed (delete the chart instead via
+    `DELETE /me/charts/{chartId}`).
+
+### Reorder pages
+
+- **Method**: `PUT`
+- **Path**: `/api/v1/me/charts/{chartId}/pages/reorder`
+- **Headers**: `Idempotency-Key` (**required**).
+- **Body** (JSON):
+
+```json
+{
+  "op_id": "uuid",
+  "order": [2, 0, 1]
+}
+```
+
+- `order` is a **0-based permutation of the chart's current pages**:
+  `order[i]` is the current page index that becomes the new index `i`. The
+  example moves current page 2 to the front. `order` must contain each
+  current index exactly once (length `== page_count`); a missing index,
+  duplicate, or out-of-range value is rejected (`422`).
+- The **identity order** (`[0, 1, 2, ...]`) is a **no-op**: the server
+  returns the current chart unchanged without rewriting the PDF or
+  re-rendering.
+- **Semantics**: reorders pages in the source PDF per the permutation,
+  applies the same permutation to per-page side data (above), resets
+  `has_renders=false`, and re-renders.
+- **Response** `200`: `{ "message": "Pages reordered.", "chart": <Chart> }`.
+
+### Shared errors (all three endpoints)
+
+All errors return a `{ "code": ..., "message": ... }` body:
+
+| HTTP | `code` | When |
+| --- | --- | --- |
+| `409` | `chart_not_ready` | The chart is mid-import or mid-render (`import_status` is non-null, or renders are in flight). Page ops require a settled chart; the client should poll `render-status` and retry. |
+| `422` | `cannot_delete_last_page` | DELETE only — removing the last remaining page. |
+| `422` | `page_limit_reached` | Add only — the chart already has the maximum **255** pages. |
+| `422` | `file_too_large` | Add only — the uploaded `file` exceeds `10MB`. |
+| `422` | `storage_limit_exceeded` | Add only — the owner's `chart_pdf_bytes` storage quota would be exceeded. |
+
+Validation failures (bad `position`, a multi-page `file`, a malformed
+`order`, an unknown `template_kind`, a missing `op_id`) return the standard
+Laravel `422` `{ "message", "errors" }` body. `403` is returned to any
+caller who is not the chart's owner (members and claim-holders may annotate,
+but only the owner may restructure pages). The 0-based `{page}` on DELETE is
+404 if it is out of range for the current `page_count`.
+
+### Add an AI-lyric page (online-only)
+
+- **Method**: `POST`
+- **Path**: `/api/v1/me/charts/{chartId}/pages/lyrics`
+- **Headers**: `Idempotency-Key` (**required**, as on the other page ops).
+- **Body** (JSON):
+
+```json
+{
+  "op_id": "uuid",
+  "position": 1,
+  "title": "Wonderwall",
+  "artist": "Oasis",
+  "bypass_cache": false
+}
+```
+
+- `position`: int `>= 0`, inserted **before** this 0-based index;
+  `position == page_count` appends; `position > page_count` is `422`
+  `position_out_of_range`.
+- `op_id`: uuid (client operation id; server-side de-dupe, see above).
+- `title` / `artist`: optional. When omitted the server falls back to the
+  chart's `import_metadata` `title` / `artist`. If neither the body nor the
+  metadata yields both, the request is `422 missing_song_details` and the
+  chart is untouched.
+- `bypass_cache`: optional bool (default `false`); when `true` the lyric
+  source is re-fetched fresh (the "Regenerate" action) instead of serving a
+  cached sheet.
+
+Unlike the three offline page ops above, this one is **online-only**: it
+sources a lyric sheet (lyric cache → external lyric APIs → AI generation) and
+renders it to a single PDF page **server-side**, then inserts that page using
+the **same single-page insert** the multipart add uses. The chart's existing
+pages are **preserved** — this does **not** replace the chart source (that is
+what `POST /me/charts/generate-lyrics` does for a song-less import chart). It
+shares the page ops' owner-only authorization, `op_id` idempotency, positional
+side-data renumbering (annotations + viewport prefs shift up from `position`
+for all owners, transactionally), `has_renders` reset, and re-render dispatch.
+
+Because the `source` enum on the multipart add endpoint covers only the
+offline-capable kinds (`template` / `photo` / `upload`), AI lyrics are **not**
+expressible there and have no `ai_lyrics` source value; they are added through
+this dedicated endpoint instead.
+
+- **Semantics**: generate → insert at `position` → renumber → re-render. A
+  replayed `op_id` returns the current chart **without** regenerating or
+  re-inserting (generation is skipped before any AI call).
+- **Response** `200`: `{ "message": "Lyric page added.", "chart": <Chart> }`
+  (the full Chart resource with the new `page_count` and `has_renders:
+  false`).
+- **Errors**: the shared page-op errors above (`409 chart_not_ready`,
+  `422 page_limit_reached` at the 255-page cap, `422 position_out_of_range`,
+  `422 storage_limit_exceeded`), plus:
+  - `429 ai_limit_exceeded` — the owner's monthly AI fair-use limit is
+    reached; nothing is generated or inserted.
+  - `422 missing_song_details` — no `title` / `artist` from the body or
+    metadata.
+  - `502 lyric_generation_failed` — no lyric sheet could be sourced (AI /
+    network failure); the chart is left untouched.
 
 ---
 
