@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.9
+  title: Tipelodeon API v1.10
   version: 1.10.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
@@ -4590,6 +4590,30 @@ components:
         expected_render_count: { type: integer, minimum: 0, nullable: true }
         has_renders: { type: boolean }
         missing_render_file_count: { type: integer, minimum: 0 }
+        import_metadata:
+          type: object
+          nullable: true
+          description: >
+            Present while a chart is mid-import (status identified/enriching).
+            Carries the AI-identified title/artist + enrichment fields, plus the
+            cover signal below. Only the cover-relevant keys are enumerated here;
+            see contracts/repertoire.md for the full set.
+          additionalProperties: true
+          properties:
+            is_cover:
+              type: boolean
+              description: >
+                True only when the performing artist differs from the original
+                recording artist. A cover is barred from the global songs
+                catalog — its metadata lands on the project_songs copy instead.
+                Defaults to false when the model is unsure.
+            original_artist:
+              type: string
+              nullable: true
+              description: >
+                Full registered name of the artist who originally recorded the
+                song (equals the performing artist when not a cover); null when
+                unknown.
     NoActiveSessionError:
       type: object
       required: [error]

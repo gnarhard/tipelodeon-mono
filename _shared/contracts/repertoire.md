@@ -1,4 +1,4 @@
-# Repertoire API Contracts (v1.6)
+# Repertoire API Contracts (v1.7)
 
 ## Scope and auth
 
@@ -132,6 +132,51 @@ Mashup flag:
   - Metadata enrichment will most likely be inaccurate
   - Repertoire list shows a red "Mashup" pill
   - Display title appends ` (mashup)`
+
+Original-artist-only catalog (covers) (v1.7):
+- The global `songs` **catalog** table only ever holds **ORIGINAL-ARTIST**
+  metadata. A **COVER** — a recording/performance whose performing artist
+  differs from the original recording artist — must NEVER create or populate a
+  global `songs` catalog row with metadata under the performing artist.
+- A cover still gets a `songs` row for **identity/dedup** (so multiple
+  performers of the same song share a `song_id`), but that row stays a **bare
+  identity shell**: `title` + `artist` + `normalized_key` only, with every
+  global metadata column (`album`, `energy`, `danceability`, `era`, `genre`,
+  `theme`, `original_musical_key`, `time_signature`, `duration_in_seconds`,
+  `tempo_bpm`) left NULL.
+- A cover's enriched metadata is written to the **`project_songs`** copy
+  instead — exactly like an already-existing catalog song. The musician owns
+  their per-project copy; the shared catalog is never polluted with a cover's
+  performed-artist metadata.
+- The signal originates in the AI identity step (see "Cover detection" below)
+  and is carried through `import_metadata`. At confirm it is read from the
+  per-item `is_cover` flag, falling back to the chart's `import_metadata` when
+  the client omits it.
+- A cover catalog row carries an internal marker (in `songs.field_sources`, not
+  a new column) so that **metadata enrichment** (`EnrichImportedSongs`,
+  `EnrichImportedChart`/lookup) and the **`songs:backfill-metadata`** command
+  both skip it permanently — they never re-populate a cover row.
+- Legacy cleanup: `songs:flag-cover-catalog-rows` re-classifies existing
+  non-verified catalog rows and (with `--apply`) demotes detected covers to
+  bare identity shells — marking them and clearing their global metadata. It
+  **never deletes** a catalog row (rows are referenced by `project_songs`,
+  `charts`, `requests`, and the dedup key); the default mode is a dry-run
+  report. Admin-verified rows are never touched.
+
+Cover detection (`is_cover` / `original_artist`) (v1.7):
+- The AI identity step (chart-image identify, chart-text extract, and the
+  filename/paste canonicalize hint) now also returns:
+  - `is_cover` (boolean) — `true` only when the model is confident the
+    performing artist differs from the original recording artist. Defaults to
+    `false` (treated as an original) when the model is unsure or omits it.
+  - `original_artist` (string|null) — the full registered name of the artist
+    who originally recorded the song (equals the performing `artist` when it is
+    not a cover); `null` when the model cannot name one. An unknown original
+    artist does **not** downgrade a cover into a catalog write — the cover is
+    still kept out of the catalog.
+- Both fields are stored in the chart's `import_metadata` and surface in the
+  `render-status` / bulk-enrich item payloads alongside the other identity
+  fields, so the client can show a cover badge in review.
 
 Public visibility:
 - Field: `is_public`
@@ -376,7 +421,9 @@ Chart render-status (`GET /me/charts/{chartId}/render-status`) now includes
 `import_metadata` and `enrichment_state` in the response. When `import_status`
 is `identified`, `import_metadata` contains the AI-identified title, artist, and
 enrichment data (energy_level, era, genre, theme, original_musical_key,
-duration_in_seconds, tempo_bpm).
+duration_in_seconds, tempo_bpm). It also carries the cover signal `is_cover`
+(boolean) and `original_artist` (string|null) so the client can badge a cover in
+review; see "Cover detection" above.
 
 `enrichment_state` is the **server-authoritative outcome of the grounded
 metadata lookup**, and the single signal clients render the enrichment status
@@ -543,6 +590,8 @@ Request:
       "mashup": false,
       "instrumental": false,
       "original": false,
+      "is_cover": false,
+      "original_artist": "Queen",
       "is_public": true,
       "learned": true,
       "theme": "story",
@@ -573,13 +622,19 @@ edit, since absent keys fall back to the column default:
   the catalog `Song` already exists. The four flags default to their column
   default when omitted (`instrumental`/`original`/`mashup` → `false`,
   `is_public`/`learned` → `true`).
-- **Catalog Song, new songs only** (`applySongMetadata`, written only when
-  the `Song` is freshly created so an import never mutates a shared catalog
-  row other projects rely on): `energy_level`, `genre`, `theme`, `tempo_bpm`.
-  For an existing Song these are instead stored as overrides on the
-  `ProjectSong` row.
-- **Catalog Song, always** (intrinsic facts, written unconditionally):
-  `era`, `original_musical_key`, `duration_in_seconds`.
+- **Catalog Song, new ORIGINAL-ARTIST songs only** (`applySongMetadata`,
+  written only when the `Song` is freshly created AND the row is not a cover,
+  so an import never mutates a shared catalog row other projects rely on and
+  never populates the catalog for a cover): `energy_level`, `genre`, `theme`,
+  `tempo_bpm`, `era`, `original_musical_key`, `duration_in_seconds`, `album`,
+  `danceability`, `time_signature`. For an existing Song **or a cover** these
+  are instead stored as overrides on the `ProjectSong` row.
+- **Cover signal** (`is_cover`, `original_artist`): `is_cover` gates the
+  catalog write — when `true` (or derived true from the chart's
+  `import_metadata`), the catalog Song stays a bare identity shell and the
+  metadata above lands on the `ProjectSong` instead; the new catalog row is
+  marked internally so enrichment/backfill skip it. `original_artist` is
+  informational. See "Original-artist-only catalog (covers)" above.
 
 `chart_id` is consumed for chart linking (not stored on the song row).
 `version_label` is reserved at confirm (`ProjectSong` rows are created with
