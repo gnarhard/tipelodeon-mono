@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Tipelodeon API v1.8
-  version: 1.8.0
+  title: Tipelodeon API v1.9
+  version: 1.9.0
   description: |
     Contract-first API for Tipelodeon performer and audience flows.
 
