@@ -2391,7 +2391,7 @@ paths:
         Owner-only. Inserts a single new page into the chart's source PDF
         at a 0-based `position` (page 0 = first page; `position ==
         page_count` appends). Single-page-add only: a multi-page `file`
-        is rejected. Resets `has_renders=false` and re-renders.
+        is rejected. Shifts existing render rows up and focuses a re-render on only the new page; `has_renders` stays true (existing pages never blank).
 
         Side data is renumbered transactionally for ALL owners:
         `chart_annotation_versions` and `chart_page_user_prefs` rows at or
@@ -2456,7 +2456,7 @@ paths:
         '200':
           description: |
             Page added (or an idempotent replay of a prior `op_id`). The
-            returned chart has the new `page_count`, `has_renders: false`,
+            returned chart has the new `page_count`, `has_renders: true`,
             and the current `import_status`.
           content:
             application/json:
@@ -2509,7 +2509,7 @@ paths:
         call, and the current chart is returned); `chart_annotation_versions`
         and `chart_page_user_prefs` rows at or after `position` shift up by
         one for ALL owners transactionally; `has_renders` resets and the
-        chart re-renders.
+        render rows are adjusted in place — no re-rasterization.
 
         `title` / `artist` are optional and fall back to the chart's
         `import_metadata`; `bypass_cache` re-sources fresh lyrics (the
@@ -2529,7 +2529,7 @@ paths:
           description: |
             Lyric page added (or an idempotent replay of a prior `op_id`).
             Returns the chart with the new `page_count` and
-            `has_renders: false`.
+            `has_renders: true`.
           content:
             application/json:
               schema:
@@ -2577,7 +2577,7 @@ paths:
       summary: Remove a page from a chart (offline-first, owner-only)
       description: |
         Owner-only. Removes the 0-based `{page}` from the chart's source
-        PDF, resets `has_renders=false`, and re-renders. Side data is
+        PDF, permutes the render rows in place (no re-rasterize). Side data is
         renumbered transactionally for ALL owners: rows at the removed
         index are dropped and later rows shift down by one, so ink and
         viewport follow the surviving pages. A chart must keep at least
@@ -2603,7 +2603,7 @@ paths:
           description: |
             Page removed (or an idempotent replay of a prior `op_id`).
             Returns the chart with the decremented `page_count` and
-            `has_renders: false`.
+            `has_renders: true`.
           content:
             application/json:
               schema:
@@ -2640,7 +2640,7 @@ paths:
         source PDF is reordered, the same permutation is applied to
         `chart_annotation_versions` and `chart_page_user_prefs` `page_number`
         for ALL owners transactionally, `has_renders` resets, and the
-        chart re-renders. Retry safety via `Idempotency-Key` + `op_id`
+        render rows are permuted in place (no re-rasterize). Retry safety via `Idempotency-Key` + `op_id`
         (a replayed `op_id` returns current chart state).
       security: [{ bearerAuth: [] }]
       parameters:
@@ -2657,7 +2657,7 @@ paths:
           description: |
             Pages reordered (identity order is a no-op; a replayed `op_id`
             returns current chart state). Returns the chart with
-            `has_renders: false` while the re-render is in flight.
+            `has_renders: true` while the re-render is in flight.
           content:
             application/json:
               schema:
