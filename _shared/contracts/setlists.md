@@ -200,9 +200,9 @@ Response:
 {
   "data": {
     "songs": [
-      {"title": "Song Title 1", "set_label": "Set 1"},
-      {"title": "Song Title 2", "set_label": "Set 1"},
-      {"title": "Song Title 3", "set_label": null}
+      {"title": "Song Title 1", "artist": "Artist A", "set_label": "Set 1"},
+      {"title": "Song Title 2", "artist": null, "set_label": "Set 1"},
+      {"title": "Song Title 3", "artist": "Artist C", "set_label": null}
     ]
   }
 }
@@ -211,6 +211,10 @@ Response:
 Semantics:
 - Sends image to configured AI vision provider for OCR/title extraction.
 - Returns extracted songs in the order they appear in the image.
+- `artist` is the AI-read or AI-inferred performer for the row, or null when it
+  is neither printed nor confidently known. The client folds it into match
+  scoring (a confirming artist promotes a borderline title; a contradicting one
+  disambiguates same-title covers), so it is passed through verbatim.
 - `set_label` is the AI-detected set grouping (e.g. "Set 1", "Encore"), or null
   if no set groupings are visible.
 - Returns `422` if extraction fails or the image cannot be processed.
